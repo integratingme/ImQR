@@ -1,0 +1,119 @@
+@font-face {
+    font-family: 'Maven Pro';
+    src: url('/MavenPro-VariableFont_wght.ttf') format('truetype');
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+@import "tailwindcss";
+
+@theme {
+    --color-primary-50: #ffe4d9;
+    --color-primary-100: #ffe4d9;
+    --color-primary-200: #f2c0a9;
+    --color-primary-300: #e54e1a;
+    --color-primary-400: #e54e1a;
+    --color-primary-500: #e54e1a;
+    --color-primary-600: #e54e1a;
+    --color-primary-700: #c43d15;
+    --color-primary-800: #a32f10;
+    --color-primary-900: #82220b;
+    --color-dark-50: #d8e1e0;
+    --color-dark-100: #d8e1e0;
+    --color-dark-200: #a8b8b6;
+    --color-dark-300: #788f8c;
+    --color-dark-400: #486662;
+    --color-dark-500: #2d3c3a;
+    --color-dark-600: #25302e;
+    --color-dark-700: #1d2422;
+    --color-dark-800: #151816;
+    --color-dark-900: #0d0c0a;
+    --color-dark: #2d3c3a;
+    --color-peach-light: #ffe4d9;
+    --color-peach: #f2c0a9;
+    --color-light-gray: #d8e1e0;
+    --color-light-gray-50: #d8e1e0;
+    --color-light-gray-100: #d8e1e0;
+}
+
+body {
+    @apply bg-white text-dark-500;
+    font-family: 'Maven Pro', sans-serif;
+}
+
+.btn {
+    @apply px-6 py-3 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
+}
+
+.btn:disabled {
+    @apply opacity-50 cursor-not-allowed;
+}
+
+.btn-primary {
+    @apply bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500;
+}
+
+.btn-primary:disabled {
+    @apply hover:bg-primary-600;
+}
+
+.btn-secondary {
+    @apply bg-dark-50 text-dark-500 border border-transparent hover:border-light-gray focus:ring-dark-500;
+}
+
+.btn-secondary:disabled {
+    @apply hover:bg-dark-50;
+}
+
+.btn-outline {
+    @apply border-2 border-primary-600 text-primary-600 hover:border-light-gray focus:ring-primary-500;
+}
+
+.btn-outline:disabled {
+    @apply hover:bg-transparent;
+}
+
+.card {
+    @apply bg-white rounded-xl shadow-sm border border-dark-50 p-6 transition-all duration-200;
+}
+
+.card-hover {
+    @apply hover:shadow-lg hover:border-light-gray cursor-pointer;
+}
+
+.input {
+    @apply w-full px-4 py-3 border border-dark-50 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors;
+}
+
+.label {
+    @apply block text-sm font-medium text-dark-500 mb-2;
+}
+
+.color-swatch {
+    @apply w-12 h-12 rounded-lg border-2 border-dark-50 cursor-pointer transition-all hover:scale-110;
+}
+
+.step-indicator {
+    @apply flex items-center justify-center w-10 h-10 rounded-full font-semibold text-sm;
+}
+
+.step-active {
+    @apply bg-primary-600 text-white;
+}
+
+.step-inactive {
+    @apply bg-dark-50 text-dark-500;
+}
+
+.step-completed {
+    @apply bg-primary-600 text-white;
+}
+
+.text-gradient {
+    background: linear-gradient(to right, #f2c0a9, #e54e1a, #c43d15);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+}
