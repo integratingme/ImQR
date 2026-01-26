@@ -32,12 +32,12 @@ class StoreQrCodeRequest extends FormRequest
 
         $typeSpecificRules = match($type) {
             'url' => [
-                'url' => 'required|url|max:2048',
+                'url' => ['required', 'url', 'max:2048', 'regex:/^https:\/\//'],
             ],
             'email' => [
                 'email' => 'required|email|max:255',
                 'subject' => 'nullable|string|max:255',
-                'message' => 'nullable|string|max:1000',
+                'message' => 'required|string|max:1000',
             ],
             'text' => [
                 'text' => 'required|string|max:500',
@@ -47,7 +47,7 @@ class StoreQrCodeRequest extends FormRequest
             ],
             'menu' => [
                 'menu_file' => 'nullable|file|mimes:pdf|max:10240',
-                'menu_url' => 'nullable|url|max:2048',
+                'menu_url' => ['nullable', 'url', 'max:2048', 'regex:/^https:\/\//'],
             ],
             'coupon' => [
                 'coupon_image' => 'required|image|mimes:jpeg,png,jpg,gif,webp,svg|max:5120', // 5MB
@@ -70,9 +70,9 @@ class StoreQrCodeRequest extends FormRequest
                 'color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
                 'app_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,svg|max:5120',
                 'app_name' => 'nullable|string|max:255',
-                'website_url' => 'nullable|url|max:2048',
-                'app_store_link' => 'nullable|url|max:2048',
-                'play_store_link' => 'nullable|url|max:2048',
+                'website_url' => ['nullable', 'url', 'max:2048', 'regex:/^https:\/\//'],
+                'app_store_link' => ['nullable', 'url', 'max:2048', 'regex:/^https:\/\/apps\.apple\.com\//'],
+                'play_store_link' => ['nullable', 'url', 'max:2048', 'regex:/^https:\/\/play\.google\.com\/store\/apps\//'],
             ],
             'location' => [
                 'address' => 'required|string|max:500',
@@ -86,7 +86,7 @@ class StoreQrCodeRequest extends FormRequest
                 'phone_number' => 'required|string|max:50',
             ],
             'mp3' => [
-                'mp3_file' => 'required|file|mimes:mp3,audio/mpeg,audio/mp3|max:20480', // 20MB
+                'mp3_file' => 'required|file|mimes:mp3,m4a,audio/mpeg,audio/mp3,audio/m4a,audio/x-m4a|max:20480', // 20MB
                 'song_name' => 'required|string|max:255',
                 'artist_name' => 'required|string|max:255',
             ],
@@ -104,8 +104,10 @@ class StoreQrCodeRequest extends FormRequest
         return [
             'url.required' => 'Please enter a website URL.',
             'url.url' => 'Please enter a valid URL.',
+            'url.regex' => 'Website URL must start with https://',
             'email.required' => 'Please enter an email address.',
             'email.email' => 'Please enter a valid email address.',
+            'message.required' => 'Please enter a message.',
             'text.required' => 'Please enter some text.',
             'text.max' => 'Text cannot exceed 500 characters.',
             'pdf_file.required' => 'Please upload a PDF file.',
@@ -120,11 +122,15 @@ class StoreQrCodeRequest extends FormRequest
             'password.required_unless' => 'Password is required for encrypted networks.',
             'address.required' => 'Please enter an address.',
             'phone_number.required' => 'Please enter a phone number.',
-            'mp3_file.required' => 'Please upload an MP3 file.',
-            'mp3_file.mimes' => 'Only MP3 audio files are allowed.',
-            'mp3_file.max' => 'MP3 file cannot exceed 20MB.',
+            'mp3_file.required' => 'Please upload an audio file.',
+            'mp3_file.mimes' => 'Only audio files are allowed (MP3, M4A formats).',
+            'mp3_file.max' => 'Audio file cannot exceed 20MB.',
             'song_name.required' => 'Please enter a song name.',
             'artist_name.required' => 'Please enter an artist name.',
+            'menu_url.regex' => 'Menu URL must start with https://',
+            'website_url.regex' => 'Website URL must start with https://',
+            'app_store_link.regex' => 'App Store Link must start with https://apps.apple.com/',
+            'play_store_link.regex' => 'Google Play Store Link must start with https://play.google.com/store/apps/',
         ];
     }
 }

@@ -11,8 +11,8 @@
     </div>
 
     <div>
-        <label for="message" class="label">Message</label>
-        <textarea id="message" name="message" rows="4" class="input" placeholder="Pre-filled message content"></textarea>
+        <label for="message" class="label">Message *</label>
+        <textarea id="message" name="message" rows="4" class="input" placeholder="Pre-filled message content" required></textarea>
         <p class="text-sm text-dark-200 mt-1">Scanners can send an email with this pre-filled content</p>
     </div>
 </div>

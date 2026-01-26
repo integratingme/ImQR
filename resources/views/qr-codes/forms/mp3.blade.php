@@ -1,14 +1,14 @@
 <!-- MP3 QR Code Form -->
 <div class="mb-6">
-    <label for="mp3_file" class="label">MP3 File *</label>
+    <label for="mp3_file" class="label">Audio File *</label>
     <div id="mp3-upload-area" class="border-2 border-dashed border-dark-200 rounded-lg p-8 text-center hover:border-primary-400 transition-colors cursor-pointer">
-        <input type="file" id="mp3_file" name="mp3_file" accept=".mp3,audio/mpeg,audio/mp3" class="hidden" required onchange="handleMp3Select(this)">
+        <input type="file" id="mp3_file" name="mp3_file" accept=".mp3,.m4a,audio/mpeg,audio/mp3,audio/m4a,audio/x-m4a" class="hidden" required onchange="handleMp3Select(this)">
         <label for="mp3_file" class="cursor-pointer">
             <svg class="w-12 h-12 text-dark-200 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
             </svg>
-            <p class="text-dark-300 font-medium">Click to upload MP3</p>
-            <p class="text-sm text-dark-200 mt-1">Maximum file size: 20MB</p>
+            <p class="text-dark-300 font-medium">Click to upload audio file</p>
+            <p class="text-sm text-dark-200 mt-1">Supported formats: MP3, M4A - Maximum file size: 20MB</p>
         </label>
     </div>
     <div id="mp3-preview" class="mt-4 hidden">
@@ -52,20 +52,20 @@
 function handleMp3Select(input) {
     const file = input.files[0];
     if (file) {
-        // Proveri da li je MP3
-        const validTypes = ['audio/mpeg', 'audio/mp3', 'audio/mpeg3'];
-        const validExtensions = ['.mp3'];
+        // Proveri da li je podržan audio format (MP3, M4A)
+        const validTypes = ['audio/mpeg', 'audio/mp3', 'audio/mpeg3', 'audio/m4a', 'audio/x-m4a'];
+        const validExtensions = ['.mp3', '.m4a'];
         const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
         
         if (!validTypes.includes(file.type) && !validExtensions.includes(fileExtension)) {
-            alert('Molimo odaberite MP3 fajl.');
+            alert('Molimo odaberite audio fajl (MP3 ili M4A format).');
             input.value = '';
             return;
         }
         
         // Proveri veličinu (20MB = 20971520 bytes)
         if (file.size > 20971520) {
-            alert('MP3 fajl je prevelik. Maksimalna veličina je 20MB.');
+            alert('Audio fajl je prevelik. Maksimalna veličina je 20MB.');
             input.value = '';
             return;
         }

@@ -43,7 +43,7 @@ class QrCodeService
             'text' => $data['text'] ?? '',
             'pdf' => $data['pdf_url'] ?? '',
             'menu' => $data['menu_url'] ?? $data['menu_file_url'] ?? '',
-            'coupon' => $data['coupon_url'] ?? '',
+            'coupon' => $data['coupon_image_url'] ?? $data['coupon_url'] ?? '',
             'event' => $this->generateEventContent($data),
             'app' => $data['website_url'] ?? '',
             'location' => $this->generateLocationContent($data),

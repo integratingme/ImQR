@@ -53,8 +53,35 @@ class QrCodeController extends Controller
             'secondary' => $validated['secondary_color'] ?? '#FFFFFF',
         ];
 
-        // For PDF and MP3 types, handle file upload first to get the URL
-        if (($type === 'pdf' && $request->hasFile('pdf_file')) || ($type === 'mp3' && $request->hasFile('mp3_file'))) {
+        // For PDF, MP3, Menu (with file upload), and Coupon, handle file upload first to get the URL
+        $hasFileUpload = false;
+        $fileField = null;
+        $fileType = null;
+        $urlField = null;
+        
+        if ($type === 'pdf' && $request->hasFile('pdf_file')) {
+            $hasFileUpload = true;
+            $fileField = 'pdf_file';
+            $fileType = 'pdf';
+            $urlField = 'pdf_url';
+        } elseif ($type === 'mp3' && $request->hasFile('mp3_file')) {
+            $hasFileUpload = true;
+            $fileField = 'mp3_file';
+            $fileType = 'mp3';
+            $urlField = 'mp3_url';
+        } elseif ($type === 'menu' && $request->hasFile('menu_file')) {
+            $hasFileUpload = true;
+            $fileField = 'menu_file';
+            $fileType = 'menu';
+            $urlField = 'menu_file_url';
+        } elseif ($type === 'coupon' && $request->hasFile('coupon_image')) {
+            $hasFileUpload = true;
+            $fileField = 'coupon_image';
+            $fileType = 'coupon_image';
+            $urlField = 'coupon_image_url';
+        }
+        
+        if ($hasFileUpload) {
             // Create a temporary QR code record to associate the file
             $qrCode = QrCode::create([
                 'type' => $type,
@@ -64,8 +91,6 @@ class QrCodeController extends Controller
             ]);
 
             // Upload the file and get the URL
-            $fileField = $type === 'pdf' ? 'pdf_file' : 'mp3_file';
-            $fileType = $type === 'pdf' ? 'pdf' : 'mp3';
             $file = $this->qrCodeService->handleFileUpload(
                 $qrCode,
                 $request->file($fileField),
@@ -73,7 +98,6 @@ class QrCodeController extends Controller
             );
 
             // Add file URL to validated data
-            $urlField = $type === 'pdf' ? 'pdf_url' : 'mp3_url';
             $validated[$urlField] = asset('storage/' . $file->file_path);
             
             // Update QR code data with file URL
@@ -85,7 +109,8 @@ class QrCodeController extends Controller
             // Generate QR code for other types
             $qrCode = $this->qrCodeService->generate($type, $validated, $colors);
 
-            // Handle file uploads based on type (for menu, coupon, event, app)
+            // Handle file uploads based on type (for menu with URL, event, app)
+            // Note: coupon_image is handled above, but logo still needs to be handled here
             $this->handleFileUploads($request, $qrCode, $type);
         }
 
@@ -156,7 +181,7 @@ class QrCodeController extends Controller
     {
         $fileFields = [
             'pdf' => ['pdf_file' => 'pdf'],
-            'menu' => ['menu_file' => 'menu'],
+            'menu' => ['menu_file' => 'menu'], // Only used if menu_url is provided (not file upload)
             'coupon' => ['coupon_image' => 'coupon_image', 'logo' => 'logo'],
             'event' => ['event_image' => 'event_image'],
             'app' => ['app_image' => 'app_image'],
@@ -176,6 +201,16 @@ class QrCodeController extends Controller
         ];
 
         foreach ($fileFields[$type] as $field => $fileType) {
+            // Skip menu_file if it was already handled in the main store method
+            if ($type === 'menu' && $field === 'menu_file' && $request->hasFile('menu_file')) {
+                continue;
+            }
+            
+            // Skip coupon_image if it was already handled in the main store method
+            if ($type === 'coupon' && $field === 'coupon_image' && $request->hasFile('coupon_image')) {
+                continue;
+            }
+            
             if ($request->hasFile($field)) {
                 $file = $this->qrCodeService->handleFileUpload(
                     $qrCode,
@@ -195,7 +230,7 @@ class QrCodeController extends Controller
             }
         }
 
-        // Regenerate QR code if needed
+        // Regenerate QR code if needed (e.g., menu with URL only)
         if ($needsRegeneration) {
             $this->qrCodeService->regenerateQrCode($qrCode, $colors);
         }
