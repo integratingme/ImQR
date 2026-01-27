@@ -13,7 +13,7 @@ class QrCodeService
     /**
      * Generate QR code based on type and data
      */
-    public function generate(string $type, array $data, ?array $colors = null): QrCode
+    public function generate(string $type, array $data, ?array $colors = null, ?array $customization = null): QrCode
     {
         // Generate QR code content based on type
         $qrContent = $this->generateQrContent($type, $data);
@@ -24,12 +24,25 @@ class QrCodeService
             'name' => $data['name'] ?? 'Untitled QR Code',
             'data' => $data,
             'colors' => $colors ?? ['primary' => '#000000', 'secondary' => '#FFFFFF'],
+            'customization' => $customization ?? $this->getDefaultCustomization(),
         ]);
 
         // Generate and save QR code image
-        $this->generateAndSaveImage($qrCode, $qrContent, $colors);
+        $this->generateAndSaveImage($qrCode, $qrContent, $colors, $customization);
 
         return $qrCode;
+    }
+
+    /**
+     * Get default customization options
+     */
+    protected function getDefaultCustomization(): array
+    {
+        return [
+            'pattern' => 'square', // square, circle, rounded
+            'corner_style' => 'square', // square, rounded, extra-rounded
+            'corner_dot_style' => 'square', // square, circle, rounded
+        ];
     }
 
     /**
@@ -161,16 +174,19 @@ class QrCodeService
     /**
      * Generate and save QR code image
      */
-    protected function generateAndSaveImage(QrCode $qrCode, string $content, ?array $colors = null): void
+    protected function generateAndSaveImage(QrCode $qrCode, string $content, ?array $colors = null, ?array $customization = null): void
     {
         $primaryColor = $colors['primary'] ?? '#000000';
         $backgroundColor = $colors['secondary'] ?? '#FFFFFF';
+        $customization = $customization ?? $qrCode->customization ?? $this->getDefaultCustomization();
 
         // Convert hex to RGB
         $primaryRgb = $this->hexToRgb($primaryColor);
         $backgroundRgb = $this->hexToRgb($backgroundColor);
 
-        // Generate QR code
+        // Generate QR code as PNG
+        // Note: For advanced customization (patterns, corners), we would need SVG manipulation
+        // For now, we generate PNG directly - customization can be added later via SVG processing
         $qrImage = QrCodeGenerator::format('png')
             ->size(500)
             ->margin(1)
@@ -179,12 +195,30 @@ class QrCodeService
             ->errorCorrection('H')
             ->generate($content);
 
+        // TODO: Apply customization via SVG manipulation if needed
+        // For now, customization options are stored but not yet applied to the image
+
         // Save to storage
         $filename = 'qr-codes/' . $qrCode->id . '_' . time() . '.png';
         Storage::disk('public')->put($filename, $qrImage);
 
         // Update QR code record
         $qrCode->update(['qr_image_path' => $filename]);
+    }
+
+    /**
+     * Apply customization to SVG QR code
+     */
+    protected function applyCustomization(string $svg, array $customization, string $primaryColor, string $backgroundColor): string
+    {
+        // For now, return the SVG as-is
+        // TODO: Implement pattern, corner style, and corner dot style modifications
+        // This would involve parsing the SVG and modifying the shapes
+        // Patterns: square, circle, rounded
+        // Corner styles: square, rounded, extra-rounded  
+        // Corner dot styles: square, circle, rounded
+        
+        return $svg;
     }
 
     /**
@@ -206,19 +240,20 @@ class QrCodeService
     /**
      * Regenerate QR code image for an existing QR code
      */
-    public function regenerateQrCode(QrCode $qrCode, ?array $colors = null): void
+    public function regenerateQrCode(QrCode $qrCode, ?array $colors = null, ?array $customization = null): void
     {
         // Refresh the model to get latest data
         $qrCode->refresh();
         
         // Use provided colors or get from QR code
         $colors = $colors ?? $qrCode->colors ?? ['primary' => '#000000', 'secondary' => '#FFFFFF'];
+        $customization = $customization ?? $qrCode->customization ?? $this->getDefaultCustomization();
         
         // Generate QR code content based on updated data
         $qrContent = $this->generateQrContent($qrCode->type, $qrCode->data);
         
         // Generate and save QR code image
-        $this->generateAndSaveImage($qrCode, $qrContent, $colors);
+        $this->generateAndSaveImage($qrCode, $qrContent, $colors, $customization);
     }
 
     /**
@@ -228,17 +263,21 @@ class QrCodeService
     {
         $content = $this->generateQrContent($qrCode->type, $qrCode->data);
         $colors = $qrCode->colors ?? ['primary' => '#000000', 'secondary' => '#FFFFFF'];
+        $customization = $qrCode->customization ?? $this->getDefaultCustomization();
         
         $primaryRgb = $this->hexToRgb($colors['primary']);
         $backgroundRgb = $this->hexToRgb($colors['secondary']);
 
-        return QrCodeGenerator::format('svg')
+        $svg = QrCodeGenerator::format('svg')
             ->size(500)
             ->margin(1)
             ->color($primaryRgb[0], $primaryRgb[1], $primaryRgb[2])
             ->backgroundColor($backgroundRgb[0], $backgroundRgb[1], $backgroundRgb[2])
             ->errorCorrection('H')
             ->generate($content);
+
+        // Apply customization
+        return $this->applyCustomization($svg, $customization, $colors['primary'], $colors['secondary']);
     }
 
     /**
@@ -262,16 +301,18 @@ class QrCodeService
     /**
      * Get QR code preview (base64 encoded)
      */
-    public function getPreview(string $type, array $data, ?array $colors = null): string
+    public function getPreview(string $type, array $data, ?array $colors = null, ?array $customization = null): string
     {
         $content = $this->generateQrContent($type, $data);
         $primaryColor = $colors['primary'] ?? '#000000';
         $backgroundColor = $colors['secondary'] ?? '#FFFFFF';
+        $customization = $customization ?? $this->getDefaultCustomization();
         
         $primaryRgb = $this->hexToRgb($primaryColor);
         $backgroundRgb = $this->hexToRgb($backgroundColor);
 
-        $qrImage = QrCodeGenerator::format('png')
+        // Generate as SVG first for customization
+        $svg = QrCodeGenerator::format('svg')
             ->size(300)
             ->margin(1)
             ->color($primaryRgb[0], $primaryRgb[1], $primaryRgb[2])
@@ -279,6 +320,10 @@ class QrCodeService
             ->errorCorrection('H')
             ->generate($content);
 
-        return 'data:image/png;base64,' . base64_encode($qrImage);
+        // Apply customization
+        $customizedSvg = $this->applyCustomization($svg, $customization, $primaryColor, $backgroundColor);
+
+        // For preview, return SVG as data URI (browsers can display SVG directly)
+        return 'data:image/svg+xml;base64,' . base64_encode($customizedSvg);
     }
 }

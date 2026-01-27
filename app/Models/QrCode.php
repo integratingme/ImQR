@@ -11,12 +11,14 @@ class QrCode extends Model
         'name',
         'data',
         'colors',
+        'customization',
         'qr_image_path',
     ];
 
     protected $casts = [
         'data' => 'array',
         'colors' => 'array',
+        'customization' => 'array',
     ];
 
     /**

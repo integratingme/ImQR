@@ -42,6 +42,12 @@ class QrCodeController extends Controller
             'secondary' => $validated['secondary_color'] ?? '#FFFFFF',
         ];
 
+        $customization = [
+            'pattern' => $request->input('pattern', 'square'),
+            'corner_style' => $request->input('corner_style', 'square'),
+            'corner_dot_style' => $request->input('corner_dot_style', 'square'),
+        ];
+
         $hasFileUpload = false;
         $fileField = null;
         $fileType = null;
@@ -74,6 +80,7 @@ class QrCodeController extends Controller
                 'name' => $validated['name'] ?? 'Untitled QR Code',
                 'data' => $validated,
                 'colors' => $colors,
+                'customization' => $customization,
             ]);
 
             $file = $this->qrCodeService->handleFileUpload(
@@ -84,9 +91,9 @@ class QrCodeController extends Controller
 
             $validated[$urlField] = asset('storage/' . $file->file_path);
             $qrCode->update(['data' => $validated]);
-            $this->qrCodeService->regenerateQrCode($qrCode, $colors);
+            $this->qrCodeService->regenerateQrCode($qrCode, $colors, $customization);
         } else {
-            $qrCode = $this->qrCodeService->generate($type, $validated, $colors);
+            $qrCode = $this->qrCodeService->generate($type, $validated, $colors, $customization);
             $this->handleFileUploads($request, $qrCode, $type);
         }
 
@@ -106,7 +113,13 @@ class QrCodeController extends Controller
             'secondary' => $request->input('secondary_color', '#FFFFFF'),
         ];
 
-        $preview = $this->qrCodeService->getPreview($type, $data, $colors);
+        $customization = [
+            'pattern' => $request->input('pattern', 'square'),
+            'corner_style' => $request->input('corner_style', 'square'),
+            'corner_dot_style' => $request->input('corner_dot_style', 'square'),
+        ];
+
+        $preview = $this->qrCodeService->getPreview($type, $data, $colors, $customization);
 
         return response()->json([
             'success' => true,

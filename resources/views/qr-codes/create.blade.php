@@ -45,7 +45,10 @@
         
         <!-- Step 1: Setup Info -->
         <div id="step-1" class="step-content">
-            <div class="card max-w-3xl mx-auto">
+            <div class="max-w-7xl mx-auto">
+                <div class="grid grid-cols-1 lg:grid-cols-[60%_40%] gap-8 items-start">
+                    <!-- Column 1: Form (60% width) -->
+                    <div class="card">
                 <h2 class="text-2xl font-bold text-dark-500 mb-6">Setup Information</h2>
                 
                 <!-- QR Name -->
@@ -60,17 +63,31 @@
                     <button type="button" onclick="nextStep(2)" class="btn btn-primary">
                         Next Step →
                     </button>
+                        </div>
+                    </div>
+
+                    <!-- Column 2: Preview Mockup with phone.png (40% width) -->
+                    <div class="flex items-center justify-center sticky top-8">
+                        <div class="relative w-full max-w-sm mx-auto">
+                            <img src="{{ asset('phone.png') }}" alt="Phone mockup" id="phone-mockup-step1" class="w-full h-auto object-contain relative z-10">
+                            <div id="phone-mockup-overlay-step1" class="absolute pointer-events-none" style="background-color: #FFFFFF; border-radius: 4rem; border: 2px solid #E5E7EB;">
+                                <div id="phone-mockup-content" class="w-full h-full flex flex-col p-6">
+                                    <!-- Type-specific mockup preview will be shown here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Step 2: Customize -->
+        <!-- Step 2: Customize QR Code Appearance -->
         <div id="step-2" class="step-content hidden">
             <div class="max-w-6xl mx-auto">
-                <div class="grid grid-cols-1 lg:grid-cols-[70%_30%] gap-8 items-start">
-                    <!-- Column 1: Color Selection -->
+                <div class="grid grid-cols-1 lg:grid-cols-[60%_40%] gap-8 items-start">
+                    <!-- Column 1: QR Code Customization Options -->
                     <div class="card self-start">
-                        <h2 class="text-2xl font-bold text-dark-500 mb-6">Customize Your {{ ucfirst($type) }} QR Code</h2>
+                        <h2 class="text-2xl font-bold text-dark-500 mb-6">Customize QR Code Design</h2>
                         
                         <!-- Color Selection -->
                         <div class="mb-6">
@@ -115,95 +132,130 @@
                             </div>
                         </div>
 
-                        <!-- Frame Options -->
+                        <!-- Pattern Selection -->
                         <div class="mb-6">
-                            <div class="flex items-center space-x-2 mb-2">
-                                <svg class="w-5 h-5 text-dark-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"></path>
-                                </svg>
-                                <label class="label mb-0">QR code frame</label>
-                            </div>
-                            <p class="text-sm text-dark-300 mb-4">Frames improve your QR code visibility, leading to more scans.</p>
-                            
-                            <div class="grid grid-cols-9 gap-2">
-                                <!-- No Frame Option -->
-                                <button type="button" class="frame-option border-2 border-primary-500 rounded-lg p-2 hover:border-primary-600 transition-colors" data-frame="" onclick="selectFrame(this, '')">
+                            <label class="label">Pattern Style</label>
+                            <p class="text-sm text-dark-300 mb-4">Choose the pattern style for QR code modules.</p>
+                            <div class="grid grid-cols-3 gap-3">
+                                <button type="button" class="pattern-option border-2 border-primary-500 rounded-lg p-4 hover:border-primary-600 transition-colors" data-pattern="square" onclick="selectPattern(this, 'square')">
                                     <div class="w-full h-20 bg-white rounded border-2 border-dark-200 flex items-center justify-center">
-                                        <svg class="w-8 h-8 text-dark-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                        </svg>
+                                        <div class="grid grid-cols-3 gap-1">
+                                            <div class="w-4 h-4 bg-black rounded-sm"></div>
+                                            <div class="w-4 h-4 bg-black rounded-sm"></div>
+                                            <div class="w-4 h-4 bg-black rounded-sm"></div>
+                                            <div class="w-4 h-4 bg-black rounded-sm"></div>
+                                            <div class="w-4 h-4 bg-black rounded-sm"></div>
+                                            <div class="w-4 h-4 bg-black rounded-sm"></div>
                                     </div>
+                                    </div>
+                                    <p class="text-xs text-center mt-2 text-dark-400">Square</p>
                                 </button>
-                                
-                                <!-- Bag Frame Option -->
-                                <button type="button" class="frame-option border-2 border-dark-200 rounded-lg p-2 hover:border-primary-400 transition-colors" data-frame="bag.png" onclick="selectFrame(this, 'bag.png')">
-                                    <div class="w-full h-20 bg-white rounded border border-dark-200 flex items-center justify-center overflow-hidden">
-                                        <img src="{{ asset('bag.png') }}" alt="Bag frame" class="w-full h-full object-contain">
+                                <button type="button" class="pattern-option border-2 border-dark-200 rounded-lg p-4 hover:border-primary-400 transition-colors" data-pattern="circle" onclick="selectPattern(this, 'circle')">
+                                    <div class="w-full h-20 bg-white rounded border-2 border-dark-200 flex items-center justify-center">
+                                        <div class="grid grid-cols-3 gap-1">
+                                            <div class="w-4 h-4 bg-black rounded-full"></div>
+                                            <div class="w-4 h-4 bg-black rounded-full"></div>
+                                            <div class="w-4 h-4 bg-black rounded-full"></div>
+                                            <div class="w-4 h-4 bg-black rounded-full"></div>
+                                            <div class="w-4 h-4 bg-black rounded-full"></div>
+                                            <div class="w-4 h-4 bg-black rounded-full"></div>
                                     </div>
+                                    </div>
+                                    <p class="text-xs text-center mt-2 text-dark-400">Circle</p>
                                 </button>
-                                
-                                <!-- Placeholder for more frames - can be added later -->
-                                <button type="button" class="frame-option border-2 border-dark-200 rounded-lg p-2 hover:border-primary-400 transition-colors opacity-50 cursor-not-allowed" disabled>
-                                    <div class="w-full h-20 bg-dark-100 rounded border border-dark-200 flex items-center justify-center">
-                                        <span class="text-xs text-dark-400">Coming soon</span>
+                                <button type="button" class="pattern-option border-2 border-dark-200 rounded-lg p-4 hover:border-primary-400 transition-colors" data-pattern="rounded" onclick="selectPattern(this, 'rounded')">
+                                    <div class="w-full h-20 bg-white rounded border-2 border-dark-200 flex items-center justify-center">
+                                        <div class="grid grid-cols-3 gap-1">
+                                            <div class="w-4 h-4 bg-black rounded"></div>
+                                            <div class="w-4 h-4 bg-black rounded"></div>
+                                            <div class="w-4 h-4 bg-black rounded"></div>
+                                            <div class="w-4 h-4 bg-black rounded"></div>
+                                            <div class="w-4 h-4 bg-black rounded"></div>
+                                            <div class="w-4 h-4 bg-black rounded"></div>
                                     </div>
-                                </button>
-                                
-                                <!-- Add more placeholder buttons for grid -->
-                                <button type="button" class="frame-option border-2 border-dark-200 rounded-lg p-2 hover:border-primary-400 transition-colors opacity-50 cursor-not-allowed" disabled>
-                                    <div class="w-full h-20 bg-dark-100 rounded border border-dark-200 flex items-center justify-center">
-                                        <span class="text-xs text-dark-400">Coming soon</span>
                                     </div>
-                                </button>
-                                <button type="button" class="frame-option border-2 border-dark-200 rounded-lg p-2 hover:border-primary-400 transition-colors opacity-50 cursor-not-allowed" disabled>
-                                    <div class="w-full h-20 bg-dark-100 rounded border border-dark-200 flex items-center justify-center">
-                                        <span class="text-xs text-dark-400">Coming soon</span>
-                                    </div>
-                                </button>
-                                <button type="button" class="frame-option border-2 border-dark-200 rounded-lg p-2 hover:border-primary-400 transition-colors opacity-50 cursor-not-allowed" disabled>
-                                    <div class="w-full h-20 bg-dark-100 rounded border border-dark-200 flex items-center justify-center">
-                                        <span class="text-xs text-dark-400">Coming soon</span>
-                                    </div>
-                                </button>
-                                <button type="button" class="frame-option border-2 border-dark-200 rounded-lg p-2 hover:border-primary-400 transition-colors opacity-50 cursor-not-allowed" disabled>
-                                    <div class="w-full h-20 bg-dark-100 rounded border border-dark-200 flex items-center justify-center">
-                                        <span class="text-xs text-dark-400">Coming soon</span>
-                                    </div>
-                                </button>
-                                <button type="button" class="frame-option border-2 border-dark-200 rounded-lg p-2 hover:border-primary-400 transition-colors opacity-50 cursor-not-allowed" disabled>
-                                    <div class="w-full h-20 bg-dark-100 rounded border border-dark-200 flex items-center justify-center">
-                                        <span class="text-xs text-dark-400">Coming soon</span>
-                                    </div>
-                                </button>
-                                <button type="button" class="frame-option border-2 border-dark-200 rounded-lg p-2 hover:border-primary-400 transition-colors opacity-50 cursor-not-allowed" disabled>
-                                    <div class="w-full h-20 bg-dark-100 rounded border border-dark-200 flex items-center justify-center">
-                                        <span class="text-xs text-dark-400">Coming soon</span>
-                                    </div>
+                                    <p class="text-xs text-center mt-2 text-dark-400">Rounded</p>
                                 </button>
                             </div>
-                            
-                            <input type="hidden" id="selected_frame" name="frame" value="">
+                            <input type="hidden" id="selected_pattern" name="pattern" value="square">
                         </div>
 
-                        <!-- QR Code Size -->
+                        <!-- Corner Style -->
                         <div class="mb-6">
-                            <label for="qr_size" class="label">QR Code Size</label>
-                            <div class="space-y-3">
-                                <input type="range" id="qr_size" name="qr_size" min="0" max="100" value="60" class="w-full" oninput="updateQRSize(this.value)">
-                                <div class="flex justify-between text-xs text-dark-300">
-                                    <span>0%</span>
-                                    <span>50%</span>
-                                    <span>100%</span>
-                                </div>
-                                <div class="text-center text-xs text-dark-400 mt-1">
-                                    <span id="qr_size_value">60%</span>
-                                </div>
+                            <label class="label">Corner Style</label>
+                            <p class="text-sm text-dark-300 mb-4">Customize the corner squares of your QR code.</p>
+                            <div class="grid grid-cols-3 gap-3">
+                                <button type="button" class="corner-option border-2 border-primary-500 rounded-lg p-4 hover:border-primary-600 transition-colors" data-corner="square" onclick="selectCorner(this, 'square')">
+                                    <div class="w-full h-20 bg-white rounded border-2 border-dark-200 flex items-center justify-center">
+                                        <div class="relative w-16 h-16">
+                                            <div class="absolute top-0 left-0 w-6 h-6 border-4 border-black"></div>
+                                            <div class="absolute top-0 right-0 w-6 h-6 border-4 border-black"></div>
+                                            <div class="absolute bottom-0 left-0 w-6 h-6 border-4 border-black"></div>
+                                    </div>
+                                    </div>
+                                    <p class="text-xs text-center mt-2 text-dark-400">Square</p>
+                                </button>
+                                <button type="button" class="corner-option border-2 border-dark-200 rounded-lg p-4 hover:border-primary-400 transition-colors" data-corner="rounded" onclick="selectCorner(this, 'rounded')">
+                                    <div class="w-full h-20 bg-white rounded border-2 border-dark-200 flex items-center justify-center">
+                                        <div class="relative w-16 h-16">
+                                            <div class="absolute top-0 left-0 w-6 h-6 border-4 border-black rounded"></div>
+                                            <div class="absolute top-0 right-0 w-6 h-6 border-4 border-black rounded"></div>
+                                            <div class="absolute bottom-0 left-0 w-6 h-6 border-4 border-black rounded"></div>
+                                    </div>
+                                    </div>
+                                    <p class="text-xs text-center mt-2 text-dark-400">Rounded</p>
+                                </button>
+                                <button type="button" class="corner-option border-2 border-dark-200 rounded-lg p-4 hover:border-primary-400 transition-colors" data-corner="extra-rounded" onclick="selectCorner(this, 'extra-rounded')">
+                                    <div class="w-full h-20 bg-white rounded border-2 border-dark-200 flex items-center justify-center">
+                                        <div class="relative w-16 h-16">
+                                            <div class="absolute top-0 left-0 w-6 h-6 border-4 border-black rounded-lg"></div>
+                                            <div class="absolute top-0 right-0 w-6 h-6 border-4 border-black rounded-lg"></div>
+                                            <div class="absolute bottom-0 left-0 w-6 h-6 border-4 border-black rounded-lg"></div>
+                                    </div>
+                                    </div>
+                                    <p class="text-xs text-center mt-2 text-dark-400">Extra Rounded</p>
+                                </button>
                             </div>
+                            <input type="hidden" id="selected_corner" name="corner_style" value="square">
                         </div>
 
-                        <!-- Type-specific Customization Options -->
-                        <div id="step2-type-specific" class="mb-6">
-                            <!-- Will be populated by JavaScript based on type -->
+                        <!-- Corner Dot Style -->
+                        <div class="mb-6">
+                            <label class="label">Corner Dot Style</label>
+                            <p class="text-sm text-dark-300 mb-4">Choose the style for the center dot in corner squares.</p>
+                            <div class="grid grid-cols-3 gap-3">
+                                <button type="button" class="corner-dot-option border-2 border-primary-500 rounded-lg p-4 hover:border-primary-600 transition-colors" data-corner-dot="square" onclick="selectCornerDot(this, 'square')">
+                                    <div class="w-full h-20 bg-white rounded border-2 border-dark-200 flex items-center justify-center">
+                                        <div class="w-12 h-12 border-4 border-black">
+                                            <div class="w-full h-full flex items-center justify-center">
+                                                <div class="w-3 h-3 bg-black"></div>
+                                </div>
+                                </div>
+                            </div>
+                                    <p class="text-xs text-center mt-2 text-dark-400">Square</p>
+                                </button>
+                                <button type="button" class="corner-dot-option border-2 border-dark-200 rounded-lg p-4 hover:border-primary-400 transition-colors" data-corner-dot="circle" onclick="selectCornerDot(this, 'circle')">
+                                    <div class="w-full h-20 bg-white rounded border-2 border-dark-200 flex items-center justify-center">
+                                        <div class="w-12 h-12 border-4 border-black rounded">
+                                            <div class="w-full h-full flex items-center justify-center">
+                                                <div class="w-3 h-3 bg-black rounded-full"></div>
+                        </div>
+                                        </div>
+                                    </div>
+                                    <p class="text-xs text-center mt-2 text-dark-400">Circle</p>
+                                </button>
+                                <button type="button" class="corner-dot-option border-2 border-dark-200 rounded-lg p-4 hover:border-primary-400 transition-colors" data-corner-dot="rounded" onclick="selectCornerDot(this, 'rounded')">
+                                    <div class="w-full h-20 bg-white rounded border-2 border-dark-200 flex items-center justify-center">
+                                        <div class="w-12 h-12 border-4 border-black rounded">
+                                            <div class="w-full h-full flex items-center justify-center">
+                                                <div class="w-3 h-3 bg-black rounded"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p class="text-xs text-center mt-2 text-dark-400">Rounded</p>
+                                </button>
+                            </div>
+                            <input type="hidden" id="selected_corner_dot" name="corner_dot_style" value="square">
                         </div>
 
                         <div class="flex justify-between mt-6">
@@ -223,28 +275,26 @@
                         </div>
                     </div>
 
-                    <!-- Column 2: Phone Image -->
-                    <div class="flex items-center justify-center h-full">
-                        <div class="relative w-full h-full">
-                            <div id="phone-mockup-overlay" class="absolute pointer-events-none flex flex-col items-center justify-center" style="background-color: #FFFFFF; border-radius: 2rem;">
-                                <div id="phone-mockup-qr" class="w-3/4 h-3/4 flex items-center justify-center">
-                                    <!-- QR code will be inserted here -->
+                    <!-- Column 2: QR Code Preview with phone.png -->
+                    <div class="flex items-center justify-center sticky top-8">
+                        <div class="relative w-full max-w-sm mx-auto">
+                            <img src="{{ asset('phone.png') }}" alt="Phone mockup" id="phone-mockup-step2" class="w-full h-auto object-contain relative z-10">
+                            <div id="phone-mockup-overlay-step2" class="absolute pointer-events-none flex items-center justify-center" style="background-color: #FFFFFF; border-radius: 4rem; border: 2px solid #E5E7EB;">
+                                <div id="phone-mockup-qr-step2" class="w-full h-full flex items-center justify-center p-6">
+                                    <!-- QR code preview will be inserted here -->
                                 </div>
-                                <div id="phone-mockup-text" class="w-full px-6 pb-6 text-center hidden">
-                                    <!-- Type-specific text will be inserted here -->
                                 </div>
-                            </div>
-                            <img src="{{ asset('phone.png') }}" alt="Phone mockup" id="phone-mockup" class="w-full h-full object-contain relative z-10">
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Step 3: Design QR Code -->
+        <!-- Step 3: Preview QR Code -->
         <div id="step-3" class="step-content hidden">
-            <div class="card max-w-3xl mx-auto">
-                <h2 class="text-2xl font-bold text-dark-500 mb-6">Your QR Code</h2>
+            <div class="max-w-4xl mx-auto">
+                <div class="card">
+                    <h2 class="text-2xl font-bold text-dark-500 mb-6 text-center">Your QR Code</h2>
                 
                 <div class="text-center mb-8">
                     <div id="qr-preview" class="inline-block p-8 bg-primary-50 rounded-lg">
@@ -298,6 +348,7 @@
                     <a href="{{ route('qr-codes.index') }}" class="btn btn-primary">
                         Create Another QR Code
                     </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -533,17 +584,20 @@ function setupRealTimeValidation() {
 }
 
 // Color picker sync
-document.getElementById('primary_color').addEventListener('input', (e) => {
-    document.getElementById('primary_color_hex').value = e.target.value;
-    updatePhoneMockupQR();
-    updatePhoneMockupText();
-});
+// Color picker sync for Step 2
+const primaryColorInput = document.getElementById('primary_color');
+const primaryColorHex = document.getElementById('primary_color_hex');
+if (primaryColorInput && primaryColorHex) {
+    primaryColorInput.addEventListener('input', (e) => {
+        primaryColorHex.value = e.target.value;
+        updateStep2QRPreview();
+    });
 
-document.getElementById('primary_color_hex').addEventListener('input', (e) => {
-    document.getElementById('primary_color').value = e.target.value;
-    updatePhoneMockupQR();
-    updatePhoneMockupText();
-});
+    primaryColorHex.addEventListener('input', (e) => {
+        primaryColorInput.value = e.target.value;
+        updateStep2QRPreview();
+    });
+}
 
 function updatePhoneMockupBackground() {
     const secondaryColor = document.getElementById('secondary_color').value;
@@ -677,22 +731,61 @@ function updatePhoneMockupText() {
     }
 }
 
-function selectFrame(button, frameValue) {
-    // Remove active state from all frame options
-    document.querySelectorAll('.frame-option').forEach(btn => {
+// Pattern selection
+function selectPattern(button, patternValue) {
+    // Remove active state from all pattern options
+    document.querySelectorAll('.pattern-option').forEach(btn => {
         btn.classList.remove('border-primary-500');
         btn.classList.add('border-dark-200');
     });
     
-    // Add active state to selected frame
+    // Add active state to selected pattern
     button.classList.remove('border-dark-200');
     button.classList.add('border-primary-500');
     
     // Update hidden input
-    document.getElementById('selected_frame').value = frameValue;
+    document.getElementById('selected_pattern').value = patternValue;
     
-    // Update preview
-    updatePhoneMockupQR();
+    // Update QR code preview
+    updateStep2QRPreview();
+}
+
+// Corner style selection
+function selectCorner(button, cornerValue) {
+    // Remove active state from all corner options
+    document.querySelectorAll('.corner-option').forEach(btn => {
+        btn.classList.remove('border-primary-500');
+        btn.classList.add('border-dark-200');
+    });
+    
+    // Add active state to selected corner
+    button.classList.remove('border-dark-200');
+    button.classList.add('border-primary-500');
+    
+    // Update hidden input
+    document.getElementById('selected_corner').value = cornerValue;
+    
+    // Update QR code preview
+    updateStep2QRPreview();
+}
+
+// Corner dot style selection
+function selectCornerDot(button, cornerDotValue) {
+    // Remove active state from all corner dot options
+    document.querySelectorAll('.corner-dot-option').forEach(btn => {
+        btn.classList.remove('border-primary-500');
+        btn.classList.add('border-dark-200');
+    });
+    
+    // Add active state to selected corner dot
+    button.classList.remove('border-dark-200');
+    button.classList.add('border-primary-500');
+    
+    // Update hidden input
+    document.getElementById('selected_corner_dot').value = cornerDotValue;
+    
+    // Update QR code preview
+    updateStep2QRPreview();
 }
 
 function updateQRSize(value) {
@@ -723,19 +816,244 @@ function updateQRSize(value) {
     }
 }
 
-async function updatePhoneMockupQR() {
-    // Only generate preview if we're on step 2 and form is valid
+// Update Step 1 preview (mockup layout based on type)
+function updateStep1Preview() {
+    if (currentStep !== 1) return;
+    
+    const type = document.querySelector('input[name="type"]').value;
+    const previewContainer = document.getElementById('phone-mockup-content');
+    if (!previewContainer) return;
+    
+    let mockupHtml = '';
+    
+    switch(type) {
+        case 'url':
+            const url = document.getElementById('url')?.value || '';
+            const urlDomain = url ? new URL(url).hostname.replace('www.', '') : 'example.com';
+            mockupHtml = `
+                <div class="w-full h-full bg-gray-50 rounded-lg overflow-hidden flex flex-col">
+                    <!-- Browser Header -->
+                    <div class="bg-white border-b border-gray-200 px-3 py-2 flex items-center gap-2 mt-8">
+                        <div class="flex gap-1">
+                            <div class="w-3 h-3 rounded-full bg-red-400"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-400"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-400"></div>
+                        </div>
+                        <div class="flex-1 bg-gray-100 rounded px-3 py-1 text-xs text-gray-600 truncate">
+                            ${url || 'https://example.com'}
+                        </div>
+                    </div>
+                    <!-- Browser Content -->
+                    <div class="p-4 flex-1 overflow-y-auto">
+                        <div class="bg-white rounded-lg shadow-sm p-4">
+                            <div class="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
+                            <div class="h-3 bg-gray-200 rounded w-full mb-2"></div>
+                            <div class="h-3 bg-gray-200 rounded w-5/6 mb-4"></div>
+                            <div class="h-2 bg-gray-100 rounded w-full mb-1"></div>
+                            <div class="h-2 bg-gray-100 rounded w-full mb-1"></div>
+                            <div class="h-2 bg-gray-100 rounded w-4/5"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            break;
+            
+        case 'email':
+            const email = document.getElementById('email')?.value || '';
+            const subject = document.getElementById('subject')?.value || '';
+            const message = document.getElementById('message')?.value || '';
+            mockupHtml = `
+                <div class="w-full h-full bg-white rounded-lg overflow-hidden flex flex-col">
+                    <!-- Email Header -->
+                    <div class="bg-gray-50 border-b border-gray-200 px-4 py-3 flex-shrink-0 mt-10">
+                        <div class="space-y-2">
+                            <div class="text-xs text-gray-600">
+                                <span class="font-medium">From:</span> <span class="text-gray-900">you</span>
+                            </div>
+                            <div class="text-xs text-gray-600">
+                                <span class="font-medium">To:</span> <span class="text-gray-900">${email || 'recipient@example.com'}</span>
+                            </div>
+                            <div class="text-xs text-gray-600">
+                                <span class="font-medium">Subject:</span> <span class="text-gray-900">${subject || 'Email Subject'}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Email Body -->
+                    <div class="p-4 flex-1 overflow-y-auto">
+                        <div class="text-xs text-gray-600 mb-2">
+                            <span class="font-medium">Message:</span>
+                            <br>
+                            <br>
+                            <span class="text-gray-900">${message || 'Your message will appear here...'}</span>
+                        </div>
+                        
+                    </div>
+                </div>
+            `;
+            break;
+            
+        case 'text':
+            const text = document.getElementById('text')?.value || '';
+            mockupHtml = `
+                <div class="w-full h-full bg-white rounded-lg overflow-hidden flex flex-col">
+                    <div class="p-4 flex-1 overflow-y-auto mt-10">
+                        <span class="text-gray-900"> Your messsage : </span>
+                        <br>
+                        <div class="text-sm text-gray-800 leading-relaxed ">
+                            ${text || 'Your text content will appear here...'}
+                        </div>
+                    </div>
+                </div>
+            `;
+            break;
+            
+        case 'phone':
+            const phone = document.getElementById('phone_number')?.value || '';
+            mockupHtml = `
+                <div class="w-full h-full bg-gray-900 rounded-lg overflow-hidden flex flex-col items-center justify-center p-6">
+                    <div class="w-20 h-20 rounded-full bg-green-500 flex items-center justify-center mb-4">
+                        <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                        </svg>
+                    </div>
+                    <div class="text-white text-lg font-medium mb-1">${phone || 'Phone Number'}</div>
+                    <div class="text-gray-400 text-sm">Calling...</div>
+                </div>
+            `;
+            break;
+            
+        case 'wifi':
+            const ssid = document.getElementById('ssid')?.value || '';
+            const encryption = document.getElementById('encryption')?.value || 'WPA2';
+            mockupHtml = `
+                <div class="w-full h-full bg-white rounded-lg overflow-hidden">
+                    <div class="p-4">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-12 h-12 rounded-lg bg-primary-100 flex items-center justify-center">
+                                <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path>
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <div class="text-sm font-medium text-gray-900">${ssid || 'WiFi Network'}</div>
+                                <div class="text-xs text-gray-500">${encryption === 'nopass' ? 'Open Network' : encryption + ' Protected'}</div>
+                            </div>
+                        </div>
+                        <div class="border-t border-gray-200 pt-3">
+                            <div class="text-xs text-gray-600">Tap to connect</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            break;
+            
+        case 'location':
+            const address = document.getElementById('address')?.value || '';
+            mockupHtml = `
+                <div class="w-full h-full bg-gray-100 rounded-lg overflow-hidden relative">
+                    <!-- Map placeholder -->
+                    <div class="absolute inset-0 bg-gray-200 flex items-center justify-center">
+                        <svg class="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                    </div>
+                    <!-- Address overlay -->
+                    <div class="absolute bottom-0 left-0 right-0 bg-white p-3 rounded-t-lg">
+                        <div class="text-sm font-medium text-gray-900">${address || 'Enter address'}</div>
+                    </div>
+                </div>
+            `;
+            break;
+            
+        case 'event':
+            const eventName = document.getElementById('event_name')?.value || '';
+            const companyName = document.getElementById('company_name')?.value || '';
+            const eventDate = document.getElementById('date')?.value || '';
+            const eventTime = document.getElementById('time')?.value || '';
+            const eventLocation = document.getElementById('location')?.value || '';
+            mockupHtml = `
+                <div class="w-full h-full bg-white rounded-lg overflow-hidden">
+                    <div class="p-4">
+                        ${companyName ? `<div class="text-xs text-gray-500 mb-1">${companyName}</div>` : ''}
+                        <div class="text-lg font-bold text-gray-900 mb-3">${eventName || 'Event Name'}</div>
+                        ${eventDate || eventTime ? `
+                            <div class="flex items-center gap-2 mb-2 text-sm text-gray-600">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                                <span>${eventDate || ''} ${eventTime || ''}</span>
+                            </div>
+                        ` : ''}
+                        ${eventLocation ? `
+                            <div class="flex items-center gap-2 text-sm text-gray-600">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                                <span>${eventLocation}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+            break;
+            
+        case 'app':
+            const appName = document.getElementById('app_name')?.value || '';
+            const websiteUrl = document.getElementById('website_url')?.value || '';
+            mockupHtml = `
+                <div class="w-full h-full bg-white rounded-lg overflow-hidden">
+                    <div class="p-4 flex flex-col items-center justify-center h-full">
+                        <div class="w-16 h-16 rounded-xl bg-primary-500 flex items-center justify-center text-white font-bold text-xl mb-3">
+                            ${appName ? appName.charAt(0).toUpperCase() : 'A'}
+                        </div>
+                        <div class="text-lg font-bold text-gray-900 mb-1">${appName || 'App Name'}</div>
+                        ${websiteUrl ? `<div class="text-xs text-gray-500">${websiteUrl}</div>` : ''}
+                    </div>
+                </div>
+            `;
+            break;
+            
+        default:
+            mockupHtml = `
+                <div class="w-full h-full bg-white rounded-lg flex items-center justify-center p-4">
+                    <div class="text-center">
+                        <div class="text-sm text-gray-500">Fill in the form to see preview</div>
+                    </div>
+                </div>
+            `;
+    }
+    
+    previewContainer.innerHTML = mockupHtml;
+}
+
+// Update Step 2 QR code preview with customization
+async function updateStep2QRPreview() {
     if (currentStep !== 2) return;
     
     const formData = new FormData(document.getElementById('qr-form'));
-    const primaryColor = document.getElementById('primary_color').value;
-    const secondaryColor = document.getElementById('secondary_color').value;
+    const primaryColor = document.getElementById('primary_color')?.value || '#000000';
+    const secondaryColor = document.getElementById('secondary_color')?.value || '#FFFFFF';
+    const pattern = document.getElementById('selected_pattern')?.value || 'square';
+    const cornerStyle = document.getElementById('selected_corner')?.value || 'square';
+    const cornerDotStyle = document.getElementById('selected_corner_dot')?.value || 'square';
     
     formData.append('primary_color', primaryColor);
     formData.append('secondary_color', secondaryColor);
+    formData.append('pattern', pattern);
+    formData.append('corner_style', cornerStyle);
+    formData.append('corner_dot_style', cornerDotStyle);
     
-    const qrContainer = document.getElementById('phone-mockup-qr');
+    const qrContainer = document.getElementById('phone-mockup-qr-step2');
+    const overlay = document.getElementById('phone-mockup-overlay-step2');
+    
     if (!qrContainer) return;
+    
+    // Update overlay background color
+    if (overlay) {
+        overlay.style.backgroundColor = secondaryColor;
+    }
     
     try {
         const response = await fetch('{{ route("qr-codes.preview") }}', {
@@ -749,34 +1067,15 @@ async function updatePhoneMockupQR() {
         const data = await response.json();
         
         if (data.success && data.preview) {
-            // Get selected frame and size
-            const selectedFrame = document.getElementById('selected_frame')?.value || '';
-            const qrSize = document.getElementById('qr_size')?.value || 60;
-            
-            if (selectedFrame) {
-                // Display QR code with frame as overlay mask
-                const framePath = '{{ asset("") }}' + selectedFrame;
-                qrContainer.innerHTML = `
-                    <div class="relative w-full h-full flex items-center justify-center">
-                        <img src="${data.preview}" alt="QR Code Preview" class="max-w-full max-h-full object-contain" style="position: relative; z-index: 1; width: ${qrSize}%; height: ${qrSize}%;">
-                        <img src="${framePath}" alt="Frame" class="absolute inset-0 w-full h-full object-contain pointer-events-none" style="z-index: 2; max-width: 100%; max-height: 100%;">
-                    </div>
-                `;
+            // Center QR code and make it smaller (60% of container)
+            qrContainer.innerHTML = `<div class="w-full h-full flex items-center justify-center"><img src="${data.preview}" alt="QR Code Preview" class="object-contain" style="max-width: 60%; max-height: 60%; width: auto; height: auto;"></div>`;
             } else {
-                // Display QR code without frame
-                qrContainer.innerHTML = `<img src="${data.preview}" alt="QR Code Preview" class="max-w-full max-h-full object-contain" style="width: ${qrSize}%; height: ${qrSize}%;">`;
-            }
-        } else {
-            // Show placeholder or empty
             qrContainer.innerHTML = '';
         }
     } catch (error) {
         console.error('Error generating QR preview:', error);
         qrContainer.innerHTML = '';
     }
-    
-    // Update text after QR code is updated
-    updatePhoneMockupText();
 }
 
 function updatePhoneMockupOverlaySize() {
@@ -818,66 +1117,154 @@ function updatePhoneMockupOverlaySize() {
     phoneOverlay.style.top = (offsetY + margin) + 'px';
 }
 
-document.getElementById('secondary_color').addEventListener('input', (e) => {
-    document.getElementById('secondary_color_hex').value = e.target.value;
-    updatePhoneMockupBackground();
-});
+// Secondary color picker sync for Step 2
+const secondaryColorInput = document.getElementById('secondary_color');
+const secondaryColorHex = document.getElementById('secondary_color_hex');
+if (secondaryColorInput && secondaryColorHex) {
+    secondaryColorInput.addEventListener('input', (e) => {
+        secondaryColorHex.value = e.target.value;
+        updateStep2QRPreview();
+    });
 
-document.getElementById('secondary_color_hex').addEventListener('input', (e) => {
-    document.getElementById('secondary_color').value = e.target.value;
-    updatePhoneMockupBackground();
-});
+    secondaryColorHex.addEventListener('input', (e) => {
+        secondaryColorInput.value = e.target.value;
+        updateStep2QRPreview();
+    });
+}
 
-// Setup real-time validation when page loads
+// Setup real-time validation and preview updates when page loads
 document.addEventListener('DOMContentLoaded', function() {
     setupRealTimeValidation();
     
-    // Setup phone mockup overlay to match image size
-    const phoneMockup = document.getElementById('phone-mockup');
-    
-    if (phoneMockup) {
-        // Update on image load
-        if (phoneMockup.complete) {
-            updatePhoneMockupOverlaySize();
+    // Setup phone mockup overlay for Step 1
+    const phoneMockupStep1 = document.getElementById('phone-mockup-step1');
+    if (phoneMockupStep1) {
+        const updateStep1OverlaySize = () => {
+            const overlay = document.getElementById('phone-mockup-overlay-step1');
+            if (!overlay || !phoneMockupStep1) return;
+            
+            const img = phoneMockupStep1;
+            const imgRect = img.getBoundingClientRect();
+            const parentRect = img.parentElement.getBoundingClientRect();
+            
+            // Calculate position relative to parent container
+            const imgLeft = imgRect.left - parentRect.left;
+            const imgTop = imgRect.top - parentRect.top;
+            
+            // Use actual displayed image dimensions
+            const displayWidth = imgRect.width;
+            const displayHeight = imgRect.height;
+            
+            // Overlay should have 2px margin on all sides for border-radius visibility
+            const margin = 2; // 2px margin on all sides
+            overlay.style.width = (displayWidth - (margin * 2)) + 'px';
+            overlay.style.height = (displayHeight - (margin * 2)) + 'px';
+            overlay.style.left = (imgLeft + margin) + 'px';
+            overlay.style.top = (imgTop + margin) + 'px';
+        };
+        
+        if (phoneMockupStep1.complete) {
+            updateStep1OverlaySize();
         } else {
-            phoneMockup.addEventListener('load', updatePhoneMockupOverlaySize);
+            phoneMockupStep1.addEventListener('load', updateStep1OverlaySize);
         }
         
-        // Update on window resize
-        window.addEventListener('resize', updatePhoneMockupOverlaySize);
+        window.addEventListener('resize', updateStep1OverlaySize);
     }
     
-    // Add event listeners for step 1 fields to update mockup text and QR code
-    const step1Fields = ['url', 'email', 'text', 'app_name'];
+    // Setup phone mockup overlay for Step 2
+    const phoneMockupStep2 = document.getElementById('phone-mockup-step2');
+    if (phoneMockupStep2) {
+        const updateStep2OverlaySize = () => {
+            const overlay = document.getElementById('phone-mockup-overlay-step2');
+            if (!overlay || !phoneMockupStep2) return;
+            
+            const img = phoneMockupStep2;
+            const imgRect = img.getBoundingClientRect();
+            const parentRect = img.parentElement.getBoundingClientRect();
+            
+            // Calculate position relative to parent container (where image is positioned)
+            const imgLeft = imgRect.left - parentRect.left;
+            const imgTop = imgRect.top - parentRect.top;
+            
+            // Use actual displayed image dimensions
+            const displayWidth = imgRect.width;
+            const displayHeight = imgRect.height;
+            
+            // Overlay should have 2px margin on all sides for border-radius visibility
+            const margin = 2; // 2px margin on all sides
+            overlay.style.width = (displayWidth - (margin * 2)) + 'px';
+            overlay.style.height = (displayHeight - (margin * 2)) + 'px';
+            overlay.style.left = (imgLeft + margin) + 'px';
+            overlay.style.top = (imgTop + margin) + 'px';
+        };
+        
+        if (phoneMockupStep2.complete) {
+            updateStep2OverlaySize();
+        } else {
+            phoneMockupStep2.addEventListener('load', updateStep2OverlaySize);
+        }
+        
+        window.addEventListener('resize', updateStep2OverlaySize);
+        
+        // Also update when QR code is loaded
+        const observer = new MutationObserver(() => {
+            updateStep2OverlaySize();
+        });
+        const qrContainer = document.getElementById('phone-mockup-qr-step2');
+        if (qrContainer) {
+            observer.observe(qrContainer, { childList: true, subtree: true });
+        }
+    }
+    
+    // Add event listeners for Step 1 fields to update preview
+    const step1Fields = [
+        'name', 'url', 'email', 'subject', 'message', 'text', 'phone_number', 
+        'app_name', 'website_url', 'app_store_link', 'play_store_link',
+        'ssid', 'encryption', 'password', 'address',
+        'event_name', 'company_name', 'date', 'time', 'location', 'description'
+    ];
+    
     step1Fields.forEach(fieldId => {
         const field = document.getElementById(fieldId);
         if (field) {
             field.addEventListener('input', () => {
-                if (currentStep === 2) {
-                    updatePhoneMockupText();
-                    // Debounce QR code update to avoid too many requests
-                    clearTimeout(window.qrUpdateTimeout);
-                    window.qrUpdateTimeout = setTimeout(() => {
-                        updatePhoneMockupQR();
-                    }, 500);
+                if (currentStep === 1) {
+                    updateStep1Preview();
+                }
+            });
+            // Also listen for change events (for select elements)
+            field.addEventListener('change', () => {
+                if (currentStep === 1) {
+                    updateStep1Preview();
                 }
             });
         }
     });
+    
+    // Initial preview update
+    setTimeout(() => {
+        updateStep1Preview();
+    }, 100);
 });
 
-// Color presets
+// Color presets for Step 2
 document.querySelectorAll('.color-preset').forEach(btn => {
     btn.addEventListener('click', (e) => {
         e.preventDefault();
         const primary = btn.dataset.primary;
         const secondary = btn.dataset.secondary;
-        document.getElementById('primary_color').value = primary;
-        document.getElementById('primary_color_hex').value = primary;
-        document.getElementById('secondary_color').value = secondary;
-        document.getElementById('secondary_color_hex').value = secondary;
-        updatePhoneMockupBackground();
-        updatePhoneMockupText();
+        const primaryColorInput = document.getElementById('primary_color');
+        const primaryColorHex = document.getElementById('primary_color_hex');
+        const secondaryColorInput = document.getElementById('secondary_color');
+        const secondaryColorHex = document.getElementById('secondary_color_hex');
+        
+        if (primaryColorInput) primaryColorInput.value = primary;
+        if (primaryColorHex) primaryColorHex.value = primary;
+        if (secondaryColorInput) secondaryColorInput.value = secondary;
+        if (secondaryColorHex) secondaryColorHex.value = secondary;
+        
+        updateStep2QRPreview();
     });
 });
 
@@ -1235,23 +1622,35 @@ async function nextStep(step) {
     document.getElementById(`step-${step}-indicator`).classList.remove('step-inactive');
     document.getElementById(`step-${step}-indicator`).classList.add('step-active');
     
-    // Update phone mockup overlay size and QR code when step 2 is shown
+    // Update previews when steps are shown
+    if (step === 1) {
+        setTimeout(() => {
+            updateStep1Preview();
+        }, 100);
+    }
+    
     if (step === 2) {
-        updateStep2TypeSpecific();
+        // Set default selections if not set
+        const selectedPattern = document.getElementById('selected_pattern')?.value;
+        if (!selectedPattern) {
+            const squarePattern = document.querySelector('.pattern-option[data-pattern="square"]');
+            if (squarePattern) selectPattern(squarePattern, 'square');
+        }
         
-        // Set default "No frame" as selected if no frame is selected
-        const selectedFrame = document.getElementById('selected_frame')?.value;
-        if (selectedFrame === '' || selectedFrame === null || selectedFrame === undefined) {
-            const noFrameButton = document.querySelector('.frame-option[data-frame=""]');
-            if (noFrameButton) {
-                selectFrame(noFrameButton, '');
-            }
+        const selectedCorner = document.getElementById('selected_corner')?.value;
+        if (!selectedCorner) {
+            const squareCorner = document.querySelector('.corner-option[data-corner="square"]');
+            if (squareCorner) selectCorner(squareCorner, 'square');
+        }
+        
+        const selectedCornerDot = document.getElementById('selected_corner_dot')?.value;
+        if (!selectedCornerDot) {
+            const squareCornerDot = document.querySelector('.corner-dot-option[data-corner-dot="square"]');
+            if (squareCornerDot) selectCornerDot(squareCornerDot, 'square');
         }
         
         setTimeout(() => {
-            updatePhoneMockupOverlaySize();
-            updatePhoneMockupQR();
-            updatePhoneMockupText();
+            updateStep2QRPreview();
         }, 100);
     }
     
