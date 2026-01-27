@@ -37,10 +37,18 @@ class QrCodeController extends Controller
         $type = $request->input('type');
         $validated = $request->validated();
 
-        $colors = [
-            'primary' => $validated['primary_color'] ?? '#000000',
-            'secondary' => $validated['secondary_color'] ?? '#FFFFFF',
-        ];
+        // For PDF type, use PDF-specific colors, otherwise use standard colors
+        if ($type === 'pdf') {
+            $colors = [
+                'primary' => $validated['pdf_primary_color'] ?? '#6594FF',
+                'secondary' => $validated['pdf_secondary_color'] ?? '#FFFFFF',
+            ];
+        } else {
+            $colors = [
+                'primary' => $validated['primary_color'] ?? '#000000',
+                'secondary' => $validated['secondary_color'] ?? '#FFFFFF',
+            ];
+        }
 
         $customization = [
             'pattern' => $request->input('pattern', 'square'),
@@ -89,7 +97,14 @@ class QrCodeController extends Controller
                 $fileType
             );
 
-            $validated[$urlField] = asset('storage/' . $file->file_path);
+            // For PDF, store the file URL and generate page URL
+            if ($type === 'pdf') {
+                $validated[$urlField] = asset('storage/' . $file->file_path);
+                $validated['pdf_page_url'] = route('qr-codes.pdf-page', $qrCode->id);
+            } else {
+                $validated[$urlField] = asset('storage/' . $file->file_path);
+            }
+            
             $qrCode->update(['data' => $validated]);
             $this->qrCodeService->regenerateQrCode($qrCode, $colors, $customization);
         } else {
@@ -108,10 +123,22 @@ class QrCodeController extends Controller
     {
         $type = $request->input('type');
         $data = $request->all();
-        $colors = [
-            'primary' => $request->input('primary_color', '#000000'),
-            'secondary' => $request->input('secondary_color', '#FFFFFF'),
-        ];
+        
+        // For PDF type, use PDF-specific colors, otherwise use standard colors
+        if ($type === 'pdf') {
+            $colors = [
+                'primary' => $request->input('pdf_primary_color', $request->input('primary_color', '#6594FF')),
+                'secondary' => $request->input('pdf_secondary_color', $request->input('secondary_color', '#FFFFFF')),
+            ];
+            
+            // For PDF preview, use placeholder URL - actual URL will be set when QR code is saved
+            // The generatePdfContent method will handle this
+        } else {
+            $colors = [
+                'primary' => $request->input('primary_color', '#000000'),
+                'secondary' => $request->input('secondary_color', '#FFFFFF'),
+            ];
+        }
 
         $customization = [
             'pattern' => $request->input('pattern', 'square'),
@@ -151,6 +178,46 @@ class QrCodeController extends Controller
     {
         $qrCodes = QrCode::latest()->paginate(12);
         return view('qr-codes.history', compact('qrCodes'));
+    }
+
+    public function showPdfPage($id)
+    {
+        $qrCode = QrCode::with('files')->findOrFail($id);
+        
+        // Only allow PDF type QR codes
+        if ($qrCode->type !== 'pdf') {
+            abort(404);
+        }
+
+        // Get PDF file
+        $pdfFile = $qrCode->files()->where('file_type', 'pdf')->first();
+        
+        if (!$pdfFile) {
+            abort(404, 'PDF file not found');
+        }
+
+        // Get customization data from QR code data
+        $data = $qrCode->data ?? [];
+        $pdfTitle = $data['pdf_title'] ?? '';
+        $pdfWebsite = $data['pdf_website'] ?? '';
+        $companyName = $data['company_name'] ?? '';
+        $fileDescription = $data['file_description'] ?? '';
+        
+        // Get colors from QR code colors (stored in colors field)
+        $colors = $qrCode->colors ?? [];
+        $primaryColor = $colors['primary'] ?? '#6594FF';
+        $secondaryColor = $colors['secondary'] ?? '#FFFFFF';
+
+        return view('qr-codes.pdf-page', compact(
+            'qrCode',
+            'pdfFile',
+            'pdfTitle',
+            'pdfWebsite',
+            'companyName',
+            'fileDescription',
+            'primaryColor',
+            'secondaryColor'
+        ));
     }
 
     protected function handleFileUploads(Request $request, QrCode $qrCode, string $type)

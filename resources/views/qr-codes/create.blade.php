@@ -1015,6 +1015,62 @@ function updateStep1Preview() {
             `;
             break;
             
+        case 'pdf':
+            const pdfPrimaryColor = document.getElementById('pdf_primary_color_hex')?.value || '#6594FF';
+            const pdfSecondaryColor = document.getElementById('pdf_secondary_color_hex')?.value || '#FFFFFF';
+            const pdfTitle = document.getElementById('pdf_title')?.value || '';
+            const pdfWebsite = document.getElementById('pdf_website')?.value || '';
+            const pdfFile = document.getElementById('pdf_file')?.files?.[0];
+            
+            // Create split background: top half primary color, bottom half secondary color
+            mockupHtml = `
+                <div class="w-full h-full rounded-lg overflow-hidden flex flex-col relative">
+                    <!-- Top half - Primary color -->
+                    <div class="absolute top-0 left-0 right-0 h-1/2" style="background-color: ${pdfPrimaryColor};"></div>
+                    <!-- Bottom half - Secondary color -->
+                    <div class="absolute bottom-0 left-0 right-0 h-1/2" style="background-color: ${pdfSecondaryColor};"></div>
+                    
+                    <div class="relative z-10 flex-1 flex flex-col items-center justify-center p-6">
+                        ${pdfTitle ? `
+                            <h2 class="text-2xl font-bold mb-6 text-center" style="color: ${pdfPrimaryColor === '#FFFFFF' ? '#000000' : '#FFFFFF'};">
+                                ${pdfTitle}
+                            </h2>
+                        ` : ''}
+                        
+                        <!-- PDF Square -->
+                        <div class="w-48 h-48 bg-white rounded-lg shadow-lg flex items-center justify-center mb-6">
+                            ${pdfFile ? `
+                                <div class="text-center p-4">
+                                    <svg class="w-16 h-16 text-red-600 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                    </svg>
+                                    <p class="text-xs text-gray-600 font-medium truncate max-w-[180px]">${pdfFile.name}</p>
+                                </div>
+                            ` : `
+                                <div class="text-center text-gray-400">
+                                    <svg class="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                                    </svg>
+                                    <p class="text-xs">PDF Preview</p>
+                                </div>
+                            `}
+                        </div>
+                        
+                        <!-- Download Button -->
+                        <button type="button" class="bg-white text-gray-900 px-6 py-3 rounded-lg font-medium shadow-md hover:shadow-lg transition-shadow mb-4">
+                            Download PDF
+                        </button>
+                        
+                        ${pdfWebsite ? `
+                            <a href="${pdfWebsite.startsWith('http') ? pdfWebsite : 'https://' + pdfWebsite}" target="_blank" class="text-sm underline hover:no-underline" style="color: ${pdfSecondaryColor === '#FFFFFF' ? '#000000' : '#FFFFFF'};">
+                                ${pdfWebsite}
+                            </a>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+            break;
+            
         default:
             mockupHtml = `
                 <div class="w-full h-full bg-white rounded-lg flex items-center justify-center p-4">
@@ -1033,14 +1089,26 @@ async function updateStep2QRPreview() {
     if (currentStep !== 2) return;
     
     const formData = new FormData(document.getElementById('qr-form'));
-    const primaryColor = document.getElementById('primary_color')?.value || '#000000';
-    const secondaryColor = document.getElementById('secondary_color')?.value || '#FFFFFF';
+    const type = document.querySelector('input[name="type"]').value;
+    
+    // For PDF type, use PDF-specific colors from Step 1
+    let primaryColor, secondaryColor;
+    if (type === 'pdf') {
+        primaryColor = document.getElementById('pdf_primary_color_hex')?.value || '#6594FF';
+        secondaryColor = document.getElementById('pdf_secondary_color_hex')?.value || '#FFFFFF';
+        formData.append('pdf_primary_color', primaryColor);
+        formData.append('pdf_secondary_color', secondaryColor);
+    } else {
+        primaryColor = document.getElementById('primary_color')?.value || '#000000';
+        secondaryColor = document.getElementById('secondary_color')?.value || '#FFFFFF';
+        formData.append('primary_color', primaryColor);
+        formData.append('secondary_color', secondaryColor);
+    }
+    
     const pattern = document.getElementById('selected_pattern')?.value || 'square';
     const cornerStyle = document.getElementById('selected_corner')?.value || 'square';
     const cornerDotStyle = document.getElementById('selected_corner_dot')?.value || 'square';
     
-    formData.append('primary_color', primaryColor);
-    formData.append('secondary_color', secondaryColor);
     formData.append('pattern', pattern);
     formData.append('corner_style', cornerStyle);
     formData.append('corner_dot_style', cornerDotStyle);
@@ -1222,7 +1290,9 @@ document.addEventListener('DOMContentLoaded', function() {
         'name', 'url', 'email', 'subject', 'message', 'text', 'phone_number', 
         'app_name', 'website_url', 'app_store_link', 'play_store_link',
         'ssid', 'encryption', 'password', 'address',
-        'event_name', 'company_name', 'date', 'time', 'location', 'description'
+        'event_name', 'company_name', 'date', 'time', 'location', 'description',
+        'pdf_primary_color_hex', 'pdf_secondary_color_hex', 'pdf_title', 'pdf_website', 
+        'company_name', 'file_description'
     ];
     
     step1Fields.forEach(fieldId => {
@@ -1279,6 +1349,47 @@ function isValidUrl(url) {
         const urlObj = new URL(url);
         return urlObj.protocol === 'https:';
     } catch (e) {
+        return false;
+    }
+}
+
+function validateWebsite(input) {
+    if (typeof input === 'string') {
+        // If input is a string, treat it as URL value
+        const website = input.trim();
+        if (website === '') {
+            return true;
+        }
+        try {
+            const url = new URL(website.startsWith('http') ? website : 'https://' + website);
+            return url.protocol === 'http:' || url.protocol === 'https:';
+        } catch (e) {
+            return false;
+        }
+    } else {
+        // If input is an element, validate and update UI
+        const website = input.value.trim();
+        const errorDiv = document.getElementById('pdf_website_error');
+        
+        if (website === '') {
+            input.classList.remove('border-red-500');
+            if (errorDiv) errorDiv.classList.add('hidden');
+            return true;
+        }
+        
+        try {
+            const url = new URL(website.startsWith('http') ? website : 'https://' + website);
+            if (url.protocol === 'http:' || url.protocol === 'https:') {
+                input.classList.remove('border-red-500');
+                if (errorDiv) errorDiv.classList.add('hidden');
+                return true;
+            }
+        } catch (e) {
+            // Invalid URL
+        }
+        
+        input.classList.add('border-red-500');
+        if (errorDiv) errorDiv.classList.remove('hidden');
         return false;
     }
 }
@@ -1358,6 +1469,22 @@ function validateStep1() {
                 if (pdfFile) pdfFile.closest('.border-dashed')?.classList.add('border-red-500');
             } else if (pdfFile) {
                 pdfFile.closest('.border-dashed')?.classList.remove('border-red-500');
+            }
+            
+            // Validate website if provided
+            const pdfWebsite = document.getElementById('pdf_website');
+            if (pdfWebsite && pdfWebsite.value.trim()) {
+                const websiteValue = pdfWebsite.value.trim();
+                if (!validateWebsite(websiteValue)) {
+                    errors.push('You have entered an invalid link. Please try again.');
+                    pdfWebsite.classList.add('border-red-500');
+                    const errorDiv = document.getElementById('pdf_website_error');
+                    if (errorDiv) errorDiv.classList.remove('hidden');
+                } else {
+                    pdfWebsite.classList.remove('border-red-500');
+                    const errorDiv = document.getElementById('pdf_website_error');
+                    if (errorDiv) errorDiv.classList.add('hidden');
+                }
             }
             break;
             

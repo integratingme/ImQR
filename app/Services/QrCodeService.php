@@ -54,7 +54,7 @@ class QrCodeService
             'url' => $data['url'] ?? '',
             'email' => $this->generateEmailContent($data),
             'text' => $data['text'] ?? '',
-            'pdf' => $data['pdf_url'] ?? '',
+            'pdf' => $this->generatePdfContent($data),
             'menu' => $data['menu_url'] ?? $data['menu_file_url'] ?? '',
             'coupon' => $data['coupon_image_url'] ?? $data['coupon_url'] ?? '',
             'event' => $this->generateEventContent($data),
@@ -65,6 +65,21 @@ class QrCodeService
             'mp3' => $data['mp3_url'] ?? '',
             default => '',
         };
+    }
+
+    /**
+     * Generate PDF QR content (URL to PDF page)
+     */
+    protected function generatePdfContent(array $data): string
+    {
+        // If pdf_page_url exists, use it (for existing QR codes)
+        if (isset($data['pdf_page_url']) && !empty($data['pdf_page_url'])) {
+            return $data['pdf_page_url'];
+        }
+        
+        // For preview purposes, use a placeholder URL
+        // This will be replaced with actual URL when QR code is saved
+        return url('/pdf/preview');
     }
 
     /**
@@ -251,6 +266,18 @@ class QrCodeService
         
         // Generate QR code content based on updated data
         $qrContent = $this->generateQrContent($qrCode->type, $qrCode->data);
+        
+        // For PDF type, ensure pdf_page_url is set
+        if ($qrCode->type === 'pdf' && empty($qrContent)) {
+            $data = $qrCode->data ?? [];
+            if (isset($data['pdf_page_url'])) {
+                $qrContent = $data['pdf_page_url'];
+            } else {
+                $data['pdf_page_url'] = route('qr-codes.pdf-page', $qrCode->id);
+                $qrCode->update(['data' => $data]);
+                $qrContent = $data['pdf_page_url'];
+            }
+        }
         
         // Generate and save QR code image
         $this->generateAndSaveImage($qrCode, $qrContent, $colors, $customization);
