@@ -132,6 +132,40 @@
                             </div>
                         </div>
 
+                        <!-- Logo (optional) -->
+                        <div class="mb-6">
+                            <label class="label">Logo (optional)</label>
+                            <p class="text-sm text-dark-300 mb-3">
+                                Add a logo or image in the center of the QR code. This affects only the visual preview for now.
+                            </p>
+                            <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                                <div class="flex-1">
+                                    <label for="qr_logo" class="sr-only">Upload logo</label>
+                                    <div class="flex items-center justify-center w-full">
+                                        <label for="qr_logo" class="w-full flex flex-col items-center justify-center px-4 py-3 border-2 border-dashed border-dark-200 rounded-lg cursor-pointer bg-white hover:border-primary-400 transition-colors">
+                                            <div class="flex items-center space-x-3">
+                                                <svg class="w-6 h-6 text-dark-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V8a2 2 0 00-2-2h-3.172a2 2 0 01-1.414-.586l-1.828-1.828A2 2 0 0010.172 3H6a2 2 0 00-2 2v13a2 2 0 002 2z"></path>
+                                                </svg>
+                                                <div class="text-left">
+                                                    <p class="text-sm font-medium text-dark-500">Upload logo image</p>
+                                                    <p class="text-xs text-dark-300">PNG, JPEG or SVG, max ~2 MB</p>
+                                                </div>
+                                            </div>
+                                            <input id="qr_logo" name="qr_logo" type="file" accept="image/*" class="hidden">
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="flex flex-col items-start gap-2">
+                                    <button type="button" id="qr_logo_remove_btn" class="btn btn-secondary btn-xs" style="display:none;">
+                                        Remove logo
+                                    </button>
+                                    <div id="qr_logo_filename" class="text-xs text-dark-300 line-clamp-2 max-w-[180px]"></div>
+                                </div>
+                            </div>
+                            <input type="hidden" id="qr_logo_data_url" name="qr_logo_data_url" value="">
+                        </div>
+
                         <!-- Pattern Selection -->
                         <div class="mb-6">
                             <label class="label">Pattern Style</label>
@@ -359,6 +393,7 @@
 <script>
 let currentStep = 1;
 let qrCodeId = null;
+let qrStylingInstance = null;
 
 // Real-time validation - remove error styling when field is filled
 function setupRealTimeValidation() {
@@ -1084,65 +1119,184 @@ function updateStep1Preview() {
     previewContainer.innerHTML = mockupHtml;
 }
 
-// Update Step 2 QR code preview with customization
+// Build QR content string from Step 1 form values (mirrors backend logic)
+function buildQrContentFromForm() {
+    const type = document.querySelector('input[name="type"]').value;
+    const getValue = (id) => document.getElementById(id)?.value || '';
+
+    switch (type) {
+        case 'url':
+            return getValue('url');
+        case 'email': {
+            const email = getValue('email');
+            const subject = getValue('subject');
+            const message = getValue('message');
+            const subjectPart = subject ? '?subject=' + encodeURIComponent(subject) : '';
+            const bodyPart = message ? '&body=' + encodeURIComponent(message) : '';
+            return `mailto:${email}${subjectPart}${bodyPart}`;
+        }
+        case 'text':
+            return getValue('text');
+        case 'pdf':
+            // Kao na backend preview-u: placeholder URL, pravi URL se postavlja pri snimanju
+            return '/pdf/preview';
+        case 'menu': {
+            const menuUrl = getValue('menu_url');
+            return menuUrl;
+        }
+        case 'coupon':
+            // Za preview nemamo URL fajla, koristimo placeholder
+            return '/coupon/preview';
+        case 'event': {
+            const amenities = []; // za preview možemo ignorisati detaljne amenity stavke
+            return JSON.stringify({
+                type: 'event',
+                event_name: getValue('event_name'),
+                company_name: getValue('company_name'),
+                description: getValue('description'),
+                date: getValue('date'),
+                time: getValue('time'),
+                location: getValue('location'),
+                amenities,
+                dress_code_color: getValue('dress_code_color'),
+                contact: getValue('contact'),
+            });
+        }
+        case 'app':
+            return getValue('website_url');
+        case 'location': {
+            const address = getValue('address');
+            return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(address);
+        }
+        case 'wifi': {
+            const escapeWifi = (val) =>
+                val.replace(/\\/g, '\\\\')
+                    .replace(/;/g, '\\;')
+                    .replace(/:/g, '\\:')
+                    .replace(/,/g, '\\,');
+
+            const ssidRaw = getValue('ssid');
+            const passwordRaw = getValue('password');
+            const encryption = getValue('encryption') || 'WPA2';
+
+            const ssid = escapeWifi(ssidRaw);
+            const password = escapeWifi(passwordRaw);
+
+            let wifiString = 'WIFI:';
+            if (encryption !== 'nopass') {
+                wifiString += 'T:' + encryption + ';';
+            }
+            wifiString += 'S:' + ssid + ';';
+            if (encryption !== 'nopass' && password) {
+                wifiString += 'P:' + password + ';';
+            }
+            wifiString += ';';
+            return wifiString;
+        }
+        case 'phone': {
+            const phone = getValue('phone_number').replace(/[^\d+]/g, '');
+            return 'tel:' + phone;
+        }
+        case 'mp3':
+            // Za preview nema realnog URL-a fajla, koristimo placeholder
+            return '/mp3/preview';
+        default:
+            return '';
+    }
+}
+
+// Update Step 2 QR code preview with customization using qr-code-styling
 async function updateStep2QRPreview() {
     if (currentStep !== 2) return;
-    
-    const formData = new FormData(document.getElementById('qr-form'));
+
+    const qrContainer = document.getElementById('phone-mockup-qr-step2');
+    const overlay = document.getElementById('phone-mockup-overlay-step2');
+    if (!qrContainer) return;
+
     const type = document.querySelector('input[name="type"]').value;
-    
-    // For PDF type, use PDF-specific colors from Step 1
-    let primaryColor, secondaryColor;
-    if (type === 'pdf') {
-        primaryColor = document.getElementById('pdf_primary_color_hex')?.value || '#6594FF';
-        secondaryColor = document.getElementById('pdf_secondary_color_hex')?.value || '#FFFFFF';
-        formData.append('pdf_primary_color', primaryColor);
-        formData.append('pdf_secondary_color', secondaryColor);
-    } else {
-        primaryColor = document.getElementById('primary_color')?.value || '#000000';
-        secondaryColor = document.getElementById('secondary_color')?.value || '#FFFFFF';
-        formData.append('primary_color', primaryColor);
-        formData.append('secondary_color', secondaryColor);
-    }
-    
+    const primaryColor = document.getElementById('primary_color')?.value || '#000000';
+    const secondaryColor = document.getElementById('secondary_color')?.value || '#FFFFFF';
     const pattern = document.getElementById('selected_pattern')?.value || 'square';
     const cornerStyle = document.getElementById('selected_corner')?.value || 'square';
     const cornerDotStyle = document.getElementById('selected_corner_dot')?.value || 'square';
-    
-    formData.append('pattern', pattern);
-    formData.append('corner_style', cornerStyle);
-    formData.append('corner_dot_style', cornerDotStyle);
-    
-    const qrContainer = document.getElementById('phone-mockup-qr-step2');
-    const overlay = document.getElementById('phone-mockup-overlay-step2');
-    
-    if (!qrContainer) return;
-    
-    // Update overlay background color
+    const logoDataUrl = document.getElementById('qr_logo_data_url')?.value || '';
+
+    // Update overlay background color (Step 2 pozadina)
     if (overlay) {
         overlay.style.backgroundColor = secondaryColor;
     }
-    
-    try {
-        const response = await fetch('{{ route("qr-codes.preview") }}', {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            }
-        });
-        
-        const data = await response.json();
-        
-        if (data.success && data.preview) {
-            // Center QR code and make it smaller (60% of container)
-            qrContainer.innerHTML = `<div class="w-full h-full flex items-center justify-center"><img src="${data.preview}" alt="QR Code Preview" class="object-contain" style="max-width: 60%; max-height: 60%; width: auto; height: auto;"></div>`;
-            } else {
-            qrContainer.innerHTML = '';
-        }
-    } catch (error) {
-        console.error('Error generating QR preview:', error);
+
+    const data = buildQrContentFromForm();
+
+    if (!window.QRCodeStyling) {
+        console.warn('QR Code Styling library is not loaded. Make sure you ran `npm install qr-code-styling` and Vite bundle je učitan.');
         qrContainer.innerHTML = '';
+        return;
+    }
+
+    // Mapiramo naše UI vrijednosti na tipove koje koristi qr-code-styling
+    const dotsTypeMap = {
+        square: 'square',
+        circle: 'dots',
+        rounded: 'rounded',
+    };
+
+    const cornersSquareTypeMap = {
+        square: 'square',
+        rounded: 'rounded',
+        'extra-rounded': 'extra-rounded',
+    };
+
+    const cornersDotTypeMap = {
+        square: 'square',
+        circle: 'dot',
+        rounded: 'rounded',
+    };
+
+    const dotsType = dotsTypeMap[pattern] || 'square';
+    const cornersSquareType = cornersSquareTypeMap[cornerStyle] || 'square';
+    const cornersDotType = cornersDotTypeMap[cornerDotStyle] || 'dot';
+
+    const options = {
+        width: 260,
+        height: 260,
+        type: 'svg',
+        data,
+        margin: 0,
+        qrOptions: {
+            errorCorrectionLevel: 'H',
+        },
+        dotsOptions: {
+            color: primaryColor,
+            type: dotsType,
+        },
+        backgroundOptions: {
+            color: secondaryColor,
+        },
+        cornersSquareOptions: {
+            type: cornersSquareType,
+            color: primaryColor,
+        },
+        cornersDotOptions: {
+            type: cornersDotType,
+            color: primaryColor,
+        },
+        image: logoDataUrl || undefined,
+        imageOptions: {
+            hideBackgroundDots: true,
+            imageSize: 0.4,
+            margin: 4,
+            crossOrigin: 'anonymous',
+        },
+    };
+
+    // Inicijalizacija ili update postojeće QR instance
+    if (!qrStylingInstance) {
+        qrContainer.innerHTML = '';
+        qrStylingInstance = new window.QRCodeStyling(options);
+        qrStylingInstance.append(qrContainer);
+    } else {
+        qrStylingInstance.update(options);
     }
 }
 
@@ -1312,6 +1466,44 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
+    // Logo upload handling for Step 2
+    const logoInput = document.getElementById('qr_logo');
+    const logoHidden = document.getElementById('qr_logo_data_url');
+    const logoFilename = document.getElementById('qr_logo_filename');
+    const logoRemoveBtn = document.getElementById('qr_logo_remove_btn');
+
+    if (logoInput && logoHidden) {
+        logoInput.addEventListener('change', () => {
+            const file = logoInput.files && logoInput.files[0] ? logoInput.files[0] : null;
+            if (!file) {
+                logoHidden.value = '';
+                if (logoFilename) logoFilename.textContent = '';
+                if (logoRemoveBtn) logoRemoveBtn.style.display = 'none';
+                updateStep2QRPreview();
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                logoHidden.value = e.target.result;
+                if (logoFilename) logoFilename.textContent = file.name;
+                if (logoRemoveBtn) logoRemoveBtn.style.display = 'inline-flex';
+                updateStep2QRPreview();
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    if (logoRemoveBtn && logoInput && logoHidden) {
+        logoRemoveBtn.addEventListener('click', () => {
+            logoInput.value = '';
+            logoHidden.value = '';
+            if (logoFilename) logoFilename.textContent = '';
+            logoRemoveBtn.style.display = 'none';
+            updateStep2QRPreview();
+        });
+    }
+
     // Initial preview update
     setTimeout(() => {
         updateStep1Preview();

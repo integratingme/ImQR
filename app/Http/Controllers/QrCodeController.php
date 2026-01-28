@@ -37,12 +37,14 @@ class QrCodeController extends Controller
         $type = $request->input('type');
         $validated = $request->validated();
 
-        // For PDF type, use PDF-specific colors, otherwise use standard colors
+        // For PDF type, use Step 2 colors for QR code (Step 1 colors are stored in data for page background)
         if ($type === 'pdf') {
+            // QR code uses Step 2 colors
             $colors = [
-                'primary' => $validated['pdf_primary_color'] ?? '#6594FF',
-                'secondary' => $validated['pdf_secondary_color'] ?? '#FFFFFF',
+                'primary' => $validated['primary_color'] ?? '#000000',
+                'secondary' => $validated['secondary_color'] ?? '#FFFFFF',
             ];
+            // Step 1 colors (pdf_primary_color, pdf_secondary_color) are already in $validated and will be stored in data field
         } else {
             $colors = [
                 'primary' => $validated['primary_color'] ?? '#000000',
@@ -124,11 +126,12 @@ class QrCodeController extends Controller
         $type = $request->input('type');
         $data = $request->all();
         
-        // For PDF type, use PDF-specific colors, otherwise use standard colors
+        // For PDF type, use Step 2 colors for QR code preview (Step 1 colors are for page background)
         if ($type === 'pdf') {
+            // QR code preview uses Step 2 colors
             $colors = [
-                'primary' => $request->input('pdf_primary_color', $request->input('primary_color', '#6594FF')),
-                'secondary' => $request->input('pdf_secondary_color', $request->input('secondary_color', '#FFFFFF')),
+                'primary' => $request->input('primary_color', '#000000'),
+                'secondary' => $request->input('secondary_color', '#FFFFFF'),
             ];
             
             // For PDF preview, use placeholder URL - actual URL will be set when QR code is saved
@@ -203,10 +206,12 @@ class QrCodeController extends Controller
         $companyName = $data['company_name'] ?? '';
         $fileDescription = $data['file_description'] ?? '';
         
-        // Get colors from QR code colors (stored in colors field)
-        $colors = $qrCode->colors ?? [];
-        $primaryColor = $colors['primary'] ?? '#6594FF';
-        $secondaryColor = $colors['secondary'] ?? '#FFFFFF';
+        // Get page background colors from data field (Step 1 colors)
+        // QR code colors are in colors field (Step 2 colors), but page background uses Step 1 colors
+        $pdfPrimaryColor = $data['pdf_primary_color'] ?? '#6594FF';
+        $pdfSecondaryColor = $data['pdf_secondary_color'] ?? '#FFFFFF';
+        $primaryColor = $pdfPrimaryColor;
+        $secondaryColor = $pdfSecondaryColor;
 
         return view('qr-codes.pdf-page', compact(
             'qrCode',
