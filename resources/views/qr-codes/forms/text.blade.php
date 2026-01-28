@@ -1,7 +1,7 @@
 <!-- Text QR Code Form -->
 <div class="mb-6">
     <label for="text" class="label">Text Content *</label>
-    <textarea id="text" name="text" rows="6" class="input" placeholder="Enter your text here..." required maxlength="500">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam efficitur turpis ut massa semper, et venenatis ipsum vulputate. Curabitur ac sem accumsan, accumsan tortor eu, consectetur purus. Proin dignissim eu dui in vehicula. Morbi rhoncus, leo et tristique condimentum, dolor libero porttitor mauris, id dapibus urna erat a purus. Donec porta, augue quis pellentesque mollis, lectus purus laoreet turpis, vel consectetur nisi nibh vitae dolor. Ut in metus ut nulla congue gravida ut a quam. Quisque a lacus non orci malesuada ornare. Curabitur eu tristique ex. Phasellus ultrices non justo vitae fringilla. In consequat mollis nulla, id ullamcorper eros sollicitudin porta. In laoreet ultrices facilisis. Cras auctor nulla eu est facilisis ullamcorper. Maecenas vehicula sem quis ipsum posuere, ut dictum diam dictum.</textarea>
+    <textarea id="text" name="text" rows="6" class="input" placeholder="Enter your text here..." required maxlength="500"></textarea>
     <p class="text-sm text-dark-200 mt-1">Maximum 500 characters</p>
 </div>
 
