@@ -53,7 +53,7 @@ class QrCodeService
         return match($type) {
             'url' => $data['url'] ?? '',
             'email' => $this->generateEmailContent($data),
-            'text' => $data['text'] ?? '',
+            'text' => $this->generateTextContent($data),
             'pdf' => $this->generatePdfContent($data),
             'menu' => $data['menu_url'] ?? $data['menu_file_url'] ?? '',
             'coupon' => $data['coupon_image_url'] ?? $data['coupon_url'] ?? '',
@@ -80,6 +80,21 @@ class QrCodeService
         // For preview purposes, use a placeholder URL
         // This will be replaced with actual URL when QR code is saved
         return url('/pdf/preview');
+    }
+
+    /**
+     * Generate Text QR content (URL to text page)
+     */
+    protected function generateTextContent(array $data): string
+    {
+        // If text_page_url exists, use it (for existing QR codes)
+        if (isset($data['text_page_url']) && !empty($data['text_page_url'])) {
+            return $data['text_page_url'];
+        }
+        
+        // For preview purposes, use a placeholder URL
+        // This will be replaced with actual URL when QR code is saved
+        return url('/text/preview');
     }
 
     /**

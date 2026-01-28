@@ -112,6 +112,14 @@ class QrCodeController extends Controller
         } else {
             $qrCode = $this->qrCodeService->generate($type, $validated, $colors, $customization);
             $this->handleFileUploads($request, $qrCode, $type);
+            
+            // For text type, generate text page URL and regenerate QR code
+            if ($type === 'text') {
+                $validated['text_page_url'] = route('qr-codes.text-page', $qrCode->id);
+                $qrCode->update(['data' => $validated]);
+                // Regenerate QR code with text page URL
+                $this->qrCodeService->regenerateQrCode($qrCode, $colors, $customization);
+            }
         }
 
         return response()->json([
@@ -228,6 +236,31 @@ class QrCodeController extends Controller
             'fileDescription',
             'primaryColor',
             'secondaryColor'
+        ));
+    }
+
+    public function showTextPage($id)
+    {
+        $qrCode = QrCode::findOrFail($id);
+        
+        // Only allow text type QR codes
+        if ($qrCode->type !== 'text') {
+            abort(404);
+        }
+
+        // Get customization data from QR code data
+        $data = $qrCode->data ?? [];
+        $textContent = $data['text'] ?? 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam efficitur turpis ut massa semper, et venenatis ipsum vulputate. Curabitur ac sem accumsan, accumsan tortor eu, consectetur purus. Proin dignissim eu dui in vehicula. Morbi rhoncus, leo et tristique condimentum, dolor libero porttitor mauris, id dapibus urna erat a purus. Donec porta, augue quis pellentesque mollis, lectus purus laoreet turpis, vel consectetur nisi nibh vitae dolor. Ut in metus ut nulla congue gravida ut a quam. Quisque a lacus non orci malesuada ornare. Curabitur eu tristique ex. Phasellus ultrices non justo vitae fringilla. In consequat mollis nulla, id ullamcorper eros sollicitudin porta. In laoreet ultrices facilisis. Cras auctor nulla eu est facilisis ullamcorper. Maecenas vehicula sem quis ipsum posuere, ut dictum diam dictum.';
+        $backgroundColor = $data['text_background_color'] ?? '#FFFFFF';
+        $textColor = $data['text_text_color'] ?? '#000000';
+        $textFontFamily = $data['text_font_family'] ?? 'Maven Pro';
+
+        return view('qr-codes.text-page', compact(
+            'qrCode',
+            'textContent',
+            'backgroundColor',
+            'textColor',
+            'textFontFamily'
         ));
     }
 

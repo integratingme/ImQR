@@ -928,14 +928,31 @@ function updateStep1Preview() {
             break;
             
         case 'text':
-            const text = document.getElementById('text')?.value || '';
+            const text = document.getElementById('text')?.value || 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam efficitur turpis ut massa semper, et venenatis ipsum vulputate. Curabitur ac sem accumsan, accumsan tortor eu, consectetur purus. Proin dignissim eu dui in vehicula. Morbi rhoncus, leo et tristique condimentum, dolor libero porttitor mauris, id dapibus urna erat a purus. Donec porta, augue quis pellentesque mollis, lectus purus laoreet turpis, vel consectetur nisi nibh vitae dolor. Ut in metus ut nulla congue gravida ut a quam. Quisque a lacus non orci malesuada ornare. Curabitur eu tristique ex. Phasellus ultrices non justo vitae fringilla. In consequat mollis nulla, id ullamcorper eros sollicitudin porta. In laoreet ultrices facilisis. Cras auctor nulla eu est facilisis ullamcorper. Maecenas vehicula sem quis ipsum posuere, ut dictum diam dictum.';
+            const textBackgroundColor = document.getElementById('text_background_color_hex')?.value || '#FFFFFF';
+            const textTextColor = document.getElementById('text_text_color_hex')?.value || '#000000';
+            const textFontFamily = document.getElementById('text_font_family')?.value || 'Maven Pro';
+            
+            // Load Google Font if needed
+            if (textFontFamily !== 'Maven Pro') {
+                const fontId = textFontFamily.replace(/\s+/g, '+');
+                const linkId = 'google-font-text-' + fontId;
+                if (!document.getElementById(linkId)) {
+                    const link = document.createElement('link');
+                    link.id = linkId;
+                    link.rel = 'stylesheet';
+                    link.href = `https://fonts.googleapis.com/css2?family=${fontId}:wght@400;500;600;700&display=swap`;
+                    document.head.appendChild(link);
+                }
+            }
+            
             mockupHtml = `
-                <div class="w-full h-full bg-white rounded-lg overflow-hidden flex flex-col">
-                    <div class="p-4 flex-1 overflow-y-auto mt-10">
-                        <span class="text-gray-900"> Your messsage : </span>
-                        <br>
-                        <div class="text-sm text-gray-800 leading-relaxed ">
-                            ${text || 'Your text content will appear here...'}
+                <div class="w-full h-full rounded-lg overflow-hidden flex items-center justify-center p-4" style="background-color: ${textBackgroundColor}; font-family: '${textFontFamily}', sans-serif;">
+                    <div class="w-full max-w-2xl">
+                        <div class="bg-white rounded-lg shadow-2xl p-6 md:p-8">
+                            <div class="prose max-w-none" style="color: ${textTextColor}; font-family: '${textFontFamily}', sans-serif;">
+                                <p class="text-xs md:text-sm leading-relaxed whitespace-pre-wrap">${text}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1155,7 +1172,8 @@ function buildQrContentFromForm() {
             return `mailto:${email}${subjectPart}${bodyPart}`;
         }
         case 'text':
-            return getValue('text');
+            // For text type, use text page URL (similar to PDF)
+            return '/text/preview';
         case 'pdf':
             // Kao na backend preview-u: placeholder URL, pravi URL se postavlja pri snimanju
             return '/pdf/preview';
@@ -1465,7 +1483,8 @@ document.addEventListener('DOMContentLoaded', function() {
         'ssid', 'encryption', 'password', 'address',
         'event_name', 'company_name', 'date', 'time', 'location', 'description',
         'pdf_primary_color_hex', 'pdf_secondary_color_hex', 'pdf_title', 'pdf_website', 
-        'company_name', 'file_description', 'pdf_button_text', 'pdf_button_color_hex', 'pdf_font_family'
+        'company_name', 'file_description', 'pdf_button_text', 'pdf_button_color_hex', 'pdf_font_family',
+        'text_background_color_hex', 'text_text_color_hex', 'text_font_family'
     ];
     
     step1Fields.forEach(fieldId => {
