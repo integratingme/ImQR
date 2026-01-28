@@ -210,6 +210,9 @@ class QrCodeController extends Controller
         // QR code colors are in colors field (Step 2 colors), but page background uses Step 1 colors
         $pdfPrimaryColor = $data['pdf_primary_color'] ?? '#6594FF';
         $pdfSecondaryColor = $data['pdf_secondary_color'] ?? '#FFFFFF';
+        $pdfButtonText = $data['pdf_button_text'] ?? 'Download PDF';
+        $pdfButtonColor = $data['pdf_button_color'] ?? '#D6D6D6';
+        $pdfFontFamily = $data['pdf_font_family'] ?? 'Maven Pro';
         $primaryColor = $pdfPrimaryColor;
         $secondaryColor = $pdfSecondaryColor;
 
@@ -218,6 +221,9 @@ class QrCodeController extends Controller
             'pdfFile',
             'pdfTitle',
             'pdfWebsite',
+            'pdfButtonText',
+            'pdfButtonColor',
+            'pdfFontFamily',
             'companyName',
             'fileDescription',
             'primaryColor',

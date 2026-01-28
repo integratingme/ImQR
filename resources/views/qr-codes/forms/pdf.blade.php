@@ -43,40 +43,76 @@
                             <div class="w-8 h-8 rounded border border-gray-200" style="background-color: #FFFFFF;"></div>
                         </div>
                     </button>
-                    <button type="button" class="pdf-color-preset border-2 border-dark-200 rounded-lg p-2 hover:border-primary-400 transition-colors" data-primary="#D1FAE5" data-secondary="#000000">
+                    <button type="button" class="pdf-color-preset border-2 border-dark-200 rounded-lg p-2 hover:border-primary-400 transition-colors" data-primary="#FFD1DC" data-secondary="#B5E5CF">
                         <div class="flex gap-1">
-                            <div class="w-8 h-8 rounded" style="background-color: #D1FAE5;"></div>
-                            <div class="w-8 h-8 rounded" style="background-color: #000000;"></div>
+                            <div class="w-8 h-8 rounded" style="background-color: #FFD1DC;"></div>
+                            <div class="w-8 h-8 rounded" style="background-color: #B5E5CF;"></div>
                         </div>
                     </button>
                 </div>
             </div>
             
-            <!-- Primary Color Input -->
+            <!-- Color Inputs -->
             <div class="mb-4">
-                <label for="pdf_primary_color" class="text-sm font-bold text-dark-500 mb-2 block">Primary color</label>
-                <div class="flex items-center gap-3">
-                    <input type="text" id="pdf_primary_color_hex" name="pdf_primary_color" value="#6594FF" class="input flex-1" placeholder="#6594FF">
-                    <div class="w-10 h-10 rounded border border-gray-200" id="pdf_primary_color_swatch" style="background-color: #6594FF;"></div>
+                <!-- Labels Row -->
+                <div class="grid grid-cols-2 gap-4 mb-2">
+                    <label for="pdf_primary_color" class="text-sm font-bold text-dark-500">Primary color</label>
+                    <label for="pdf_secondary_color" class="text-sm font-bold text-dark-500">Secondary color</label>
+                </div>
+                
+                <!-- Inputs Row -->
+                <div class="grid grid-cols-2 gap-4 relative">
+                    <!-- Primary Color Input -->
+                    <div class="flex items-center gap-3 relative">
+                        <input type="text" id="pdf_primary_color_hex" name="pdf_primary_color" value="#6594FF" class="input flex-1" placeholder="#6594FF">
+                        <div class="relative">
+                            <input type="color" id="pdf_primary_color_picker" value="#6594FF" class="w-10 h-10 rounded border border-gray-200 cursor-pointer">
+                            <button type="button" id="pdf-swap-colors" class="absolute -top-6 left-1/2 transform -translate-x-1/2 text-dark-300 hover:text-dark-500 transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Secondary Color Input -->
+                    <div class="flex items-center gap-3">
+                        <input type="text" id="pdf_secondary_color_hex" name="pdf_secondary_color" value="#FFFFFF" class="input flex-1" placeholder="#FFFFFF">
+                        <input type="color" id="pdf_secondary_color_picker" value="#FFFFFF" class="w-10 h-10 rounded border border-gray-200 cursor-pointer">
+                    </div>
                 </div>
             </div>
             
-            <!-- Swap Button -->
-            <div class="flex justify-center mb-4">
-                <button type="button" id="pdf-swap-colors" class="text-dark-300 hover:text-dark-500 transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
-                    </svg>
-                </button>
+            <!-- Button Customization -->
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label for="pdf_button_text" class="text-sm font-bold text-dark-500 mb-2 block">Button text</label>
+                    <input type="text" id="pdf_button_text" name="pdf_button_text" value="Download PDF" class="input w-full" placeholder="Download PDF">
+                </div>
+                
+                <div>
+                    <label for="pdf_button_color" class="text-sm font-bold text-dark-500 mb-2 block">Button color</label>
+                    <div class="flex items-center gap-3">
+                        <input type="text" id="pdf_button_color_hex" name="pdf_button_color" value="#D6D6D6" class="input flex-1" placeholder="#D6D6D6">
+                        <input type="color" id="pdf_button_color_picker" value="#D6D6D6" class="w-10 h-10 rounded border border-gray-200 cursor-pointer">
+                    </div>
+                </div>
             </div>
             
-            <!-- Secondary Color Input -->
+            <!-- Font Selection -->
             <div class="mb-4">
-                <label for="pdf_secondary_color" class="text-sm font-bold text-dark-500 mb-2 block">Secondary color</label>
-                <div class="flex items-center gap-3">
-                    <input type="text" id="pdf_secondary_color_hex" name="pdf_secondary_color" value="#FFFFFF" class="input flex-1" placeholder="#FFFFFF">
-                    <div class="w-10 h-10 rounded border border-gray-200" id="pdf_secondary_color_swatch" style="background-color: #FFFFFF;"></div>
-                </div>
+                <label for="pdf_font_family" class="text-sm font-bold text-dark-500 mb-2 block">Font family</label>
+                <select id="pdf_font_family" name="pdf_font_family" class="input w-full">
+                    <option value="Maven Pro">Maven Pro</option>
+                    <option value="Inter">Inter</option>
+                    <option value="Roboto">Roboto</option>
+                    <option value="Open Sans">Open Sans</option>
+                    <option value="Lato">Lato</option>
+                    <option value="Montserrat">Montserrat</option>
+                    <option value="Poppins">Poppins</option>
+                    <option value="Raleway">Raleway</option>
+                    <option value="Nunito">Nunito</option>
+                </select>
             </div>
         </div>
     </div>
@@ -126,7 +162,7 @@
                     </div>
                     <div>
                         <label for="pdf_website" class="label">Website</label>
-                        <input type="text" id="pdf_website" name="pdf_website" class="input" placeholder="Website" onblur="validateWebsite(this)">
+                        <input type="text" id="pdf_website" name="pdf_website" class="input" placeholder="https://example.com" onblur="validateWebsite(this)">
                         <div id="pdf_website_error" class="hidden mt-1 text-sm text-red-600">You have entered an invalid link. Please try again.</div>
                     </div>
                 </div>
@@ -249,9 +285,17 @@ function validateWebsite(input) {
         return true;
     }
     
+    // Check if URL starts with https://
+    if (!website.startsWith('https://')) {
+        input.classList.add('border-red-500');
+        errorDiv.classList.remove('hidden');
+        errorDiv.textContent = 'Website URL must start with https://';
+        return false;
+    }
+    
     try {
-        const url = new URL(website.startsWith('http') ? website : 'https://' + website);
-        if (url.protocol === 'http:' || url.protocol === 'https:') {
+        const url = new URL(website);
+        if (url.protocol === 'https:') {
             input.classList.remove('border-red-500');
             errorDiv.classList.add('hidden');
             return true;
@@ -262,6 +306,7 @@ function validateWebsite(input) {
     
     input.classList.add('border-red-500');
     errorDiv.classList.remove('hidden');
+    errorDiv.textContent = 'You have entered an invalid link. Please try again.';
     return false;
 }
 
@@ -277,17 +322,13 @@ document.addEventListener('DOMContentLoaded', function() {
             // Update inputs
             const primaryInput = document.getElementById('pdf_primary_color_hex');
             const secondaryInput = document.getElementById('pdf_secondary_color_hex');
-            const primarySwatch = document.getElementById('pdf_primary_color_swatch');
-            const secondarySwatch = document.getElementById('pdf_secondary_color_swatch');
+            const primaryColorPicker = document.getElementById('pdf_primary_color_picker');
+            const secondaryColorPicker = document.getElementById('pdf_secondary_color_picker');
             
             if (primaryInput) primaryInput.value = primary;
             if (secondaryInput) secondaryInput.value = secondary;
-            if (primarySwatch) {
-                primarySwatch.style.backgroundColor = primary;
-            }
-            if (secondarySwatch) {
-                secondarySwatch.style.backgroundColor = secondary;
-            }
+            if (primaryColorPicker) primaryColorPicker.value = primary;
+            if (secondaryColorPicker) secondaryColorPicker.value = secondary;
             
             // Update active state
             document.querySelectorAll('.pdf-color-preset').forEach(b => {
@@ -307,14 +348,56 @@ document.addEventListener('DOMContentLoaded', function() {
     // Color input handlers
     const primaryInput = document.getElementById('pdf_primary_color_hex');
     const secondaryInput = document.getElementById('pdf_secondary_color_hex');
-    const primarySwatch = document.getElementById('pdf_primary_color_swatch');
-    const secondarySwatch = document.getElementById('pdf_secondary_color_swatch');
+    const primaryColorPicker = document.getElementById('pdf_primary_color_picker');
+    const secondaryColorPicker = document.getElementById('pdf_secondary_color_picker');
     
-    if (primaryInput && primarySwatch) {
+    // Primary color picker handler
+    if (primaryColorPicker && primaryInput) {
+        primaryColorPicker.addEventListener('input', function() {
+            const color = this.value.toUpperCase();
+            primaryInput.value = color;
+            // Update active preset
+            document.querySelectorAll('.pdf-color-preset').forEach(btn => {
+                if (btn.dataset.primary === color && btn.dataset.secondary === secondaryInput.value) {
+                    btn.classList.remove('border-dark-200');
+                    btn.classList.add('border-primary-500');
+                } else {
+                    btn.classList.remove('border-primary-500');
+                    btn.classList.add('border-dark-200');
+                }
+            });
+            if (typeof updateStep1Preview === 'function') {
+                updateStep1Preview();
+            }
+        });
+    }
+    
+    // Secondary color picker handler
+    if (secondaryColorPicker && secondaryInput) {
+        secondaryColorPicker.addEventListener('input', function() {
+            const color = this.value.toUpperCase();
+            secondaryInput.value = color;
+            // Update active preset
+            document.querySelectorAll('.pdf-color-preset').forEach(btn => {
+                if (btn.dataset.primary === primaryInput.value && btn.dataset.secondary === color) {
+                    btn.classList.remove('border-dark-200');
+                    btn.classList.add('border-primary-500');
+                } else {
+                    btn.classList.remove('border-primary-500');
+                    btn.classList.add('border-dark-200');
+                }
+            });
+            if (typeof updateStep1Preview === 'function') {
+                updateStep1Preview();
+            }
+        });
+    }
+    
+    if (primaryInput && primaryColorPicker) {
         primaryInput.addEventListener('input', function() {
             const color = this.value;
             if (/^#[0-9A-F]{6}$/i.test(color)) {
-                primarySwatch.style.backgroundColor = color;
+                primaryColorPicker.value = color;
                 // Update active preset
                 document.querySelectorAll('.pdf-color-preset').forEach(btn => {
                     if (btn.dataset.primary === color && btn.dataset.secondary === secondaryInput.value) {
@@ -332,11 +415,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    if (secondaryInput && secondarySwatch) {
+    if (secondaryInput && secondaryColorPicker) {
         secondaryInput.addEventListener('input', function() {
             const color = this.value;
             if (/^#[0-9A-F]{6}$/i.test(color)) {
-                secondarySwatch.style.backgroundColor = color;
+                secondaryColorPicker.value = color;
                 // Update active preset
                 document.querySelectorAll('.pdf-color-preset').forEach(btn => {
                     if (btn.dataset.primary === primaryInput.value && btn.dataset.secondary === color) {
@@ -356,15 +439,15 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Swap colors button
     const swapButton = document.getElementById('pdf-swap-colors');
-    if (swapButton && primaryInput && secondaryInput && primarySwatch && secondarySwatch) {
+    if (swapButton && primaryInput && secondaryInput && primaryColorPicker && secondaryColorPicker) {
         swapButton.addEventListener('click', function() {
             const tempPrimary = primaryInput.value;
             const tempSecondary = secondaryInput.value;
             
             primaryInput.value = tempSecondary;
             secondaryInput.value = tempPrimary;
-            primarySwatch.style.backgroundColor = tempSecondary;
-            secondarySwatch.style.backgroundColor = tempPrimary;
+            primaryColorPicker.value = tempSecondary;
+            secondaryColorPicker.value = tempPrimary;
             
             // Update active preset
             document.querySelectorAll('.pdf-color-preset').forEach(btn => {
@@ -381,6 +464,88 @@ document.addEventListener('DOMContentLoaded', function() {
                 updateStep1Preview();
             }
         });
+    }
+    
+    // Button color picker handler
+    const buttonColorPicker = document.getElementById('pdf_button_color_picker');
+    const buttonColorHex = document.getElementById('pdf_button_color_hex');
+    const primaryColorInput = document.getElementById('pdf_primary_color_hex');
+    
+    // Initialize button color with #D6D6D6 if not set
+    if (buttonColorHex && buttonColorPicker) {
+        if (!buttonColorHex.value || buttonColorHex.value === '#FFFFFF' || buttonColorHex.value === '#6594FF') {
+            buttonColorHex.value = '#D6D6D6';
+            buttonColorPicker.value = '#D6D6D6';
+        }
+    }
+    
+    if (buttonColorPicker && buttonColorHex) {
+        buttonColorPicker.addEventListener('input', function() {
+            const color = this.value.toUpperCase();
+            buttonColorHex.value = color;
+            if (typeof updateStep1Preview === 'function') {
+                updateStep1Preview();
+            }
+        });
+    }
+    
+    if (buttonColorHex && buttonColorPicker) {
+        buttonColorHex.addEventListener('input', function() {
+            const color = this.value;
+            if (/^#[0-9A-F]{6}$/i.test(color)) {
+                buttonColorPicker.value = color;
+                if (typeof updateStep1Preview === 'function') {
+                    updateStep1Preview();
+                }
+            }
+        });
+    }
+    
+    // Button text handler
+    const buttonText = document.getElementById('pdf_button_text');
+    if (buttonText) {
+        buttonText.addEventListener('input', function() {
+            if (typeof updateStep1Preview === 'function') {
+                updateStep1Preview();
+            }
+        });
+    }
+    
+    // Font family handler
+    const fontFamily = document.getElementById('pdf_font_family');
+    if (fontFamily) {
+        fontFamily.addEventListener('change', function() {
+            // Load Google Font if needed
+            const selectedFont = this.value;
+            if (selectedFont !== 'Maven Pro') {
+                loadGoogleFont(selectedFont);
+            }
+            if (typeof updateStep1Preview === 'function') {
+                updateStep1Preview();
+            }
+        });
+        // Load initial font if needed
+        const initialFont = fontFamily.value;
+        if (initialFont !== 'Maven Pro') {
+            loadGoogleFont(initialFont);
+        }
+    }
+    
+    // Function to load Google Fonts
+    function loadGoogleFont(fontName) {
+        const fontId = fontName.replace(/\s+/g, '+');
+        const linkId = 'google-font-' + fontId;
+        
+        // Check if font is already loaded
+        if (document.getElementById(linkId)) {
+            return;
+        }
+        
+        const link = document.createElement('link');
+        link.id = linkId;
+        link.rel = 'stylesheet';
+        link.href = `https://fonts.googleapis.com/css2?family=${fontId}:wght@400;500;600;700&display=swap`;
+        document.head.appendChild(link);
     }
     
     // Add event listeners for PDF document fields

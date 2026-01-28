@@ -5,11 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $pdfTitle ?: 'PDF Document' }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @php
+        $fontFamily = $pdfFontFamily ?? 'Maven Pro';
+        $googleFonts = ['Inter', 'Roboto', 'Open Sans', 'Lato', 'Montserrat', 'Poppins', 'Raleway', 'Nunito'];
+    @endphp
+    @if(in_array($fontFamily, $googleFonts))
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family={{ str_replace(' ', '+', $fontFamily) }}:wght@400;500;600;700&display=swap" rel="stylesheet">
+    @endif
     <style>
         body {
             margin: 0;
             padding: 0;
             overflow-x: hidden;
+            font-family: '{{ $fontFamily }}', sans-serif;
         }
     </style>
 </head>
@@ -20,9 +30,9 @@
         <!-- Bottom half - Secondary color -->
         <div class="absolute bottom-0 left-0 right-0 h-1/2" style="background-color: {{ $secondaryColor }};"></div>
         
-        <div class="relative z-10 flex-1 flex flex-col items-center justify-center p-6 min-h-screen">
+        <div class="relative z-10 flex-1 flex flex-col items-center justify-center p-6 min-h-screen" style="font-family: '{{ $pdfFontFamily ?? 'Maven Pro' }}', sans-serif;">
             @if($pdfTitle)
-                <h1 class="text-3xl md:text-4xl font-bold mb-8 text-center px-4" style="color: {{ $primaryColor === '#FFFFFF' ? '#000000' : '#FFFFFF' }};">
+                <h1 class="text-3xl md:text-4xl font-bold mb-8 text-center px-4" style="color: {{ $primaryColor === '#FFFFFF' ? '#000000' : '#FFFFFF' }}; font-family: '{{ $pdfFontFamily ?? 'Maven Pro' }}', sans-serif;">
                     {{ $pdfTitle }}
                 </h1>
             @endif
@@ -37,33 +47,42 @@
                             class="w-full h-full border-0"
                             type="application/pdf"
                             title="PDF Document">
-                            <p class="text-gray-500 p-4 text-center">
+                            <p class="text-gray-500 p-4 text-center" style="font-family: '{{ $pdfFontFamily ?? 'Maven Pro' }}', sans-serif;">
                                 Your browser does not support PDFs. 
-                                <a href="{{ $pdfFile->url }}" class="text-blue-600 underline" download>Download the PDF</a> instead.
+                                <a href="{{ $pdfFile->url }}" class="text-blue-600 underline" download style="font-family: '{{ $pdfFontFamily ?? 'Maven Pro' }}', sans-serif;">Download the PDF</a> instead.
                             </p>
                         </iframe>
                     </div>
                     
                     <!-- Download Button -->
+                    @php
+                        // Button color defaults to #D6D6D6, text color defaults to secondary color
+                        $buttonColorHex = $pdfButtonColor ?? '#D6D6D6';
+                        $buttonTextColor = $secondaryColor ?? '#FFFFFF';
+                    @endphp
                     <a 
                         href="{{ $pdfFile->url }}" 
                         download="{{ $pdfFile->original_name }}"
-                        class="bg-gray-900 text-white px-8 py-3 rounded-lg font-medium shadow-md hover:shadow-lg transition-shadow inline-flex items-center gap-2">
+                        class="px-8 py-3.5 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 inline-flex items-center gap-2"
+                        style="background-color: {{ $pdfButtonColor ?? '#FFFFFF' }}; color: {{ $buttonTextColor }}; font-family: '{{ $pdfFontFamily ?? 'Maven Pro' }}', sans-serif;">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
-                        Download PDF
+                        {{ $pdfButtonText ?? 'Download PDF' }}
                     </a>
                 </div>
             </div>
             
             @if($pdfWebsite)
+                @php
+                    $websiteTextColor = $secondaryColor === '#FFFFFF' ? '#000000' : '#FFFFFF';
+                @endphp
                 <a 
                     href="{{ $pdfWebsite }}" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     class="text-sm underline hover:no-underline transition-all px-4 text-center" 
-                    style="color: {{ $secondaryColor === '#FFFFFF' ? '#000000' : '#FFFFFF' }};">
+                    style="color: {{ $websiteTextColor }}; font-family: '{{ $pdfFontFamily ?? 'Maven Pro' }}', sans-serif;">
                     {{ $pdfWebsite }}
                 </a>
             @endif

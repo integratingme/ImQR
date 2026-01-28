@@ -1056,10 +1056,29 @@ function updateStep1Preview() {
             const pdfTitle = document.getElementById('pdf_title')?.value || '';
             const pdfWebsite = document.getElementById('pdf_website')?.value || '';
             const pdfFile = document.getElementById('pdf_file')?.files?.[0];
+            const pdfButtonText = document.getElementById('pdf_button_text')?.value || 'Download PDF';
+            const pdfButtonColor = document.getElementById('pdf_button_color_hex')?.value || '#D6D6D6';
+            const pdfFontFamily = document.getElementById('pdf_font_family')?.value || 'Maven Pro';
+            
+            // Button text color defaults to secondary color
+            const buttonTextColor = pdfSecondaryColor;
+            
+            // Load Google Font if needed
+            if (pdfFontFamily !== 'Maven Pro') {
+                const fontId = pdfFontFamily.replace(/\s+/g, '+');
+                const linkId = 'google-font-' + fontId;
+                if (!document.getElementById(linkId)) {
+                    const link = document.createElement('link');
+                    link.id = linkId;
+                    link.rel = 'stylesheet';
+                    link.href = `https://fonts.googleapis.com/css2?family=${fontId}:wght@400;500;600;700&display=swap`;
+                    document.head.appendChild(link);
+                }
+            }
             
             // Create split background: top half primary color, bottom half secondary color
             mockupHtml = `
-                <div class="w-full h-full rounded-lg overflow-hidden flex flex-col relative">
+                <div class="w-full h-full rounded-lg overflow-hidden flex flex-col relative" style="font-family: '${pdfFontFamily}', sans-serif;">
                     <!-- Top half - Primary color -->
                     <div class="absolute top-0 left-0 right-0 h-1/2" style="background-color: ${pdfPrimaryColor};"></div>
                     <!-- Bottom half - Secondary color -->
@@ -1067,7 +1086,7 @@ function updateStep1Preview() {
                     
                     <div class="relative z-10 flex-1 flex flex-col items-center justify-center p-6">
                         ${pdfTitle ? `
-                            <h2 class="text-2xl font-bold mb-6 text-center" style="color: ${pdfPrimaryColor === '#FFFFFF' ? '#000000' : '#FFFFFF'};">
+                            <h2 class="text-2xl font-bold mb-6 text-center" style="color: ${pdfPrimaryColor === '#FFFFFF' ? '#000000' : '#FFFFFF'}; font-family: '${pdfFontFamily}', sans-serif;">
                                 ${pdfTitle}
                             </h2>
                         ` : ''}
@@ -1079,25 +1098,25 @@ function updateStep1Preview() {
                                     <svg class="w-16 h-16 text-red-600 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                                     </svg>
-                                    <p class="text-xs text-gray-600 font-medium truncate max-w-[180px]">${pdfFile.name}</p>
+                                    <p class="text-xs text-gray-600 font-medium truncate max-w-[180px]" style="font-family: '${pdfFontFamily}', sans-serif;">${pdfFile.name}</p>
                                 </div>
                             ` : `
                                 <div class="text-center text-gray-400">
                                     <svg class="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
                                     </svg>
-                                    <p class="text-xs">PDF Preview</p>
+                                    <p class="text-xs" style="font-family: '${pdfFontFamily}', sans-serif;">PDF Preview</p>
                                 </div>
                             `}
                         </div>
                         
                         <!-- Download Button -->
-                        <button type="button" class="bg-white text-gray-900 px-6 py-3 rounded-lg font-medium shadow-md hover:shadow-lg transition-shadow mb-4">
-                            Download PDF
+                        <button type="button" class="px-8 py-3.5 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 mb-4" style="background-color: ${pdfButtonColor}; color: ${buttonTextColor}; font-family: '${pdfFontFamily}', sans-serif;">
+                            ${pdfButtonText}
                         </button>
                         
                         ${pdfWebsite ? `
-                            <a href="${pdfWebsite.startsWith('http') ? pdfWebsite : 'https://' + pdfWebsite}" target="_blank" class="text-sm underline hover:no-underline" style="color: ${pdfSecondaryColor === '#FFFFFF' ? '#000000' : '#FFFFFF'};">
+                            <a href="${pdfWebsite.startsWith('http') ? pdfWebsite : 'https://' + pdfWebsite}" target="_blank" class="text-sm underline hover:no-underline" style="color: ${pdfSecondaryColor === '#FFFFFF' ? '#000000' : '#FFFFFF'}; font-family: '${pdfFontFamily}', sans-serif;">
                                 ${pdfWebsite}
                             </a>
                         ` : ''}
@@ -1446,7 +1465,7 @@ document.addEventListener('DOMContentLoaded', function() {
         'ssid', 'encryption', 'password', 'address',
         'event_name', 'company_name', 'date', 'time', 'location', 'description',
         'pdf_primary_color_hex', 'pdf_secondary_color_hex', 'pdf_title', 'pdf_website', 
-        'company_name', 'file_description'
+        'company_name', 'file_description', 'pdf_button_text', 'pdf_button_color_hex', 'pdf_font_family'
     ];
     
     step1Fields.forEach(fieldId => {
@@ -1552,9 +1571,13 @@ function validateWebsite(input) {
         if (website === '') {
             return true;
         }
+        // Check if URL starts with https://
+        if (!website.startsWith('https://')) {
+            return false;
+        }
         try {
-            const url = new URL(website.startsWith('http') ? website : 'https://' + website);
-            return url.protocol === 'http:' || url.protocol === 'https:';
+            const url = new URL(website);
+            return url.protocol === 'https:';
         } catch (e) {
             return false;
         }
@@ -1569,9 +1592,19 @@ function validateWebsite(input) {
             return true;
         }
         
+        // Check if URL starts with https://
+        if (!website.startsWith('https://')) {
+            input.classList.add('border-red-500');
+            if (errorDiv) {
+                errorDiv.classList.remove('hidden');
+                errorDiv.textContent = 'Website URL must start with https://';
+            }
+            return false;
+        }
+        
         try {
-            const url = new URL(website.startsWith('http') ? website : 'https://' + website);
-            if (url.protocol === 'http:' || url.protocol === 'https:') {
+            const url = new URL(website);
+            if (url.protocol === 'https:') {
                 input.classList.remove('border-red-500');
                 if (errorDiv) errorDiv.classList.add('hidden');
                 return true;
@@ -1581,7 +1614,10 @@ function validateWebsite(input) {
         }
         
         input.classList.add('border-red-500');
-        if (errorDiv) errorDiv.classList.remove('hidden');
+        if (errorDiv) {
+            errorDiv.classList.remove('hidden');
+            errorDiv.textContent = 'You have entered an invalid link. Please try again.';
+        }
         return false;
     }
 }
@@ -1668,10 +1704,19 @@ function validateStep1() {
             if (pdfWebsite && pdfWebsite.value.trim()) {
                 const websiteValue = pdfWebsite.value.trim();
                 if (!validateWebsite(websiteValue)) {
-                    errors.push('You have entered an invalid link. Please try again.');
+                    if (!websiteValue.startsWith('https://')) {
+                        errors.push('Website URL must start with https://');
+                    } else {
+                        errors.push('You have entered an invalid link. Please try again.');
+                    }
                     pdfWebsite.classList.add('border-red-500');
                     const errorDiv = document.getElementById('pdf_website_error');
-                    if (errorDiv) errorDiv.classList.remove('hidden');
+                    if (errorDiv) {
+                        errorDiv.classList.remove('hidden');
+                        errorDiv.textContent = !websiteValue.startsWith('https://') 
+                            ? 'Website URL must start with https://' 
+                            : 'You have entered an invalid link. Please try again.';
+                    }
                 } else {
                     pdfWebsite.classList.remove('border-red-500');
                     const errorDiv = document.getElementById('pdf_website_error');
