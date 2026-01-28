@@ -24,7 +24,7 @@
         <div id="design-section-content">
             <!-- Color Palettes -->
             <div class="mb-6">
-                <div class="flex gap-3 mb-4">
+                <div class="grid grid-cols-2 md:flex gap-3 mb-4">
                     <button type="button" class="pdf-color-preset border-2 border-primary-500 rounded-lg p-2 hover:border-primary-600 transition-colors" data-primary="#6594FF" data-secondary="#FFFFFF">
                         <div class="flex gap-1">
                             <div class="w-8 h-8 rounded" style="background-color: #6594FF;"></div>

@@ -13,6 +13,7 @@ Route::get('/qr-codes/{id}/download/{format}', [QrCodeController::class, 'downlo
 Route::get('/qr-codes/history', [QrCodeController::class, 'history'])->name('qr-codes.history');
 Route::get('/pdf/{id}', [QrCodeController::class, 'showPdfPage'])->name('qr-codes.pdf-page');
 Route::get('/text/{id}', [QrCodeController::class, 'showTextPage'])->name('qr-codes.text-page');
+Route::get('/app/{id}', [QrCodeController::class, 'showAppPage'])->name('qr-codes.app-page');
 
 // Static Pages
 Route::get('/terms-and-conditions', [PageController::class, 'termsAndConditions'])->name('pages.terms-and-conditions');

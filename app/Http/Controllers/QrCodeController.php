@@ -120,6 +120,14 @@ class QrCodeController extends Controller
                 // Regenerate QR code with text page URL
                 $this->qrCodeService->regenerateQrCode($qrCode, $colors, $customization);
             }
+            
+            // For app type, generate app page URL and regenerate QR code
+            if ($type === 'app') {
+                $validated['app_page_url'] = route('qr-codes.app-page', $qrCode->id);
+                $qrCode->update(['data' => $validated]);
+                // Regenerate QR code with app page URL
+                $this->qrCodeService->regenerateQrCode($qrCode, $colors, $customization);
+            }
         }
 
         return response()->json([
@@ -261,6 +269,46 @@ class QrCodeController extends Controller
             'backgroundColor',
             'textColor',
             'textFontFamily'
+        ));
+    }
+
+    public function showAppPage($id)
+    {
+        $qrCode = QrCode::findOrFail($id);
+        
+        // Only allow app type QR codes
+        if ($qrCode->type !== 'app') {
+            abort(404);
+        }
+
+        // Get customization data from QR code data
+        $data = $qrCode->data ?? [];
+        $appName = $data['app_name'] ?? '';
+        $appDescription = $data['app_description'] ?? '';
+        $appStoreLink = $data['app_store_link'] ?? '';
+        $playStoreLink = $data['play_store_link'] ?? '';
+        $appFontFamily = $data['app_font_family'] ?? 'Maven Pro';
+        $textColor = $data['app_text_color'] ?? '#000000';
+        
+        // Get colors from QR code colors field (Step 2 colors)
+        $primaryColor = $qrCode->colors['primary'] ?? '#6594FF';
+        $secondaryColor = $qrCode->colors['secondary'] ?? '#FFFFFF';
+        
+        // Get app image if exists
+        $appImageFile = $qrCode->files()->where('file_type', 'image')->first();
+        $appImageUrl = $appImageFile ? asset('storage/' . $appImageFile->file_path) : null;
+
+        return view('qr-codes.app-page', compact(
+            'qrCode',
+            'appName',
+            'appDescription',
+            'appStoreLink',
+            'playStoreLink',
+            'appFontFamily',
+            'textColor',
+            'primaryColor',
+            'secondaryColor',
+            'appImageUrl'
         ));
     }
 

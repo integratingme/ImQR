@@ -58,7 +58,7 @@ class QrCodeService
             'menu' => $data['menu_url'] ?? $data['menu_file_url'] ?? '',
             'coupon' => $data['coupon_image_url'] ?? $data['coupon_url'] ?? '',
             'event' => $this->generateEventContent($data),
-            'app' => $data['website_url'] ?? '',
+            'app' => $this->generateAppContent($data),
             'location' => $this->generateLocationContent($data),
             'wifi' => $this->generateWifiContent($data),
             'phone' => $this->generatePhoneContent($data),
@@ -95,6 +95,21 @@ class QrCodeService
         // For preview purposes, use a placeholder URL
         // This will be replaced with actual URL when QR code is saved
         return url('/text/preview');
+    }
+
+    /**
+     * Generate App QR content (URL to app page)
+     */
+    protected function generateAppContent(array $data): string
+    {
+        // If app_page_url exists, use it (for existing QR codes)
+        if (isset($data['app_page_url']) && !empty($data['app_page_url'])) {
+            return $data['app_page_url'];
+        }
+        
+        // For preview purposes, use a placeholder URL
+        // This will be replaced with actual URL when QR code is saved
+        return url('/app/preview');
     }
 
     /**

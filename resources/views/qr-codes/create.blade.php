@@ -7,33 +7,33 @@
     <!-- Progress Steps -->
     <div class="mb-12">
         <div class="flex items-center justify-center">
-            <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-2 md:space-x-4">
                 <!-- Step 1 -->
                 <div class="flex items-center">
                     <div class="step-indicator step-active" id="step-1-indicator">
                         1
                     </div>
-                    <span class="ml-2 text-sm font-medium text-dark-500">Setup Info</span>
+                    <span class="ml-1 md:ml-2 text-xs md:text-sm font-medium text-dark-500">Setup Info</span>
                 </div>
                 
-                <div class="w-16 h-0.5 bg-dark-200"></div>
+                <div class="w-4 md:w-16 h-0.5 bg-dark-200"></div>
                 
                 <!-- Step 2 -->
                 <div class="flex items-center">
                     <div class="step-indicator step-inactive" id="step-2-indicator">
                         2
                     </div>
-                    <span class="ml-2 text-sm font-medium text-dark-300">Customize</span>
+                    <span class="ml-1 md:ml-2 text-xs md:text-sm font-medium text-dark-300">Customize</span>
                 </div>
                 
-                <div class="w-16 h-0.5 bg-dark-200"></div>
+                <div class="w-4 md:w-16 h-0.5 bg-dark-200"></div>
                 
                 <!-- Step 3 -->
                 <div class="flex items-center">
                     <div class="step-indicator step-inactive" id="step-3-indicator">
                         3
                     </div>
-                    <span class="ml-2 text-sm font-medium text-dark-300">Design QR Code</span>
+                    <span class="ml-1 md:ml-2 text-xs md:text-sm font-medium text-dark-300">Design QR Code</span>
                 </div>
             </div>
         </div>
@@ -68,7 +68,7 @@
 
                     <!-- Column 2: Preview Mockup with phone.png (40% width) -->
                     <div class="flex items-center justify-center sticky top-8">
-                        <div class="relative w-full max-w-sm mx-auto">
+                        <div id="phone-mockup-container-step1" class="relative w-full max-w-sm mx-auto ">
                             <img src="{{ asset('phone.png') }}" alt="Phone mockup" id="phone-mockup-step1" class="w-full h-auto object-contain relative z-10">
                             <div id="phone-mockup-overlay-step1" class="absolute pointer-events-none" style="background-color: #FFFFFF; border-radius: 4rem; border: 2px solid #E5E7EB;">
                                 <div id="phone-mockup-content" class="w-full h-full flex flex-col p-6">
@@ -861,12 +861,16 @@ function updateStep1Preview() {
     
     let mockupHtml = '';
     
+    // Get overlay element for background color
+    const overlay = document.getElementById('phone-mockup-overlay-step1');
+    
     switch(type) {
         case 'url':
+            if (overlay) overlay.style.backgroundColor = '#F9FAFB'; // gray-50
             const url = document.getElementById('url')?.value || '';
             const urlDomain = url ? new URL(url).hostname.replace('www.', '') : 'example.com';
             mockupHtml = `
-                <div class="w-full h-full bg-gray-50 rounded-lg overflow-hidden flex flex-col">
+                <div class="w-full h-full rounded-lg overflow-hidden flex flex-col">
                     <!-- Browser Header -->
                     <div class="bg-white border-b border-gray-200 px-3 py-2 flex items-center gap-2 mt-8">
                         <div class="flex gap-1">
@@ -894,11 +898,12 @@ function updateStep1Preview() {
             break;
             
         case 'email':
+            if (overlay) overlay.style.backgroundColor = '#FFFFFF'; // white
             const email = document.getElementById('email')?.value || '';
             const subject = document.getElementById('subject')?.value || '';
             const message = document.getElementById('message')?.value || '';
             mockupHtml = `
-                <div class="w-full h-full bg-white rounded-lg overflow-hidden flex flex-col">
+                <div class="w-full h-full rounded-lg overflow-hidden flex flex-col">
                     <!-- Email Header -->
                     <div class="bg-gray-50 border-b border-gray-200 px-4 py-3 flex-shrink-0 mt-10">
                         <div class="space-y-2">
@@ -933,6 +938,9 @@ function updateStep1Preview() {
             const textTextColor = document.getElementById('text_text_color_hex')?.value || '#000000';
             const textFontFamily = document.getElementById('text_font_family')?.value || 'Maven Pro';
             
+            // Set background color on overlay div
+            if (overlay) overlay.style.backgroundColor = textBackgroundColor;
+            
             // Load Google Font if needed
             if (textFontFamily !== 'Maven Pro') {
                 const fontId = textFontFamily.replace(/\s+/g, '+');
@@ -947,7 +955,7 @@ function updateStep1Preview() {
             }
             
             mockupHtml = `
-                <div class="w-full h-full rounded-lg overflow-hidden flex items-center justify-center p-4" style="background-color: ${textBackgroundColor}; font-family: '${textFontFamily}', sans-serif;">
+                <div class="w-full h-full rounded-lg overflow-hidden flex items-center justify-center p-4" style="font-family: '${textFontFamily}', sans-serif;">
                     <div class="w-full max-w-2xl">
                         <div class="bg-white rounded-lg shadow-2xl p-6 md:p-8">
                             <div class="prose max-w-none" style="color: ${textTextColor}; font-family: '${textFontFamily}', sans-serif;">
@@ -960,9 +968,10 @@ function updateStep1Preview() {
             break;
             
         case 'phone':
+            if (overlay) overlay.style.backgroundColor = '#111827'; // gray-900
             const phone = document.getElementById('phone_number')?.value || '';
             mockupHtml = `
-                <div class="w-full h-full bg-gray-900 rounded-lg overflow-hidden flex flex-col items-center justify-center p-6">
+                <div class="w-full h-full rounded-lg overflow-hidden flex flex-col items-center justify-center p-6">
                     <div class="w-20 h-20 rounded-full bg-green-500 flex items-center justify-center mb-4">
                         <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
@@ -975,10 +984,11 @@ function updateStep1Preview() {
             break;
             
         case 'wifi':
+            if (overlay) overlay.style.backgroundColor = '#FFFFFF'; // white
             const ssid = document.getElementById('ssid')?.value || '';
             const encryption = document.getElementById('encryption')?.value || 'WPA2';
             mockupHtml = `
-                <div class="w-full h-full bg-white rounded-lg overflow-hidden">
+                <div class="w-full h-full rounded-lg overflow-hidden">
                     <div class="p-4">
                         <div class="flex items-center gap-3 mb-4">
                             <div class="w-12 h-12 rounded-lg bg-primary-100 flex items-center justify-center">
@@ -1000,9 +1010,10 @@ function updateStep1Preview() {
             break;
             
         case 'location':
+            if (overlay) overlay.style.backgroundColor = '#F3F4F6'; // gray-100
             const address = document.getElementById('address')?.value || '';
             mockupHtml = `
-                <div class="w-full h-full bg-gray-100 rounded-lg overflow-hidden relative">
+                <div class="w-full h-full rounded-lg overflow-hidden relative">
                     <!-- Map placeholder -->
                     <div class="absolute inset-0 bg-gray-200 flex items-center justify-center">
                         <svg class="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1019,13 +1030,14 @@ function updateStep1Preview() {
             break;
             
         case 'event':
+            if (overlay) overlay.style.backgroundColor = '#FFFFFF'; // white
             const eventName = document.getElementById('event_name')?.value || '';
             const companyName = document.getElementById('company_name')?.value || '';
             const eventDate = document.getElementById('date')?.value || '';
             const eventTime = document.getElementById('time')?.value || '';
             const eventLocation = document.getElementById('location')?.value || '';
             mockupHtml = `
-                <div class="w-full h-full bg-white rounded-lg overflow-hidden">
+                <div class="w-full h-full rounded-lg overflow-hidden">
                     <div class="p-4">
                         ${companyName ? `<div class="text-xs text-gray-500 mb-1">${companyName}</div>` : ''}
                         <div class="text-lg font-bold text-gray-900 mb-3">${eventName || 'Event Name'}</div>
@@ -1053,15 +1065,65 @@ function updateStep1Preview() {
             
         case 'app':
             const appName = document.getElementById('app_name')?.value || '';
-            const websiteUrl = document.getElementById('website_url')?.value || '';
+            const appDescription = document.getElementById('app_description')?.value || '';
+            const appSecondaryColor = document.getElementById('app_secondary_color_hex')?.value || '#FFFFFF';
+            const appPrimaryColor = document.getElementById('app_primary_color_hex')?.value || '#6594FF';
+            const appFontFamily = document.getElementById('app_font_family')?.value || 'Maven Pro';
+            const appTextColor = document.getElementById('app_text_color_hex')?.value || '#000000';
+            const appStoreLink = document.getElementById('app_store_link')?.value || '';
+            const playStoreLink = document.getElementById('play_store_link')?.value || '';
+            const appImagePreview = document.getElementById('app-img-preview');
+            const appImageSrc = appImagePreview && !appImagePreview.classList.contains('hidden') 
+                ? appImagePreview.querySelector('img')?.src || '' 
+                : '';
+            
+            // Button texts - always show both buttons
+            const appStoreButtonText = 'Download on the App Store';
+            const playStoreButtonText = 'Get it on Google Play';
+            
+            // Load Google Font if needed
+            if (appFontFamily !== 'Maven Pro') {
+                const fontId = appFontFamily.replace(/\s+/g, '+');
+                const linkId = 'google-font-app-' + fontId;
+                if (!document.getElementById(linkId)) {
+                    const link = document.createElement('link');
+                    link.id = linkId;
+                    link.rel = 'stylesheet';
+                    link.href = `https://fonts.googleapis.com/css2?family=${fontId}:wght@400;500;600;700&display=swap`;
+                    document.head.appendChild(link);
+                }
+            }
+            
+            // Set split background on overlay div (top primary, bottom secondary)
+            if (overlay) {
+                overlay.style.background = `linear-gradient(to bottom, ${appPrimaryColor} 0%, ${appPrimaryColor} 25%, ${appSecondaryColor} 25%, ${appSecondaryColor} 100%)`;
+            }
+            
             mockupHtml = `
-                <div class="w-full h-full bg-white rounded-lg overflow-hidden">
-                    <div class="p-4 flex flex-col items-center justify-center h-full">
-                        <div class="w-16 h-16 rounded-xl bg-primary-500 flex items-center justify-center text-white font-bold text-xl mb-3">
-                            ${appName ? appName.charAt(0).toUpperCase() : 'A'}
+                <div class="w-full h-full rounded-lg overflow-hidden flex flex-col relative" style="font-family: '${appFontFamily}', sans-serif;">
+                    <div class="flex flex-col items-center px-4 pt-16" style="height: 25%;">
+                        <div class="w-24 h-24 rounded-3xl flex items-center justify-center text-white font-bold text-2xl flex-shrink-0 shadow-lg border-4 border-white" style="background-color: ${appPrimaryColor}; position: absolute; top: 4rem; left: 50%; transform: translateX(-50%); z-index: 10;">
+                            ${appImageSrc 
+                                ? `<img src="${appImageSrc}" alt="App Logo" class="w-full h-full object-contain rounded-xl">`
+                                : (appName ? appName.charAt(0).toUpperCase() : 'A')
+                            }
                         </div>
-                        <div class="text-lg font-bold text-gray-900 mb-1">${appName || 'App Name'}</div>
-                        ${websiteUrl ? `<div class="text-xs text-gray-500">${websiteUrl}</div>` : ''}
+                        <div class="mt-32 flex flex-col items-center">
+                            <div class="text-lg font-bold mb-2 text-center" style="color: ${appTextColor};">
+                                ${appName || 'Your app name here'}
+                            </div>
+                            <div class="text-sm px-2" style="color: ${appTextColor};">
+                                ${appDescription || 'Your app description here'}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex-1 flex flex-col items-center justify-center gap-3 px-4 pb-4">
+                        <button class="w-full py-3 rounded-lg text-white font-medium transition-colors shadow-lg" style="background-color: ${appPrimaryColor};">
+                            ${appStoreButtonText}
+                        </button>
+                        <button class="w-full py-3 rounded-lg text-white font-medium transition-colors shadow-lg" style="background-color: ${appPrimaryColor};">
+                            ${playStoreButtonText}
+                        </button>
                     </div>
                 </div>
             `;
@@ -1080,6 +1142,11 @@ function updateStep1Preview() {
             // Button text color defaults to secondary color
             const buttonTextColor = pdfSecondaryColor;
             
+            // Set split background on overlay div (top half primary, bottom half secondary)
+            if (overlay) {
+                overlay.style.background = `linear-gradient(to bottom, ${pdfPrimaryColor} 0%, ${pdfPrimaryColor} 50%, ${pdfSecondaryColor} 50%, ${pdfSecondaryColor} 100%)`;
+            }
+            
             // Load Google Font if needed
             if (pdfFontFamily !== 'Maven Pro') {
                 const fontId = pdfFontFamily.replace(/\s+/g, '+');
@@ -1093,13 +1160,8 @@ function updateStep1Preview() {
                 }
             }
             
-            // Create split background: top half primary color, bottom half secondary color
             mockupHtml = `
                 <div class="w-full h-full rounded-lg overflow-hidden flex flex-col relative" style="font-family: '${pdfFontFamily}', sans-serif;">
-                    <!-- Top half - Primary color -->
-                    <div class="absolute top-0 left-0 right-0 h-1/2" style="background-color: ${pdfPrimaryColor};"></div>
-                    <!-- Bottom half - Secondary color -->
-                    <div class="absolute bottom-0 left-0 right-0 h-1/2" style="background-color: ${pdfSecondaryColor};"></div>
                     
                     <div class="relative z-10 flex-1 flex flex-col items-center justify-center p-6">
                         ${pdfTitle ? `
@@ -1143,8 +1205,9 @@ function updateStep1Preview() {
             break;
             
         default:
+            if (overlay) overlay.style.backgroundColor = '#FFFFFF'; // white
             mockupHtml = `
-                <div class="w-full h-full bg-white rounded-lg flex items-center justify-center p-4">
+                <div class="w-full h-full rounded-lg flex items-center justify-center p-4">
                     <div class="text-center">
                         <div class="text-sm text-gray-500">Fill in the form to see preview</div>
                     </div>
@@ -1200,7 +1263,8 @@ function buildQrContentFromForm() {
             });
         }
         case 'app':
-            return getValue('website_url');
+            // For app type, use app page URL (similar to PDF and text)
+            return '/app/preview';
         case 'location': {
             const address = getValue('address');
             return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(address);
@@ -1396,39 +1460,35 @@ document.addEventListener('DOMContentLoaded', function() {
     setupRealTimeValidation();
     
     // Setup phone mockup overlay for Step 1
-    const phoneMockupStep1 = document.getElementById('phone-mockup-step1');
-    if (phoneMockupStep1) {
+    const phoneMockupContainerStep1 = document.getElementById('phone-mockup-container-step1');
+    if (phoneMockupContainerStep1) {
         const updateStep1OverlaySize = () => {
             const overlay = document.getElementById('phone-mockup-overlay-step1');
-            if (!overlay || !phoneMockupStep1) return;
+            if (!overlay || !phoneMockupContainerStep1) return;
             
-            const img = phoneMockupStep1;
-            const imgRect = img.getBoundingClientRect();
-            const parentRect = img.parentElement.getBoundingClientRect();
+            const containerRect = phoneMockupContainerStep1.getBoundingClientRect();
             
-            // Calculate position relative to parent container
-            const imgLeft = imgRect.left - parentRect.left;
-            const imgTop = imgRect.top - parentRect.top;
-            
-            // Use actual displayed image dimensions
-            const displayWidth = imgRect.width;
-            const displayHeight = imgRect.height;
-            
-            // Overlay should have 2px margin on all sides for border-radius visibility
+            // Overlay should cover the entire container with 2px margin on all sides for border-radius visibility
             const margin = 2; // 2px margin on all sides
-            overlay.style.width = (displayWidth - (margin * 2)) + 'px';
-            overlay.style.height = (displayHeight - (margin * 2)) + 'px';
-            overlay.style.left = (imgLeft + margin) + 'px';
-            overlay.style.top = (imgTop + margin) + 'px';
+            overlay.style.width = (containerRect.width - (margin * 2)) + 'px';
+            overlay.style.height = (containerRect.height - (margin * 2)) + 'px';
+            overlay.style.left = margin + 'px';
+            overlay.style.top = margin + 'px';
         };
         
-        if (phoneMockupStep1.complete) {
-            updateStep1OverlaySize();
-        } else {
-            phoneMockupStep1.addEventListener('load', updateStep1OverlaySize);
-        }
-        
+        // Update immediately and on resize
+        updateStep1OverlaySize();
         window.addEventListener('resize', updateStep1OverlaySize);
+        
+        // Also update when image loads (in case container size changes)
+        const phoneMockupStep1 = document.getElementById('phone-mockup-step1');
+        if (phoneMockupStep1) {
+            if (phoneMockupStep1.complete) {
+                updateStep1OverlaySize();
+            } else {
+                phoneMockupStep1.addEventListener('load', updateStep1OverlaySize);
+            }
+        }
     }
     
     // Setup phone mockup overlay for Step 2
@@ -1479,7 +1539,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add event listeners for Step 1 fields to update preview
     const step1Fields = [
         'name', 'url', 'email', 'subject', 'message', 'text', 'phone_number', 
-        'app_name', 'website_url', 'app_store_link', 'play_store_link',
+        'app_name', 'website_url', 'app_store_link', 'play_store_link', 'app_description',
+        'app_primary_color_hex', 'app_secondary_color_hex', 'app_button_text', 'app_button_color_hex', 'app_font_family', 'app_text_color_hex',
         'ssid', 'encryption', 'password', 'address',
         'event_name', 'company_name', 'date', 'time', 'location', 'description',
         'pdf_primary_color_hex', 'pdf_secondary_color_hex', 'pdf_title', 'pdf_website', 
