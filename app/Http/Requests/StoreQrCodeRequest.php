@@ -50,8 +50,26 @@ class StoreQrCodeRequest extends FormRequest
                 'menu_url' => ['nullable', 'url', 'max:2048', 'regex:/^https:\/\//'],
             ],
             'coupon' => [
-                'coupon_image' => 'required|image|mimes:jpeg,png,jpg,gif,webp,svg|max:5120', // 5MB
+                'coupon_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,svg|max:5120', // 5MB presentation image
                 'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,svg|max:2048', // 2MB
+                'coupon_primary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+                'coupon_secondary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+                'coupon_button_text' => 'nullable|string|max:255',
+                'coupon_button_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+                'coupon_button_text_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+                'coupon_font_family' => 'nullable|string|max:100',
+                'coupon_company' => 'required|string|max:255',
+                'coupon_title' => 'required|string|max:255',
+                'coupon_description' => 'nullable|string|max:1000',
+                'coupon_sales_badge' => 'required|string|max:100',
+                'coupon_sales_badge_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+                'coupon_sales_badge_text_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+                'coupon_code_button_text' => 'nullable|string|max:255',
+                'coupon_use_barcode' => 'nullable',
+                'coupon_barcode_image' => 'required_if:coupon_use_barcode,1|nullable|image|mimes:jpeg,png,jpg,gif,webp,svg|max:2048', // 2MB; required when use barcode
+                'coupon_valid_until' => 'required|date',
+                'coupon_view_more_text' => 'nullable|string|max:255',
+                'coupon_view_more_website' => ['required_without:coupon_barcode_image', 'nullable', 'url', 'max:2048', 'regex:/^https:\/\//'], // required if no barcode
             ],
             'event' => [
                 'event_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,svg|max:5120',
@@ -119,9 +137,17 @@ class StoreQrCodeRequest extends FormRequest
             'pdf_file.required' => 'Please upload a PDF file.',
             'pdf_file.mimes' => 'Only PDF files are allowed.',
             'pdf_file.max' => 'PDF file cannot exceed 10MB.',
-            'coupon_image.required' => 'Please upload a coupon image.',
-            'coupon_image.image' => 'Coupon file must be an image.',
+            'coupon_image.required' => 'Please upload a presentation image for your coupon.',
+            'coupon_image.image' => 'Coupon presentation file must be an image.',
             'coupon_image.max' => 'Coupon image cannot exceed 5MB.',
+            'coupon_company.required' => 'Company name is required.',
+            'coupon_title.required' => 'Coupon title is required.',
+            'coupon_sales_badge.required' => 'Sales badge is required.',
+            'coupon_valid_until.required' => 'Valid until date is required.',
+            'coupon_valid_until.date' => 'Please enter a valid date.',
+            'coupon_view_more_website.required_without' => 'Please enter a website URL or upload a barcode (at least one is required).',
+            'coupon_view_more_website.regex' => 'Website URL must start with https://',
+            'coupon_barcode_image.required_if' => 'Please upload a barcode image when "Use barcode" is enabled.',
             'event_name.required' => 'Please enter an event name.',
             'ssid.required' => 'Please enter the WiFi network name.',
             'encryption.required' => 'Please select an encryption type.',

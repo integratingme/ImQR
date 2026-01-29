@@ -14,6 +14,7 @@ Route::get('/qr-codes/history', [QrCodeController::class, 'history'])->name('qr-
 Route::get('/pdf/{id}', [QrCodeController::class, 'showPdfPage'])->name('qr-codes.pdf-page');
 Route::get('/text/{id}', [QrCodeController::class, 'showTextPage'])->name('qr-codes.text-page');
 Route::get('/app/{id}', [QrCodeController::class, 'showAppPage'])->name('qr-codes.app-page');
+Route::get('/coupon/{id}', [QrCodeController::class, 'showCouponPage'])->name('qr-codes.coupon-page');
 
 // Static Pages
 Route::get('/terms-and-conditions', [PageController::class, 'termsAndConditions'])->name('pages.terms-and-conditions');

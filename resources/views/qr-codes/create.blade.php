@@ -3,6 +3,198 @@
 @section('title', 'Create ' . ucfirst($type) . ' QR Code')
 
 @section('content')
+<style>
+/* Coupon mockup card – interior uses secondary color, left/right semicircles use primary */
+.coupon-card {
+    background: var(--coupon-card-bg, white);
+    border-radius: 15px;
+    max-width: 400px;
+    width: 100%;
+    min-height: 520px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
+}
+.coupon-card-promo {
+    height: 40%;
+    min-height: 40%;
+    flex-shrink: 0;
+    background: var(--coupon-card-bg, white);
+}
+.coupon-card-promo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 15px 15px 0 0;
+}
+.coupon-card-content {
+    flex: 1;
+    padding: 40px 30px;
+    display: flex;
+    flex-direction: column;
+}
+.coupon-card-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 6px;
+    line-height: 1.3;
+}
+.coupon-card-description {
+    font-size: 0.8125rem;
+    color: #4b5563;
+    line-height: 1.4;
+}
+.coupon-card-button-wrap {
+    margin-top: auto;
+    padding-top: 2%;
+}
+.coupon-card-button {
+    display: block;
+    width: 100%;
+    padding: 14px 24px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--coupon-button-text-color, #1f2937);
+    background: var(--coupon-button-bg, #d1d5db);
+    border: none;
+    border-radius: 12px;
+    cursor: default;
+    text-align: center;
+}
+.coupon-card-barcode-wrap {
+    margin-top: auto;
+    padding-top: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.coupon-card > .coupon-card-barcode-wrap {
+    position: absolute;
+    bottom: 28px;
+    left: 0;
+    right: 0;
+    margin-top: 0;
+    padding: 16px 30px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.coupon-card-valid-until {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 6px 8px;
+    margin: 0;
+    font-size: 0.75rem;
+    color: #6b7280;
+    text-align: center;
+    line-height: 1.2;
+}
+.coupon-card-barcode-wrap img {
+    max-width: 100%;
+    width: auto;
+    height: auto;
+    max-height: 90px;
+    object-fit: contain;
+    display: block;
+    border: 1px solid #e5e7eb;
+}
+.coupon-sales-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--coupon-sales-badge-bg, #9FE2BF);
+    color: var(--coupon-sales-badge-text-color, #1f2937);
+    padding: 8px 16px;
+    border-radius: 9999px;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+.coupon-sales-badge svg {
+    flex-shrink: 0;
+    width: 20px;
+    height: 15px;
+}
+.coupon-card-dashed-line {
+    position: absolute;
+    left: 25px;
+    right: 25px;
+    top: 70%;
+    transform: translateY(-50%);
+    height: 0;
+    border-top: 2px dashed var(--coupon-circle-color, #5B7DBE);
+    z-index: 1;
+}
+.coupon-sales-badge-wrap {
+    position: absolute;
+    left: 50%;
+    top: 70%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+}
+.coupon-card::before {
+    content: '';
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    background: var(--coupon-circle-color, #5B7DBE);
+    border-radius: 50%;
+    left: -25px;
+    top: 70%;
+    transform: translateY(-50%);
+}
+.coupon-mockup-company {
+    height: 25%;
+    min-height: 32px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--coupon-card-bg, #FFFFFF);
+}
+.coupon-mockup-company-logo {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+.coupon-mockup-company-text {
+    flex-shrink: 0;
+}
+.coupon-mockup-view-more {
+    margin-top: 12px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: underline;
+    color: var(--coupon-card-bg, #FFFFFF);
+}
+.coupon-mockup-view-more a {
+    color: inherit;
+    text-decoration: inherit;
+    cursor: default;
+}
+.coupon-mockup-view-more a:hover {
+    opacity: 0.9;
+}
+.coupon-card::after {
+    content: '';
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    background: var(--coupon-circle-color, #5B7DBE);
+    border-radius: 50%;
+    right: -25px;
+    top: 70%;
+    transform: translateY(-50%);
+}
+</style>
 <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
     <!-- Progress Steps -->
     <div class="mb-12">
@@ -39,7 +231,7 @@
         </div>
     </div>
 
-    <form id="qr-form" enctype="multipart/form-data">
+    <form id="qr-form" enctype="multipart/form-data" @if($type === 'coupon') data-coupon-default-promo-url="{{ asset('coupon-icons/coupon-promo-image.webp') }}" @endif>
         @csrf
         <input type="hidden" name="type" value="{{ $type }}">
         
@@ -1128,6 +1320,80 @@ function updateStep1Preview() {
                 </div>
             `;
             break;
+
+        case 'coupon': {
+            const couponPrimaryColor = document.getElementById('coupon_primary_color_hex')?.value || '#6594FF';
+            const couponSecondaryColor = document.getElementById('coupon_secondary_color_hex')?.value || '#FFFFFF';
+            const couponSalesBadge = document.getElementById('coupon_sales_badge')?.value?.trim() || '25% OFF*';
+            const couponSalesBadgeColor = document.getElementById('coupon_sales_badge_color_hex')?.value || '#9FE2BF';
+            const couponSalesBadgeTextColor = document.getElementById('coupon_sales_badge_text_color_hex')?.value || '#1f2937';
+            const couponCompany = document.getElementById('coupon_company')?.value?.trim() || '';
+            const couponLogoPreview = document.getElementById('logo-img-preview');
+            const couponLogoSrc = couponLogoPreview && !couponLogoPreview.classList.contains('hidden')
+                ? (couponLogoPreview.querySelector('img')?.src || '')
+                : '';
+            const couponValidUntil = document.getElementById('coupon_valid_until')?.value || '';
+            const couponViewMoreWebsite = document.getElementById('coupon_view_more_website')?.value?.trim() || '';
+            const couponTitle = document.getElementById('coupon_title')?.value?.trim() || '';
+            const couponDescription = document.getElementById('coupon_description')?.value?.trim() || '';
+            const couponCodeButtonText = document.getElementById('coupon_code_button_text')?.value?.trim() || 'Get code';
+            const couponButtonColor = document.getElementById('coupon_button_color_hex')?.value || '#D6D6D6';
+            const couponButtonTextColor = document.getElementById('coupon_button_text_color_hex')?.value || '#1f2937';
+            const couponUseBarcode = document.getElementById('coupon_use_barcode')?.checked || false;
+            const couponBarcodePreview = document.getElementById('coupon-barcode-preview');
+            const couponBarcodeSrc = couponUseBarcode && couponBarcodePreview && !couponBarcodePreview.classList.contains('hidden')
+                ? (couponBarcodePreview.querySelector('img')?.src || '')
+                : '';
+            const formEl = document.getElementById('qr-form');
+            const defaultPromoUrl = formEl?.dataset?.couponDefaultPromoUrl || '/coupon-icons/coupon-promo-image.webp';
+            const couponImgPreview = document.getElementById('coupon-img-preview');
+            const userPromoSrc = couponImgPreview && !couponImgPreview.classList.contains('hidden')
+                ? (couponImgPreview.querySelector('img')?.src || '')
+                : '';
+            const promoImgSrc = userPromoSrc || defaultPromoUrl;
+
+            if (overlay) overlay.style.backgroundColor = couponPrimaryColor;
+
+            const salesBadgeHtml = `
+                <div class="coupon-sales-badge-wrap">
+                    <span class="coupon-sales-badge">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path></svg>
+                        <span>${couponSalesBadge}</span>
+                    </span>
+                </div>
+            `;
+
+            const buttonHtml = `<div class="coupon-card-button-wrap"><button type="button" class="coupon-card-button">${couponCodeButtonText}</button></div>`;
+            const barcodeHtml = couponBarcodeSrc
+                ? `<div class="coupon-card-barcode-wrap"><img src="${couponBarcodeSrc}" alt="Barcode"></div>`
+                : '';
+
+            mockupHtml = `
+                <div class="w-full h-full rounded-lg overflow-visible flex flex-col" style="--coupon-circle-color: ${couponPrimaryColor}; --coupon-card-bg: ${couponSecondaryColor}; --coupon-button-bg: ${couponButtonColor}; --coupon-button-text-color: ${couponButtonTextColor}; --coupon-sales-badge-bg: ${couponSalesBadgeColor}; --coupon-sales-badge-text-color: ${couponSalesBadgeTextColor}">
+                    <div class="coupon-mockup-company">
+                        ${couponLogoSrc ? `<img src="${couponLogoSrc}" alt="Logo" class="coupon-mockup-company-logo">` : ''}
+                        <span class="coupon-mockup-company-text">${couponCompany || 'Your company name'}</span>
+                    </div>
+                    <div class="flex-1 flex flex-col items-center justify-center p-4 min-h-0">
+                        <div class="coupon-card">
+                            <div class="coupon-card-promo">
+                                ${promoImgSrc ? `<img src="${promoImgSrc}" alt="Promo">` : ''}
+                            </div>
+                            <div class="coupon-card-content">
+                                <div class="coupon-card-title">${couponTitle || 'Your coupon title'}</div>
+                                <div class="coupon-card-description">${couponDescription || 'Description'}</div>
+                                ${couponBarcodeSrc ? '' : buttonHtml}
+                            </div>
+                            <div class="coupon-card-dashed-line"></div>
+                            ${salesBadgeHtml}
+                            ${barcodeHtml}
+                            ${couponValidUntil ? `<div class="coupon-card-valid-until">Valid until: ${couponValidUntil}</div>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+            break;
+        }
             
         case 'pdf':
             const pdfPrimaryColor = document.getElementById('pdf_primary_color_hex')?.value || '#6594FF';
@@ -1545,7 +1811,10 @@ document.addEventListener('DOMContentLoaded', function() {
         'event_name', 'company_name', 'date', 'time', 'location', 'description',
         'pdf_primary_color_hex', 'pdf_secondary_color_hex', 'pdf_title', 'pdf_website', 
         'company_name', 'file_description', 'pdf_button_text', 'pdf_button_color_hex', 'pdf_font_family',
-        'text_background_color_hex', 'text_text_color_hex', 'text_font_family'
+        'text_background_color_hex', 'text_text_color_hex', 'text_font_family',
+        'coupon_primary_color_hex', 'coupon_secondary_color_hex', 'coupon_button_color_hex', 'coupon_button_text_color_hex', 'coupon_font_family',
+        'coupon_company', 'coupon_title', 'coupon_description', 'coupon_sales_badge', 'coupon_sales_badge_color_hex', 'coupon_sales_badge_text_color_hex', 'coupon_code_button_text',
+        'coupon_valid_until', 'coupon_view_more_website'
     ];
     
     step1Fields.forEach(fieldId => {
@@ -1702,6 +1971,49 @@ function validateWebsite(input) {
     }
 }
 
+function validateCouponWebsite(input) {
+    if (typeof input === 'string') {
+        const website = input.trim();
+        if (website === '') return true;
+        if (!website.startsWith('https://')) return false;
+        try {
+            const url = new URL(website);
+            return url.protocol === 'https:';
+        } catch (e) {
+            return false;
+        }
+    }
+    const website = input.value.trim();
+    const errorDiv = document.getElementById('coupon_view_more_website_error');
+    if (website === '') {
+        input.classList.remove('border-red-500');
+        if (errorDiv) errorDiv.classList.add('hidden');
+        return true;
+    }
+    if (!website.startsWith('https://')) {
+        input.classList.add('border-red-500');
+        if (errorDiv) {
+            errorDiv.classList.remove('hidden');
+            errorDiv.textContent = 'Website URL must start with https://';
+        }
+        return false;
+    }
+    try {
+        const url = new URL(website);
+        if (url.protocol === 'https:') {
+            input.classList.remove('border-red-500');
+            if (errorDiv) errorDiv.classList.add('hidden');
+            return true;
+        }
+    } catch (e) {}
+    input.classList.add('border-red-500');
+    if (errorDiv) {
+        errorDiv.classList.remove('hidden');
+        errorDiv.textContent = 'You have entered an invalid link. Please try again.';
+    }
+    return false;
+}
+
 function isValidAppStoreLink(url) {
     return url.startsWith('https://apps.apple.com/');
 }
@@ -1828,15 +2140,62 @@ function validateStep1() {
             }
             break;
             
-        case 'coupon':
-            const couponImage = document.getElementById('coupon_image');
-            if (!couponImage || !couponImage.files || couponImage.files.length === 0) {
-                errors.push('Coupon image is required');
-                if (couponImage) couponImage.closest('.border-dashed')?.classList.add('border-red-500');
-            } else if (couponImage) {
-                couponImage.closest('.border-dashed')?.classList.remove('border-red-500');
+        case 'coupon': {
+            const couponCompany = document.getElementById('coupon_company');
+            if (!couponCompany || !couponCompany.value.trim()) {
+                errors.push('Company name is required');
+                if (couponCompany) couponCompany.classList.add('border-red-500');
+            } else if (couponCompany) couponCompany.classList.remove('border-red-500');
+            const couponTitle = document.getElementById('coupon_title');
+            if (!couponTitle || !couponTitle.value.trim()) {
+                errors.push('Coupon title is required');
+                if (couponTitle) couponTitle.classList.add('border-red-500');
+            } else if (couponTitle) couponTitle.classList.remove('border-red-500');
+            const couponSalesBadge = document.getElementById('coupon_sales_badge');
+            if (!couponSalesBadge || !couponSalesBadge.value.trim()) {
+                errors.push('Sales badge is required');
+                if (couponSalesBadge) couponSalesBadge.classList.add('border-red-500');
+            } else if (couponSalesBadge) couponSalesBadge.classList.remove('border-red-500');
+            const couponValidUntil = document.getElementById('coupon_valid_until');
+            if (!couponValidUntil || !couponValidUntil.value.trim()) {
+                errors.push('Valid until date is required');
+                if (couponValidUntil) couponValidUntil.classList.add('border-red-500');
+            } else if (couponValidUntil) couponValidUntil.classList.remove('border-red-500');
+            const useBarcode = document.getElementById('coupon_use_barcode');
+            const barcodeImage = document.getElementById('coupon_barcode_image');
+            const hasBarcode = useBarcode && useBarcode.checked && barcodeImage && barcodeImage.files && barcodeImage.files.length > 0;
+            if (useBarcode && useBarcode.checked && barcodeImage && (!barcodeImage.files || barcodeImage.files.length === 0)) {
+                errors.push('Please upload a barcode image when "Use barcode" is enabled');
+                barcodeImage.closest('.border-dashed')?.classList.add('border-red-500');
+            } else if (barcodeImage) {
+                barcodeImage.closest('.border-dashed')?.classList.remove('border-red-500');
+            }
+            const couponViewMoreWebsite = document.getElementById('coupon_view_more_website');
+            const websiteValue = couponViewMoreWebsite ? couponViewMoreWebsite.value.trim() : '';
+            if (!hasBarcode && !websiteValue) {
+                errors.push('Please enter a website URL or upload a barcode (at least one is required)');
+                if (couponViewMoreWebsite) couponViewMoreWebsite.classList.add('border-red-500');
+            } else if (couponViewMoreWebsite && websiteValue) {
+                if (!validateCouponWebsite(websiteValue)) {
+                    errors.push(websiteValue.startsWith('https://') ? 'You have entered an invalid link. Please try again.' : 'Website URL must start with https://');
+                    couponViewMoreWebsite.classList.add('border-red-500');
+                    const errorDiv = document.getElementById('coupon_view_more_website_error');
+                    if (errorDiv) {
+                        errorDiv.classList.remove('hidden');
+                        errorDiv.textContent = websiteValue.startsWith('https://') ? 'You have entered an invalid link. Please try again.' : 'Website URL must start with https://';
+                    }
+                } else {
+                    couponViewMoreWebsite.classList.remove('border-red-500');
+                    const errorDiv = document.getElementById('coupon_view_more_website_error');
+                    if (errorDiv) errorDiv.classList.add('hidden');
+                }
+            } else if (couponViewMoreWebsite) {
+                couponViewMoreWebsite.classList.remove('border-red-500');
+                const errorDiv = document.getElementById('coupon_view_more_website_error');
+                if (errorDiv) errorDiv.classList.add('hidden');
             }
             break;
+        }
             
         case 'event':
             const eventName = document.getElementById('event_name');

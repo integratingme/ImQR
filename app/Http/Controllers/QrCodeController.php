@@ -93,21 +93,30 @@ class QrCodeController extends Controller
                 'customization' => $customization,
             ]);
 
-            $file = $this->qrCodeService->handleFileUpload(
-                $qrCode,
-                $request->file($fileField),
-                $fileType
-            );
-
-            // For PDF, store the file URL and generate page URL
-            if ($type === 'pdf') {
-                $validated[$urlField] = asset('storage/' . $file->file_path);
-                $validated['pdf_page_url'] = route('qr-codes.pdf-page', $qrCode->id);
-            } else {
-                $validated[$urlField] = asset('storage/' . $file->file_path);
+            // Coupon presentation image is optional; PDF and MP3 always have a file
+            $hasMainFile = ($type === 'coupon') ? $request->hasFile($fileField) : true;
+            if ($hasMainFile) {
+                $file = $this->qrCodeService->handleFileUpload(
+                    $qrCode,
+                    $request->file($fileField),
+                    $fileType
+                );
+                // For PDF, store the file URL and generate page URL
+                if ($type === 'pdf') {
+                    $validated[$urlField] = asset('storage/' . $file->file_path);
+                    $validated['pdf_page_url'] = route('qr-codes.pdf-page', $qrCode->id);
+                } else {
+                    $validated[$urlField] = asset('storage/' . $file->file_path);
+                }
             }
-            
+
             $qrCode->update(['data' => $validated]);
+            // For coupon, also handle optional logo and barcode uploads, then set coupon page URL and regenerate QR
+            if ($type === 'coupon') {
+                $this->handleFileUploads($request, $qrCode, $type);
+                $validated['coupon_page_url'] = route('qr-codes.coupon-page', $qrCode->id);
+                $qrCode->update(['data' => $validated]);
+            }
             $this->qrCodeService->regenerateQrCode($qrCode, $colors, $customization);
         } else {
             $qrCode = $this->qrCodeService->generate($type, $validated, $colors, $customization);
@@ -312,11 +321,67 @@ class QrCodeController extends Controller
         ));
     }
 
+    public function showCouponPage($id)
+    {
+        $qrCode = QrCode::with('files')->findOrFail($id);
+
+        if ($qrCode->type !== 'coupon') {
+            abort(404);
+        }
+
+        $data = $qrCode->data ?? [];
+        $primaryColor = $data['coupon_primary_color'] ?? '#6594FF';
+        $secondaryColor = $data['coupon_secondary_color'] ?? '#FFFFFF';
+        $company = $data['coupon_company'] ?? '';
+        $title = $data['coupon_title'] ?? 'Your coupon title';
+        $description = $data['coupon_description'] ?? 'Description';
+        $salesBadge = $data['coupon_sales_badge'] ?? '25% OFF*';
+        $salesBadgeColor = $data['coupon_sales_badge_color'] ?? '#9FE2BF';
+        $salesBadgeTextColor = $data['coupon_sales_badge_text_color'] ?? '#1f2937';
+        $codeButtonText = $data['coupon_code_button_text'] ?? 'Get code';
+        $buttonColor = $data['coupon_button_color'] ?? '#D6D6D6';
+        $buttonTextColor = $data['coupon_button_text_color'] ?? '#1f2937';
+        $validUntil = $data['coupon_valid_until'] ?? '';
+        $viewMoreText = $data['coupon_view_more_text'] ?? 'View more';
+        $viewMoreWebsite = $data['coupon_view_more_website'] ?? '';
+        $useBarcode = !empty($data['coupon_use_barcode']);
+        $fontFamily = $data['coupon_font_family'] ?? 'Maven Pro';
+
+        $promoFile = $qrCode->files()->where('file_type', 'image')->first();
+        $promoImageUrl = $promoFile ? asset('storage/' . $promoFile->file_path) : asset('coupon-icons/coupon-promo-image.webp');
+        $logoFile = $qrCode->files()->where('file_type', 'logo')->first();
+        $logoUrl = $logoFile ? asset('storage/' . $logoFile->file_path) : null;
+        $barcodeFile = $qrCode->files()->where('file_type', 'barcode')->first();
+        $barcodeImageUrl = ($useBarcode && $barcodeFile) ? asset('storage/' . $barcodeFile->file_path) : null;
+
+        return view('qr-codes.coupon-page', compact(
+            'qrCode',
+            'primaryColor',
+            'secondaryColor',
+            'company',
+            'title',
+            'description',
+            'salesBadge',
+            'salesBadgeColor',
+            'salesBadgeTextColor',
+            'codeButtonText',
+            'buttonColor',
+            'buttonTextColor',
+            'validUntil',
+            'viewMoreText',
+            'viewMoreWebsite',
+            'promoImageUrl',
+            'logoUrl',
+            'barcodeImageUrl',
+            'fontFamily'
+        ));
+    }
+
     protected function handleFileUploads(Request $request, QrCode $qrCode, string $type)
     {
         $fileFields = [
             'menu' => ['menu_file' => 'menu'],
-            'coupon' => ['logo' => 'logo'],
+            'coupon' => ['logo' => 'logo', 'coupon_barcode_image' => 'barcode'],
             'event' => ['event_image' => 'image'],
             'app' => ['app_image' => 'image'],
         ];
