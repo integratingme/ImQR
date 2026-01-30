@@ -262,8 +262,8 @@
                     <div class="flex items-center justify-center sticky top-8">
                         <div id="phone-mockup-container-step1" class="relative w-full max-w-sm mx-auto ">
                             <img src="{{ asset('phone.png') }}" alt="Phone mockup" id="phone-mockup-step1" class="w-full h-auto object-contain relative z-10">
-                            <div id="phone-mockup-overlay-step1" class="absolute pointer-events-none" style="background-color: #FFFFFF; border-radius: 4rem; border: 2px solid #E5E7EB;">
-                                <div id="phone-mockup-content" class="w-full h-full flex flex-col p-6">
+                            <div id="phone-mockup-overlay-step1" class="absolute pointer-events-none overflow-hidden" style="background-color: #FFFFFF; border-radius: 4rem; border: 2px solid #E5E7EB;">
+                                <div id="phone-mockup-content" class="w-full h-full flex flex-col overflow-hidden rounded-[4rem]">
                                     <!-- Type-specific mockup preview will be shown here -->
                                 </div>
                             </div>
