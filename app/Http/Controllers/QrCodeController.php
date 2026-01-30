@@ -137,6 +137,13 @@ class QrCodeController extends Controller
                 // Regenerate QR code with app page URL
                 $this->qrCodeService->regenerateQrCode($qrCode, $colors, $customization);
             }
+
+            // For phone type, generate phone page URL and regenerate QR code
+            if ($type === 'phone') {
+                $validated['phone_page_url'] = route('qr-codes.phone-page', $qrCode->id);
+                $qrCode->update(['data' => $validated]);
+                $this->qrCodeService->regenerateQrCode($qrCode, $colors, $customization);
+            }
         }
 
         return response()->json([
@@ -204,7 +211,7 @@ class QrCodeController extends Controller
 
     public function history()
     {
-        $qrCodes = QrCode::whereIn('type', ['text', 'coupon', 'pdf', 'app'])
+        $qrCodes = QrCode::whereIn('type', ['text', 'coupon', 'pdf', 'app', 'phone'])
             ->latest()
             ->paginate(12);
         return view('qr-codes.history', compact('qrCodes'));
@@ -331,6 +338,50 @@ class QrCodeController extends Controller
             'appStoreButtonColor',
             'appStoreButtonTextColor',
             'appImageUrl'
+        ));
+    }
+
+    public function showPhonePage($id)
+    {
+        $qrCode = QrCode::findOrFail($id);
+
+        if ($qrCode->type !== 'phone') {
+            abort(404);
+        }
+
+        $data = $qrCode->data ?? [];
+        $phoneNumber = $data['phone_number'] ?? '';
+        $fullName = trim($data['full_name'] ?? '');
+
+        // Digits only (for WhatsApp/Viber); tel keeps leading + for international
+        $phoneDigits = preg_replace('/\D/', '', $phoneNumber);
+        $telUri = (str_starts_with($phoneNumber, '+') ? '+' : '') . $phoneDigits;
+
+        // WhatsApp: https://wa.me/<country_code><number> (digits only)
+        $whatsappUri = $phoneDigits ? 'https://wa.me/' . $phoneDigits : '#';
+
+        // Viber: viber://call?number=<digits>
+        $viberUri = $phoneDigits ? 'viber://call?number=' . $phoneDigits : '#';
+
+        // Display number as entered (or formatted)
+        $phoneNumberDisplay = trim($phoneNumber) ?: '—';
+
+        $backgroundColor = $data['phone_background_color'] ?? '#2d3748';
+        $textColor = $data['phone_text_color'] ?? '#ffffff';
+        $callButtonColor = $data['phone_call_button_color'] ?? '#22c55e';
+        $phoneFontFamily = $data['phone_font_family'] ?? 'Maven Pro';
+
+        return view('qr-codes.phone-page', compact(
+            'qrCode',
+            'telUri',
+            'whatsappUri',
+            'viberUri',
+            'fullName',
+            'phoneNumberDisplay',
+            'backgroundColor',
+            'textColor',
+            'callButtonColor',
+            'phoneFontFamily'
         ));
     }
 

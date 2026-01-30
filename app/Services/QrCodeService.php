@@ -213,18 +213,14 @@ class QrCodeService
     }
 
     /**
-     * Generate phone QR content (TEL format)
+     * Generate phone QR content (URL to phone landing page; page has tel: link to call)
      */
     protected function generatePhoneContent(array $data): string
     {
-        $phoneNumber = $data['phone_number'] ?? '';
-        
-        // Remove any non-digit characters except + for international format
-        $phoneNumber = preg_replace('/[^\d+]/', '', $phoneNumber);
-        
-        // If phone number doesn't start with +, add tel: prefix
-        // Standard format: tel:+1234567890 or tel:1234567890
-        return 'tel:' . $phoneNumber;
+        if (isset($data['phone_page_url']) && !empty($data['phone_page_url'])) {
+            return $data['phone_page_url'];
+        }
+        return url('/phone/preview');
     }
 
     /**

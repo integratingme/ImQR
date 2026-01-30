@@ -38,13 +38,14 @@
                     </div>
 
                     <div class="flex flex-col space-y-2">
-                        @if(in_array($qrCode->type, ['text', 'coupon', 'pdf', 'app']))
+                        @if(in_array($qrCode->type, ['text', 'coupon', 'pdf', 'app', 'phone']))
                             @php
                                 $pageRoutes = [
                                     'text' => ['route' => 'qr-codes.text-page', 'label' => 'View Text Page'],
                                     'coupon' => ['route' => 'qr-codes.coupon-page', 'label' => 'View Coupon Page'],
                                     'pdf' => ['route' => 'qr-codes.pdf-page', 'label' => 'View PDF Page'],
                                     'app' => ['route' => 'qr-codes.app-page', 'label' => 'View App Page'],
+                                    'phone' => ['route' => 'qr-codes.phone-page', 'label' => 'View Phone Page'],
                                 ];
                                 $page = $pageRoutes[$qrCode->type];
                             @endphp

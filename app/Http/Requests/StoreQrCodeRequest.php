@@ -111,7 +111,10 @@ class StoreQrCodeRequest extends FormRequest
                 'password' => 'required_unless:encryption,nopass|string|max:255',
             ],
             'phone' => [
+                'full_name' => 'nullable|string|max:255',
                 'phone_number' => 'required|string|max:50',
+                'phone_background_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+                'phone_font_family' => 'nullable|string|max:100',
             ],
             'mp3' => [
                 'mp3_file' => 'required|file|mimes:mp3,m4a,audio/mpeg,audio/mp3,audio/m4a,audio/x-m4a|max:20480', // 20MB
