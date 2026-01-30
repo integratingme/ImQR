@@ -204,7 +204,9 @@ class QrCodeController extends Controller
 
     public function history()
     {
-        $qrCodes = QrCode::latest()->paginate(12);
+        $qrCodes = QrCode::whereIn('type', ['text', 'coupon', 'pdf', 'app'])
+            ->latest()
+            ->paginate(12);
         return view('qr-codes.history', compact('qrCodes'));
     }
 
