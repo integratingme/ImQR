@@ -1262,8 +1262,12 @@ function updateStep1Preview() {
             const appPrimaryColor = document.getElementById('app_primary_color_hex')?.value || '#6594FF';
             const appFontFamily = document.getElementById('app_font_family')?.value || 'Maven Pro';
             const appTextColor = document.getElementById('app_text_color_hex')?.value || '#000000';
+            const appTextFontSize = parseInt(document.getElementById('app_text_font_size')?.value || '16', 10);
+            const appIconSize = parseInt(document.getElementById('app_icon_size')?.value || '96', 10);
             const appStoreLink = document.getElementById('app_store_link')?.value || '';
             const playStoreLink = document.getElementById('play_store_link')?.value || '';
+            const appStoreButtonColor = document.getElementById('app_store_button_color_hex')?.value || appPrimaryColor;
+            const appStoreButtonTextColor = document.getElementById('app_store_button_text_color_hex')?.value || appSecondaryColor;
             const appImagePreview = document.getElementById('app-img-preview');
             const appImageSrc = appImagePreview && !appImagePreview.classList.contains('hidden') 
                 ? appImagePreview.querySelector('img')?.src || '' 
@@ -1286,36 +1290,35 @@ function updateStep1Preview() {
                 }
             }
             
-            // Set split background on overlay div (top primary, bottom secondary)
-            if (overlay) {
-                overlay.style.background = `linear-gradient(to bottom, ${appPrimaryColor} 0%, ${appPrimaryColor} 25%, ${appSecondaryColor} 25%, ${appSecondaryColor} 100%)`;
-            }
-            
+            if (overlay) overlay.style.background = '';
+            const appIconHalf = Math.floor(appIconSize / 2);
             mockupHtml = `
                 <div class="w-full h-full rounded-lg overflow-hidden flex flex-col relative" style="font-family: '${appFontFamily}', sans-serif;">
-                    <div class="flex flex-col items-center px-4 pt-16" style="height: 25%;">
-                        <div class="w-24 h-24 rounded-3xl flex items-center justify-center text-white font-bold text-2xl flex-shrink-0 shadow-lg border-4 border-white" style="background-color: ${appPrimaryColor}; position: absolute; top: 4rem; left: 50%; transform: translateX(-50%); z-index: 10;">
+                    <div class="flex-shrink-0 flex flex-col justify-end items-center" style="height: 25vh; background-color: ${appPrimaryColor};">
+                        <div class="rounded-3xl flex items-center justify-center text-white font-bold text-2xl flex-shrink-0 shadow-lg border-4 border-white" style="width: ${appIconSize}px; height: ${appIconSize}px; background-color: ${appPrimaryColor}; margin-bottom: -5vh; position: relative; z-index: 10;">
                             ${appImageSrc 
                                 ? `<img src="${appImageSrc}" alt="App Logo" class="w-full h-full object-contain rounded-xl">`
                                 : (appName ? appName.charAt(0).toUpperCase() : 'A')
                             }
                         </div>
-                        <div class="mt-32 flex flex-col items-center">
-                            <div class="text-lg font-bold mb-2 text-center" style="color: ${appTextColor};">
+                    </div>
+                    <div class="flex-1 flex flex-col min-h-0" style="background-color: ${appSecondaryColor}; padding-top: calc(3vh + ${appIconHalf}px);">
+                        <div class="flex flex-col items-center px-4 pt-0">
+                            <div class="font-bold mb-2 text-center" style="color: ${appTextColor}; font-size: ${appTextFontSize + 16}px;">
                                 ${appName || 'Your app name here'}
                             </div>
-                            <div class="text-sm px-2" style="color: ${appTextColor};">
+                            <div class="px-2 text-center max-w-md mb-6" style="color: ${appTextColor}; font-size: ${appTextFontSize}px;">
                                 ${appDescription || 'Your app description here'}
                             </div>
                         </div>
-                    </div>
-                    <div class="flex-1 flex flex-col items-center justify-center gap-3 px-4 pb-4">
-                        <button class="w-full py-3 rounded-lg text-white font-medium transition-colors shadow-lg" style="background-color: ${appPrimaryColor};">
-                            ${appStoreButtonText}
-                        </button>
-                        <button class="w-full py-3 rounded-lg text-white font-medium transition-colors shadow-lg" style="background-color: ${appPrimaryColor};">
-                            ${playStoreButtonText}
-                        </button>
+                        <div class="flex-1 flex flex-col justify-center gap-3 px-4 pb-4 min-h-0">
+                            <button class="w-full py-3 rounded-lg font-medium transition-colors shadow-lg" style="background-color: ${appStoreButtonColor}; color: ${appStoreButtonTextColor};">
+                                ${appStoreButtonText}
+                            </button>
+                            <button class="w-full py-3 rounded-lg font-medium transition-colors shadow-lg" style="background-color: ${appStoreButtonColor}; color: ${appStoreButtonTextColor};">
+                                ${playStoreButtonText}
+                            </button>
+                        </div>
                     </div>
                 </div>
             `;
@@ -1401,6 +1404,7 @@ function updateStep1Preview() {
             const pdfTitle = document.getElementById('pdf_title')?.value || '';
             const pdfWebsite = document.getElementById('pdf_website')?.value || '';
             const pdfFile = document.getElementById('pdf_file')?.files?.[0];
+            const pdfFileDescription = document.getElementById('file_description')?.value || '';
             const pdfButtonText = document.getElementById('pdf_button_text')?.value || 'Download PDF';
             const pdfButtonColor = document.getElementById('pdf_button_color_hex')?.value || '#D6D6D6';
             const pdfFontFamily = document.getElementById('pdf_font_family')?.value || 'Maven Pro';
@@ -1454,6 +1458,12 @@ function updateStep1Preview() {
                                 </div>
                             `}
                         </div>
+                        
+                        ${pdfFileDescription ? `
+                        <div class="w-[70%] mx-auto mb-6 text-center text-xs" style="color: ${pdfPrimaryColor === '#FFFFFF' ? '#000000' : '#FFFFFF'}; font-family: '${pdfFontFamily}', sans-serif;">
+                            ${pdfFileDescription}
+                        </div>
+                        ` : ''}
                         
                         <!-- Download Button -->
                         <button type="button" class="px-8 py-3.5 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 mb-4" style="background-color: ${pdfButtonColor}; color: ${buttonTextColor}; font-family: '${pdfFontFamily}', sans-serif;">
@@ -1807,6 +1817,8 @@ document.addEventListener('DOMContentLoaded', function() {
         'name', 'url', 'email', 'subject', 'message', 'text', 'phone_number', 
         'app_name', 'website_url', 'app_store_link', 'play_store_link', 'app_description',
         'app_primary_color_hex', 'app_secondary_color_hex', 'app_button_text', 'app_button_color_hex', 'app_font_family', 'app_text_color_hex',
+        'app_text_font_size', 'app_icon_size',
+        'app_store_button_color_hex', 'app_store_button_text_color_hex',
         'ssid', 'encryption', 'password', 'address',
         'event_name', 'company_name', 'date', 'time', 'location', 'description',
         'pdf_primary_color_hex', 'pdf_secondary_color_hex', 'pdf_title', 'pdf_website', 

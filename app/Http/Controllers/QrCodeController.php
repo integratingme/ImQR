@@ -300,10 +300,17 @@ class QrCodeController extends Controller
         $playStoreLink = $data['play_store_link'] ?? '';
         $appFontFamily = $data['app_font_family'] ?? 'Maven Pro';
         $textColor = $data['app_text_color'] ?? '#000000';
+        // Font size from slider (12–24px), stored in data when QR code is created
+        $appTextFontSize = (int) ($data['app_text_font_size'] ?? 16);
+        $appTextFontSize = max(12, min(24, $appTextFontSize));
+        $appIconSize = (int) ($data['app_icon_size'] ?? 96);
+        $appIconSize = max(64, min(128, $appIconSize));
         
         // Get colors from QR code colors field (Step 2 colors)
         $primaryColor = $qrCode->colors['primary'] ?? '#6594FF';
         $secondaryColor = $qrCode->colors['secondary'] ?? '#FFFFFF';
+        $appStoreButtonColor = $data['app_store_button_color'] ?? $primaryColor;
+        $appStoreButtonTextColor = $data['app_store_button_text_color'] ?? $secondaryColor;
         
         // Get app image if exists
         $appImageFile = $qrCode->files()->where('file_type', 'image')->first();
@@ -317,8 +324,12 @@ class QrCodeController extends Controller
             'playStoreLink',
             'appFontFamily',
             'textColor',
+            'appTextFontSize',
+            'appIconSize',
             'primaryColor',
             'secondaryColor',
+            'appStoreButtonColor',
+            'appStoreButtonTextColor',
             'appImageUrl'
         ));
     }

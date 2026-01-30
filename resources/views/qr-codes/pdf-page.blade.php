@@ -54,6 +54,12 @@
                         </iframe>
                     </div>
                     
+                    @if(!empty($fileDescription))
+                    <div class="w-[50%] mx-auto mb-6 text-center text-sm" style="color: {{ $primaryColor === '#FFFFFF' ? '#000000' : '#FFFFFF' }}; font-family: '{{ $pdfFontFamily ?? 'Maven Pro' }}', sans-serif;">
+                        {{ $fileDescription }}
+                    </div>
+                    @endif
+                    
                     <!-- Download Button -->
                     @php
                         // Button color defaults to #D6D6D6, text color defaults to secondary color

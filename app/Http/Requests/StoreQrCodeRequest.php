@@ -94,9 +94,13 @@ class StoreQrCodeRequest extends FormRequest
                 'app_button_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
                 'app_font_family' => 'nullable|string|max:100',
                 'app_text_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+                'app_text_font_size' => 'nullable|integer|min:12|max:24',
+                'app_icon_size' => 'nullable|integer|min:64|max:128',
                 'website_url' => ['nullable', 'url', 'max:2048', 'regex:/^https:\/\//'],
                 'app_store_link' => ['nullable', 'url', 'max:2048', 'regex:/^https:\/\/apps\.apple\.com\//'],
                 'play_store_link' => ['nullable', 'url', 'max:2048', 'regex:/^https:\/\/play\.google\.com\/store\/apps\//'],
+                'app_store_button_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+                'app_store_button_text_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
             ],
             'location' => [
                 'address' => 'required|string|max:500',

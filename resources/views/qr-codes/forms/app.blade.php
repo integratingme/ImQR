@@ -172,6 +172,15 @@
                 </div>
             </div>
 
+            <!-- App icon size (logo) -->
+            <div>
+                <label for="app_icon_size" class="label flex items-center justify-between">
+                    <span>App icon size</span>
+                    <span id="app_icon_size_value" class="text-sm font-medium text-dark-500">96px</span>
+                </label>
+                <input type="range" id="app_icon_size" name="app_icon_size" min="64" max="128" value="96" class="w-full h-2 rounded-lg appearance-none cursor-pointer bg-dark-500 accent-primary-500 [&::-webkit-slider-runnable-track]:bg-dark-500 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary-500 [&::-webkit-slider-thumb]:border-0 [&::-webkit-slider-thumb]:cursor-pointer">
+            </div>
+
             <!-- App Name -->
             <div>
                 <label for="app_name" class="label">App name</label>
@@ -182,6 +191,15 @@
             <div>
                 <label for="app_description" class="label">Description</label>
                 <textarea id="app_description" name="app_description" rows="4" class="input" placeholder="Enter app description"></textarea>
+            </div>
+
+            <!-- Text font size -->
+            <div>
+                <label for="app_text_font_size" class="label flex items-center justify-between">
+                    <span>Text font size</span>
+                    <span id="app_text_font_size_value" class="text-sm font-medium text-dark-500">16px</span>
+                </label>
+                <input type="range" id="app_text_font_size" name="app_text_font_size" min="12" max="24" value="16" class="w-full h-2 rounded-lg appearance-none cursor-pointer bg-dark-500 accent-primary-500 [&::-webkit-slider-runnable-track]:bg-dark-500 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary-500 [&::-webkit-slider-thumb]:border-0 [&::-webkit-slider-thumb]:cursor-pointer">
             </div>
         </div>
     </div>
@@ -236,6 +254,24 @@
                         <button type="button" onclick="clearPlayStoreLink()" class="p-2 text-dark-300 hover:text-red-500 transition-colors">
                             <img src="{{ asset('bin.svg') }}" alt="Delete" class="w-5 h-5">
                         </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Store button colors (default from color scheme) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-dark-200">
+                <div>
+                    <label for="app_store_button_color_hex" class="text-sm font-bold text-dark-500 mb-2 block">Button color</label>
+                    <div class="flex items-center gap-3">
+                        <input type="text" id="app_store_button_color_hex" name="app_store_button_color" value="#6594FF" class="input flex-1" placeholder="#6594FF">
+                        <input type="color" id="app_store_button_color_picker" value="#6594FF" class="w-10 h-10 rounded border border-gray-200 cursor-pointer">
+                    </div>
+                </div>
+                <div>
+                    <label for="app_store_button_text_color_hex" class="text-sm font-bold text-dark-500 mb-2 block">Button text color</label>
+                    <div class="flex items-center gap-3">
+                        <input type="text" id="app_store_button_text_color_hex" name="app_store_button_text_color" value="#FFFFFF" class="input flex-1" placeholder="#FFFFFF">
+                        <input type="color" id="app_store_button_text_color_picker" value="#FFFFFF" class="w-10 h-10 rounded border border-gray-200 cursor-pointer">
                     </div>
                 </div>
             </div>
@@ -348,6 +384,16 @@ document.addEventListener('DOMContentLoaded', function() {
             if (secondaryInput) secondaryInput.value = secondary;
             if (primaryColorPicker) primaryColorPicker.value = primary;
             if (secondaryColorPicker) secondaryColorPicker.value = secondary;
+            
+            // Sync store button colors to scheme (primary = button color, secondary = button text color)
+            const storeButtonColorHex = document.getElementById('app_store_button_color_hex');
+            const storeButtonColorPicker = document.getElementById('app_store_button_color_picker');
+            const storeButtonTextColorHex = document.getElementById('app_store_button_text_color_hex');
+            const storeButtonTextColorPicker = document.getElementById('app_store_button_text_color_picker');
+            if (storeButtonColorHex) storeButtonColorHex.value = primary;
+            if (storeButtonColorPicker) storeButtonColorPicker.value = primary;
+            if (storeButtonTextColorHex) storeButtonTextColorHex.value = secondary;
+            if (storeButtonTextColorPicker) storeButtonTextColorPicker.value = secondary;
             
             // Update active state
             document.querySelectorAll('.app-color-preset').forEach(b => {
@@ -551,6 +597,68 @@ document.addEventListener('DOMContentLoaded', function() {
         buttonTextInput.addEventListener('input', function() {
             if (typeof updateStep1Preview === 'function') {
                 updateStep1Preview();
+            }
+        });
+    }
+
+    // Text font size slider
+    const appTextFontSizeInput = document.getElementById('app_text_font_size');
+    const appTextFontSizeValue = document.getElementById('app_text_font_size_value');
+    if (appTextFontSizeInput && appTextFontSizeValue) {
+        appTextFontSizeInput.addEventListener('input', function() {
+            appTextFontSizeValue.textContent = this.value + 'px';
+            if (typeof updateStep1Preview === 'function') {
+                updateStep1Preview();
+            }
+        });
+    }
+
+    // App icon size slider
+    const appIconSizeInput = document.getElementById('app_icon_size');
+    const appIconSizeValue = document.getElementById('app_icon_size_value');
+    if (appIconSizeInput && appIconSizeValue) {
+        appIconSizeInput.addEventListener('input', function() {
+            appIconSizeValue.textContent = this.value + 'px';
+            if (typeof updateStep1Preview === 'function') {
+                updateStep1Preview();
+            }
+        });
+    }
+
+    // Store button color (App store section)
+    const storeButtonColorHex = document.getElementById('app_store_button_color_hex');
+    const storeButtonColorPicker = document.getElementById('app_store_button_color_picker');
+    if (storeButtonColorPicker && storeButtonColorHex) {
+        storeButtonColorPicker.addEventListener('input', function() {
+            storeButtonColorHex.value = this.value.toUpperCase();
+            if (typeof updateStep1Preview === 'function') updateStep1Preview();
+        });
+    }
+    if (storeButtonColorHex && storeButtonColorPicker) {
+        storeButtonColorHex.addEventListener('input', function() {
+            const color = this.value;
+            if (/^#[0-9A-F]{6}$/i.test(color)) {
+                storeButtonColorPicker.value = color;
+                if (typeof updateStep1Preview === 'function') updateStep1Preview();
+            }
+        });
+    }
+
+    // Store button text color (App store section)
+    const storeButtonTextColorHex = document.getElementById('app_store_button_text_color_hex');
+    const storeButtonTextColorPicker = document.getElementById('app_store_button_text_color_picker');
+    if (storeButtonTextColorPicker && storeButtonTextColorHex) {
+        storeButtonTextColorPicker.addEventListener('input', function() {
+            storeButtonTextColorHex.value = this.value.toUpperCase();
+            if (typeof updateStep1Preview === 'function') updateStep1Preview();
+        });
+    }
+    if (storeButtonTextColorHex && storeButtonTextColorPicker) {
+        storeButtonTextColorHex.addEventListener('input', function() {
+            const color = this.value;
+            if (/^#[0-9A-F]{6}$/i.test(color)) {
+                storeButtonTextColorPicker.value = color;
+                if (typeof updateStep1Preview === 'function') updateStep1Preview();
             }
         });
     }
