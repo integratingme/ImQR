@@ -48,6 +48,23 @@ class StoreQrCodeRequest extends FormRequest
             'menu' => [
                 'menu_file' => 'nullable|file|mimes:pdf|max:10240',
                 'menu_url' => ['nullable', 'url', 'max:2048', 'regex:/^https:\/\//'],
+                'menu_primary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+                'menu_secondary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+                'menu_font_family' => 'nullable|string|max:100',
+                'menu_restaurant_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,svg|max:5120',
+                'restaurant_name' => 'nullable|string|max:255',
+                'restaurant_description' => 'nullable|string|max:1000',
+                'menu_sections' => 'nullable|array',
+                'menu_sections.*.section_name' => 'nullable|string|max:255',
+                'menu_sections.*.section_description' => 'nullable|string|max:1000',
+                'menu_sections.*.products' => 'nullable|array',
+                'menu_sections.*.products.*.product_name' => 'nullable|string|max:255',
+                'menu_sections.*.products.*.name_translation' => 'nullable|string|max:255',
+                'menu_sections.*.products.*.product_description' => 'nullable|string|max:500',
+                'menu_sections.*.products.*.description_translation' => 'nullable|string|max:500',
+                'menu_sections.*.products.*.price' => 'nullable|string|max:50',
+                'menu_sections.*.products.*.allergens' => 'nullable|string|max:255',
+                'menu_sections.*.products.*.product_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,svg|max:5120',
             ],
             'coupon' => [
                 'coupon_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,svg|max:5120', // 5MB presentation image

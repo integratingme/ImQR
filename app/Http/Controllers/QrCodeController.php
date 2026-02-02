@@ -37,14 +37,14 @@ class QrCodeController extends Controller
         $type = $request->input('type');
         $validated = $request->validated();
 
-        // For PDF type, use Step 2 colors for QR code (Step 1 colors are stored in data for page background)
-        if ($type === 'pdf') {
+        // For PDF and menu types, use Step 2 colors for QR code (Step 1 colors are stored in data for page background)
+        if ($type === 'pdf' || $type === 'menu') {
             // QR code uses Step 2 colors
             $colors = [
                 'primary' => $validated['primary_color'] ?? '#000000',
                 'secondary' => $validated['secondary_color'] ?? '#FFFFFF',
             ];
-            // Step 1 colors (pdf_primary_color, pdf_secondary_color) are already in $validated and will be stored in data field
+            // Step 1 colors (pdf_*/menu_* primary, secondary, font) are already in $validated and will be stored in data field
         } else {
             $colors = [
                 'primary' => $validated['primary_color'] ?? '#000000',
@@ -143,6 +143,28 @@ class QrCodeController extends Controller
                 $validated['phone_page_url'] = route('qr-codes.phone-page', $qrCode->id);
                 $qrCode->update(['data' => $validated]);
                 $this->qrCodeService->regenerateQrCode($qrCode, $colors, $customization);
+            }
+
+            // For menu type, process menu_sections product images and store URLs in data
+            if ($type === 'menu' && !empty($validated['menu_sections'])) {
+                foreach ($validated['menu_sections'] as $si => &$section) {
+                    if (empty($section['products'] ?? [])) {
+                        continue;
+                    }
+                    foreach ($section['products'] as $pi => &$product) {
+                        if (isset($product['product_image']) && $product['product_image'] instanceof \Illuminate\Http\UploadedFile) {
+                            $file = $this->qrCodeService->handleFileUpload(
+                                $qrCode,
+                                $product['product_image'],
+                                'menu_product_' . $si . '_' . $pi
+                            );
+                            $product['product_image_url'] = asset('storage/' . $file->file_path);
+                            unset($product['product_image']);
+                        }
+                    }
+                }
+                unset($section, $product);
+                $qrCode->update(['data' => $validated]);
             }
         }
 
@@ -444,7 +466,7 @@ class QrCodeController extends Controller
     protected function handleFileUploads(Request $request, QrCode $qrCode, string $type)
     {
         $fileFields = [
-            'menu' => ['menu_file' => 'menu'],
+            'menu' => ['menu_file' => 'menu', 'menu_restaurant_image' => 'restaurant_image'],
             'coupon' => ['logo' => 'logo', 'coupon_barcode_image' => 'barcode'],
             'event' => ['event_image' => 'image'],
             'app' => ['app_image' => 'image'],

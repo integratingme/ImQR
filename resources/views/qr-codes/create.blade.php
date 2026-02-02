@@ -1420,6 +1420,189 @@ function updateStep1Preview() {
             break;
         }
             
+        case 'menu': {
+            const menuPrimaryColor = document.getElementById('menu_primary_color_hex')?.value || '#6594FF';
+            const menuSecondaryColor = document.getElementById('menu_secondary_color_hex')?.value || '#FFFFFF';
+            const menuFontFamily = document.getElementById('menu_font_family')?.value || 'Maven Pro';
+            const restaurantName = document.getElementById('restaurant_name')?.value || '';
+            const restaurantDescription = document.getElementById('restaurant_description')?.value || '';
+            const menuRestaurantImg = document.getElementById('menu-restaurant-image-thumb');
+            const hasMenuImage = menuRestaurantImg && menuRestaurantImg.src && menuRestaurantImg.src.startsWith('data:');
+            const menuRestaurantNameFontSize = parseInt(document.getElementById('menu_restaurant_name_font_size')?.value || '18', 10);
+            const menuRestaurantDescFontSize = parseInt(document.getElementById('menu_restaurant_description_font_size')?.value || '14', 10);
+            const menuRestaurantNameColor = document.getElementById('menu_restaurant_name_color_hex')?.value || document.getElementById('menu_restaurant_name_color')?.value || '#FFFFFF';
+            const menuRestaurantDescColor = document.getElementById('menu_restaurant_description_color_hex')?.value || document.getElementById('menu_restaurant_description_color')?.value || '#FFFFFF';
+
+            const menuFileInput = document.getElementById('menu_file');
+            const menuUrlInput = document.getElementById('menu_url');
+            const menuSectionsContainer = document.getElementById('menu-sections-container');
+            const hasMenuPdf = menuFileInput && menuFileInput.files && menuFileInput.files.length > 0;
+            const hasMenuUrl = menuUrlInput && menuUrlInput.value && menuUrlInput.value.trim() !== '';
+            const menuUrlValue = (menuUrlInput && menuUrlInput.value && menuUrlInput.value.trim()) || '';
+            const hasMenuSections = menuSectionsContainer && menuSectionsContainer.querySelectorAll('.menu-section-block').length > 0;
+            const menuMode = hasMenuSections ? 'sections' : (hasMenuUrl ? 'url' : (hasMenuPdf ? 'pdf' : 'sections'));
+
+            const escapeMenuHtml = (s) => {
+                if (!s) return '';
+                const div = document.createElement('div');
+                div.textContent = s;
+                return div.innerHTML;
+            };
+            let sectionNames = [];
+            let firstSectionProducts = [];
+            if (menuSectionsContainer) {
+                const sectionBlocks = menuSectionsContainer.querySelectorAll('.menu-section-block');
+                sectionBlocks.forEach((block, idx) => {
+                    const sectionNameInput = block.querySelector('input[name*="[section_name]"]');
+                    const sectionName = sectionNameInput ? sectionNameInput.value.trim() : '';
+                    if (sectionName) sectionNames.push({ name: sectionName, index: idx });
+                    if (idx === 0) {
+                        const productsContainer = block.querySelector('[id^="menu-section-products-"]');
+                        if (productsContainer) {
+                            const productBlocks = productsContainer.querySelectorAll('.menu-product-block');
+                            productBlocks.forEach((pb) => {
+                                const nameInput = pb.querySelector('input[name*="[product_name]"]');
+                                const priceInput = pb.querySelector('input[name*="[price]"]');
+                                const descInput = pb.querySelector('input[name*="[product_description]"]');
+                                const allergensInput = pb.querySelector('input[name*="[allergens]"]');
+                                const thumbImg = pb.querySelector('.menu-product-image-thumb');
+                                const imgSrc = thumbImg && thumbImg.src && thumbImg.src.startsWith('data:') ? thumbImg.src : '';
+                                firstSectionProducts.push({
+                                    name: nameInput ? nameInput.value.trim() : '',
+                                    price: priceInput ? priceInput.value.trim() : '',
+                                    description: descInput ? descInput.value.trim() : '',
+                                    allergens: allergensInput ? allergensInput.value.trim() : '',
+                                    imgSrc: imgSrc
+                                });
+                            });
+                        }
+                    }
+                });
+            }
+
+            let categoryPillsHtml = '';
+            sectionNames.forEach((s, i) => {
+                const isSelected = i === 0;
+                categoryPillsHtml += `<span class="flex-shrink-0 py-1.5 px-3 rounded-full text-xs font-semibold whitespace-nowrap ${isSelected ? 'text-white' : 'text-gray-700 bg-gray-100'}" style="${isSelected ? 'background-color: ' + menuPrimaryColor + ';' : ''}">${escapeMenuHtml(s.name)}</span>`;
+            });
+            if (!categoryPillsHtml) {
+                categoryPillsHtml = `<span class="flex-shrink-0 py-1.5 px-3 rounded-full text-xs font-semibold whitespace-nowrap text-white inline-flex items-center gap-1.5" style="background-color: ${menuPrimaryColor};">
+                    <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    Add section
+                </span>`;
+            }
+
+            let productCardsHtml = '';
+            firstSectionProducts.forEach((p) => {
+                if (!p.name && !p.price) return;
+                const imgPlaceholder = `<div class="w-full h-full rounded-full flex items-center justify-center bg-gray-200"><svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg></div>`;
+                const productImgHtml = p.imgSrc ? `<img src="${p.imgSrc}" alt="" class="w-full h-full object-cover rounded-full">` : imgPlaceholder;
+                productCardsHtml += `
+                    <div class="rounded-xl bg-white shadow-sm border border-gray-100 p-2.5 flex flex-col gap-1">
+                        <div class="flex gap-2">
+                            <div class="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-gray-100">${productImgHtml}</div>
+                            <div class="min-w-0 flex-1">
+                                <div class="text-xs font-bold text-gray-800 truncate">${escapeMenuHtml(p.name) || '—'}</div>
+                                ${p.description ? `<div class="text-[10px] text-gray-600 line-clamp-2 mt-0.5">${escapeMenuHtml(p.description)}</div>` : ''}
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between mt-auto">
+                            ${p.price ? `<span class="text-xs font-bold text-gray-800">${escapeMenuHtml(p.price)}</span>` : ''}
+                            ${p.allergens ? `<span class="text-[10px] text-gray-400 truncate max-w-[50%]">${escapeMenuHtml(p.allergens)}</span>` : ''}
+                        </div>
+                    </div>`;
+            });
+            if (!productCardsHtml) {
+                productCardsHtml = `
+                    <div class="rounded-xl bg-white shadow-sm border border-gray-100 p-2.5 flex flex-col gap-1 border-2 border-dashed border-gray-200">
+                        <div class="flex gap-2">
+                            <div class="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-gray-100 flex items-center justify-center">
+                                <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                            </div>
+                            <div class="min-w-0 flex-1 flex items-center">
+                                <div class="text-xs font-semibold text-gray-500">Add product</div>
+                            </div>
+                        </div>
+                    </div>`;
+            }
+
+            let menuBottomContentHtml = '';
+            if (menuMode === 'pdf') {
+                const pdfFileName = menuFileInput && menuFileInput.files[0] ? escapeMenuHtml(menuFileInput.files[0].name) : 'menu.pdf';
+                menuBottomContentHtml = `
+                    <div class="flex-1 min-h-0 rounded-t-2xl overflow-hidden flex flex-col items-center justify-center p-4" style="background-color: ${menuSecondaryColor}; color: #1f2937;">
+                        <div class="w-20 h-20 rounded-xl bg-white shadow-sm border border-gray-100 flex items-center justify-center mb-4">
+                            <svg class="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                        <p class="text-xs font-medium text-gray-600 truncate max-w-full px-2 mb-4">${pdfFileName}</p>
+                        <button type="button" class="py-2.5 px-5 rounded-xl text-sm font-semibold text-white shadow-md" style="background-color: ${menuPrimaryColor};">View menu</button>
+                    </div>`;
+            } else if (menuMode === 'url') {
+                const urlDisplay = menuUrlValue.length > 35 ? menuUrlValue.substring(0, 32) + '...' : menuUrlValue;
+                menuBottomContentHtml = `
+                    <div class="flex-1 min-h-0 rounded-t-2xl overflow-hidden flex flex-col p-4 pt-4" style="background-color: ${menuSecondaryColor}; color: #1f2937;">
+                        <div class="w-full max-w-full rounded-lg bg-gray-100 px-3 py-2.5 mb-3">
+                            <p class="text-xs text-gray-600 truncate">${escapeMenuHtml(urlDisplay)}</p>
+                        </div>
+                        <button type="button" class="w-full py-3 rounded-xl text-sm font-semibold text-white shadow-md flex-shrink-0" style="background-color: ${menuPrimaryColor};">Open menu</button>
+                    </div>`;
+            } else {
+                menuBottomContentHtml = `
+                    <div class="flex-shrink-0 px-3 py-2 overflow-x-auto" style="background-color: ${menuSecondaryColor};">
+                        <div class="flex gap-2 items-center">
+                            ${categoryPillsHtml}
+                        </div>
+                    </div>
+                    <div class="flex-1 min-h-0 rounded-t-2xl overflow-hidden overflow-y-auto" style="background-color: ${menuSecondaryColor}; color: #1f2937;">
+                        <div class="grid grid-cols-2 gap-2 p-3 pb-4">
+                            ${productCardsHtml}
+                        </div>
+                    </div>`;
+            }
+
+            if (overlay) overlay.style.backgroundColor = menuSecondaryColor;
+
+            if (menuFontFamily !== 'Maven Pro') {
+                const fontId = menuFontFamily.replace(/\s+/g, '+');
+                const linkId = 'google-font-menu-' + fontId;
+                if (!document.getElementById(linkId)) {
+                    const link = document.createElement('link');
+                    link.id = linkId;
+                    link.rel = 'stylesheet';
+                    link.href = `https://fonts.googleapis.com/css2?family=${fontId}:wght@400;500;600;700&display=swap`;
+                    document.head.appendChild(link);
+                }
+            }
+
+            mockupHtml = `
+                <div class="w-full h-full rounded-lg overflow-hidden flex flex-col" style="font-family: '${menuFontFamily}', sans-serif;">
+                    <!-- Top section: title (mt-12) → description → image at bottom -->
+                    <div class="flex-shrink-0 flex flex-col rounded-t-lg overflow-hidden" style="height: 32%; min-height: 32%; background-color: ${menuPrimaryColor};">
+                        <div class="flex-shrink-0 px-4 pt-8 pb-2 text-center">
+                            <div class="font-bold truncate" style="font-size: ${menuRestaurantNameFontSize}px; margin-top: 32px; color: ${menuRestaurantNameColor};">${escapeMenuHtml(restaurantName) || 'Restaurant name'}</div>
+                            <div class="mt-1.5 line-clamp-2" style="font-size: ${menuRestaurantDescFontSize}px; color: ${menuRestaurantDescColor};">${escapeMenuHtml(restaurantDescription) || 'Short description of your restaurant'}</div>
+                        </div>
+                        <div class="flex-1 min-h-0"></div>
+                        <div class="flex-shrink-0 w-full overflow-hidden rounded-b-2xl" style="height: 55%; max-height: 55%;">
+                            ${hasMenuImage
+                                ? `<div class="w-full h-full flex items-center justify-center overflow-hidden"><img src="${menuRestaurantImg.src}" alt="" class="h-full w-full object-cover object-bottom"></div>`
+                                : `<div class="w-full h-full flex items-center justify-center bg-white/5">
+                                    <svg class="w-10 h-10 opacity-50" style="color: rgba(255,255,255,0.6);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                   </div>`
+                            }
+                        </div>
+                    </div>
+                    <!-- Bottom: PDF / URL / sections (changes by mode) -->
+                    ${menuBottomContentHtml}
+                </div>
+            `;
+            break;
+        }
+
         case 'pdf':
             const pdfPrimaryColor = document.getElementById('pdf_primary_color_hex')?.value || '#6594FF';
             const pdfSecondaryColor = document.getElementById('pdf_secondary_color_hex')?.value || '#FFFFFF';
@@ -1845,6 +2028,8 @@ document.addEventListener('DOMContentLoaded', function() {
         'event_name', 'company_name', 'date', 'time', 'location', 'description',
         'pdf_primary_color_hex', 'pdf_secondary_color_hex', 'pdf_title', 'pdf_website', 
         'company_name', 'file_description', 'pdf_button_text', 'pdf_button_color_hex', 'pdf_font_family',
+        'menu_primary_color_hex', 'menu_secondary_color_hex', 'menu_font_family',
+        'restaurant_name', 'restaurant_description',
         'text_background_color_hex', 'text_text_color_hex', 'text_font_family',
         'coupon_primary_color_hex', 'coupon_secondary_color_hex', 'coupon_button_color_hex', 'coupon_button_text_color_hex', 'coupon_font_family',
         'coupon_company', 'coupon_title', 'coupon_description', 'coupon_sales_badge', 'coupon_sales_badge_color_hex', 'coupon_sales_badge_text_color_hex', 'coupon_code_button_text',
