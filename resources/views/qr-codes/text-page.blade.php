@@ -25,9 +25,9 @@
 </head>
 <body>
     <div class="min-h-screen flex flex-col items-center justify-center p-6" style="background-color: {{ $backgroundColor ?? '#FFFFFF' }};">
-        <div class="w-full max-w-3xl">
-            <div class="bg-white rounded-lg shadow-2xl p-8 md:p-12">
-                <div class="prose max-w-none" style="color: {{ $textColor ?? '#000000' }}; font-family: '{{ $fontFamily }}', sans-serif;">
+        <div class="w-full max-w-3xl h-[80vh] flex flex-col">
+            <div class="bg-white rounded-lg shadow-2xl p-8 md:p-12 flex-1 min-h-0 flex flex-col overflow-hidden">
+                <div class="prose max-w-none flex-1 min-h-0 overflow-y-auto" style="color: {{ $textColor ?? '#000000' }}; font-family: '{{ $fontFamily }}', sans-serif;">
                     <p class="text-base md:text-lg leading-relaxed whitespace-pre-wrap">{{ $textContent }}</p>
                 </div>
             </div>

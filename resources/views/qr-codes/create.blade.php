@@ -1064,7 +1064,7 @@ function updateStep1Preview() {
             mockupHtml = `
                 <div class="w-full h-full rounded-lg overflow-hidden flex flex-col">
                     <!-- Browser Header -->
-                    <div class="bg-white border-b border-gray-200 px-3 py-2 flex items-center gap-2 mt-8">
+                    <div class="bg-white border-b border-gray-200 px-3 py-2 flex items-center gap-2 mt-15">
                         <div class="flex gap-1">
                             <div class="w-3 h-3 rounded-full bg-red-400"></div>
                             <div class="w-3 h-3 rounded-full bg-yellow-400"></div>
@@ -1148,9 +1148,9 @@ function updateStep1Preview() {
             
             mockupHtml = `
                 <div class="w-full h-full rounded-lg overflow-hidden flex items-center justify-center p-4" style="font-family: '${textFontFamily}', sans-serif;">
-                    <div class="w-full max-w-2xl">
-                        <div class="bg-white rounded-lg shadow-2xl p-6 md:p-8">
-                            <div class="prose max-w-none" style="color: ${textTextColor}; font-family: '${textFontFamily}', sans-serif;">
+                    <div class="w-full max-w-2xl h-[80%] flex flex-col min-h-0">
+                        <div class="bg-white rounded-lg shadow-2xl p-6 md:p-8 flex-1 min-h-0 flex flex-col overflow-hidden">
+                            <div class="prose max-w-none flex-1 min-h-0 overflow-y-auto" style="color: ${textTextColor}; font-family: '${textFontFamily}', sans-serif;">
                                 <p class="text-xs md:text-sm leading-relaxed whitespace-pre-wrap">${text}</p>
                             </div>
                         </div>
@@ -1423,7 +1423,7 @@ function updateStep1Preview() {
         case 'pdf':
             const pdfPrimaryColor = document.getElementById('pdf_primary_color_hex')?.value || '#6594FF';
             const pdfSecondaryColor = document.getElementById('pdf_secondary_color_hex')?.value || '#FFFFFF';
-            const pdfTitle = document.getElementById('pdf_title')?.value || '';
+            const pdfTitle = document.getElementById('pdf_title')?.value || 'Title';
             const pdfWebsite = document.getElementById('pdf_website')?.value || '';
             const pdfFile = document.getElementById('pdf_file')?.files?.[0];
             const pdfFileDescription = document.getElementById('file_description')?.value || '';
