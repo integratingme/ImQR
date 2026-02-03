@@ -34,6 +34,19 @@ class QrCodeController extends Controller
 
     public function store(StoreQrCodeRequest $request)
     {
+        try {
+            return $this->performStore($request);
+        } catch (\Throwable $e) {
+            \Log::error('QR code store failed', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return response()->json([
+                'success' => false,
+                'message' => config('app.debug') ? $e->getMessage() : 'Server error. Please check your input and try again.',
+            ], 500);
+        }
+    }
+
+    protected function performStore(StoreQrCodeRequest $request)
+    {
         $type = $request->input('type');
         $validated = $request->validated();
 
@@ -119,7 +132,24 @@ class QrCodeController extends Controller
             }
             $this->qrCodeService->regenerateQrCode($qrCode, $colors, $customization);
         } else {
-            $qrCode = $this->qrCodeService->generate($type, $validated, $colors, $customization);
+            // For menu type, strip file inputs from data so we can store JSON (files are handled via handleFileUploads)
+            $dataForStorage = $validated;
+            if ($type === 'menu') {
+                unset($dataForStorage['menu_file'], $dataForStorage['menu_restaurant_image']);
+                if (!empty($dataForStorage['menu_sections'])) {
+                    foreach ($dataForStorage['menu_sections'] as $si => &$section) {
+                        if (!empty($section['products'])) {
+                            foreach ($section['products'] as $pi => &$product) {
+                                unset($product['product_image']);
+                            }
+                        }
+                    }
+                    unset($section, $product);
+                }
+                $dataForStorage = $this->stripFilesFromArray($dataForStorage);
+            }
+
+            $qrCode = $this->qrCodeService->generate($type, $dataForStorage, $colors, $customization);
             $this->handleFileUploads($request, $qrCode, $type);
             
             // For text type, generate text page URL and regenerate QR code
@@ -164,15 +194,28 @@ class QrCodeController extends Controller
                     }
                 }
                 unset($section, $product);
-                $qrCode->update(['data' => $validated]);
+                $dataForStorage['menu_sections'] = $this->stripFilesFromArray($validated['menu_sections']);
+                $qrCode->update(['data' => $dataForStorage]);
+            }
+            
+            // For menu type, generate menu page URL and regenerate QR code
+            if ($type === 'menu') {
+                $dataForStorage['menu_page_url'] = route('qr-codes.menu-page', $qrCode->id);
+                $qrCode->update(['data' => $dataForStorage]);
+                // Regenerate QR code with menu page URL
+                $this->qrCodeService->regenerateQrCode($qrCode, $colors, $customization);
             }
         }
 
-        return response()->json([
+        $payload = [
             'success' => true,
             'qr_code_id' => $qrCode->id,
             'preview_url' => asset('storage/' . $qrCode->qr_image_path),
-        ]);
+        ];
+        if ($type === 'menu') {
+            $payload['menu_page_url'] = route('qr-codes.menu-page', $qrCode->id);
+        }
+        return response()->json($payload);
     }
 
     public function preview(Request $request)
@@ -233,7 +276,7 @@ class QrCodeController extends Controller
 
     public function history()
     {
-        $qrCodes = QrCode::whereIn('type', ['text', 'coupon', 'pdf', 'app', 'phone'])
+        $qrCodes = QrCode::whereIn('type', ['text', 'coupon', 'pdf', 'app', 'phone', 'menu'])
             ->latest()
             ->paginate(12);
         return view('qr-codes.history', compact('qrCodes'));
@@ -461,6 +504,95 @@ class QrCodeController extends Controller
             'barcodeImageUrl',
             'fontFamily'
         ));
+    }
+
+    public function showMenuPage($id)
+    {
+        $qrCode = QrCode::with('files')->findOrFail($id);
+        
+        // Only allow menu type QR codes
+        if ($qrCode->type !== 'menu') {
+            abort(404);
+        }
+
+        $data = $qrCode->data ?? [];
+        
+        // Restaurant info
+        $restaurantName = $data['restaurant_name'] ?? 'Restaurant';
+        $restaurantDescription = $data['restaurant_description'] ?? '';
+        
+        // Get restaurant image
+        $restaurantImageFile = $qrCode->files()->where('file_type', 'restaurant_image')->first();
+        $restaurantImageUrl = $restaurantImageFile ? asset('storage/' . $restaurantImageFile->file_path) : null;
+        
+        // Colors and fonts
+        $menuPrimaryColor = $data['menu_primary_color'] ?? '#6594FF';
+        $menuSecondaryColor = $data['menu_secondary_color'] ?? '#FFFFFF';
+        $menuFontFamily = $data['menu_font_family'] ?? 'Maven Pro';
+        $restaurantNameFontSize = $data['menu_restaurant_name_font_size'] ?? 18;
+        $restaurantDescFontSize = $data['menu_restaurant_description_font_size'] ?? 14;
+        $restaurantNameColor = $data['menu_restaurant_name_color'] ?? '#FFFFFF';
+        $restaurantDescColor = $data['menu_restaurant_description_color'] ?? '#FFFFFF';
+        
+        // Determine menu mode (priority: 1. sections, 2. URL, 3. PDF)
+        $menuMode = 'sections'; // default
+        $menuSections = [];
+        $menuUrl = null;
+        $pdfUrl = null;
+        $pdfFileName = null;
+        $hasSections = !empty($data['menu_sections']) && is_array($data['menu_sections']);
+        $pdfFile = $qrCode->files()->where('file_type', 'menu')->first();
+
+        if ($hasSections) {
+            $menuMode = 'sections';
+            $menuSections = $data['menu_sections'];
+        } elseif (!empty($data['menu_url'])) {
+            $menuMode = 'url';
+            $menuUrl = $data['menu_url'];
+        } elseif ($pdfFile) {
+            $menuMode = 'pdf';
+            $pdfUrl = asset('storage/' . $pdfFile->file_path);
+            $pdfFileName = $pdfFile->original_name;
+        }
+
+        return view('qr-codes.menu-page', compact(
+            'qrCode',
+            'restaurantName',
+            'restaurantDescription',
+            'restaurantImageUrl',
+            'menuPrimaryColor',
+            'menuSecondaryColor',
+            'menuFontFamily',
+            'restaurantNameFontSize',
+            'restaurantDescFontSize',
+            'restaurantNameColor',
+            'restaurantDescColor',
+            'menuMode',
+            'menuSections',
+            'menuUrl',
+            'pdfUrl',
+            'pdfFileName'
+        ));
+    }
+
+
+    /**
+     * Recursively remove UploadedFile instances from array so it can be JSON-encoded for storage.
+     */
+    protected function stripFilesFromArray(array $data): array
+    {
+        $out = [];
+        foreach ($data as $key => $value) {
+            if ($value instanceof \Illuminate\Http\UploadedFile) {
+                continue;
+            }
+            if (is_array($value)) {
+                $out[$key] = $this->stripFilesFromArray($value);
+            } else {
+                $out[$key] = $value;
+            }
+        }
+        return $out;
     }
 
     protected function handleFileUploads(Request $request, QrCode $qrCode, string $type)

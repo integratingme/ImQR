@@ -315,10 +315,14 @@ All routes are defined in `routes/web.php`:
 - Ensure `storage/app/public` directory is writable
 - Verify `php artisan storage:link` was run
 
-### File Upload Errors
-- Check PHP upload limits in `php.ini`:
-  - `upload_max_filesize = 10M`
-  - `post_max_size = 10M`
+### File Upload Errors / 413 Payload Too Large
+- **413** means the request body (all uploads + form data) exceeds the server limit.
+- This project sets higher limits in `public/.user.ini` and `public/.htaccess`:
+  - `upload_max_filesize = 64M`, `post_max_size = 68M`
+- If you still get 413:
+  - **PHP-FPM / CGI:** ensure `public/.user.ini` is read (or set in `php.ini`).
+  - **Nginx:** add `client_max_body_size 68M;` in the `server` block.
+  - **Apache:** ensure `mod_php` is used if you rely on `.htaccess` PHP values.
 - Ensure storage directory permissions are correct
 
 ### Assets Not Loading

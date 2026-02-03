@@ -1,3 +1,10 @@
+; Increase upload limits for menu QR (PDF + restaurant image + product images).
+; Only applies when PHP runs as Apache module (mod_php).
+<IfModule mod_php.c>
+    php_value upload_max_filesize 64M
+    php_value post_max_size 68M
+</IfModule>
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes

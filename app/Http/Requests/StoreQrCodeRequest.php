@@ -43,10 +43,10 @@ class StoreQrCodeRequest extends FormRequest
                 'text' => 'required|string|max:500',
             ],
             'pdf' => [
-                'pdf_file' => 'required|file|mimes:pdf|max:10240', // 10MB
+                'pdf_file' => 'required|file|mimes:pdf|max:5120', // 5MB
             ],
             'menu' => [
-                'menu_file' => 'nullable|file|mimes:pdf|max:10240',
+                'menu_file' => 'nullable|file|mimes:pdf|max:5120', // 5MB
                 'menu_url' => ['nullable', 'url', 'max:2048', 'regex:/^https:\/\//'],
                 'menu_primary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
                 'menu_secondary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
@@ -54,17 +54,19 @@ class StoreQrCodeRequest extends FormRequest
                 'menu_restaurant_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,svg|max:5120',
                 'restaurant_name' => 'nullable|string|max:255',
                 'restaurant_description' => 'nullable|string|max:1000',
+                'menu_restaurant_name_font_size' => 'nullable|integer|min:12|max:28',
+                'menu_restaurant_description_font_size' => 'nullable|integer|min:10|max:20',
+                'menu_restaurant_name_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+                'menu_restaurant_description_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
                 'menu_sections' => 'nullable|array',
                 'menu_sections.*.section_name' => 'nullable|string|max:255',
                 'menu_sections.*.section_description' => 'nullable|string|max:1000',
                 'menu_sections.*.products' => 'nullable|array',
                 'menu_sections.*.products.*.product_name' => 'nullable|string|max:255',
-                'menu_sections.*.products.*.name_translation' => 'nullable|string|max:255',
                 'menu_sections.*.products.*.product_description' => 'nullable|string|max:500',
-                'menu_sections.*.products.*.description_translation' => 'nullable|string|max:500',
                 'menu_sections.*.products.*.price' => 'nullable|string|max:50',
                 'menu_sections.*.products.*.allergens' => 'nullable|string|max:255',
-                'menu_sections.*.products.*.product_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,svg|max:5120',
+                'menu_sections.*.products.*.product_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,svg|max:3072', // 3MB
             ],
             'coupon' => [
                 'coupon_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,svg|max:5120', // 5MB presentation image
@@ -145,6 +147,28 @@ class StoreQrCodeRequest extends FormRequest
     }
 
     /**
+     * Configure the validator for menu: at least one of (sections, PDF, URL) is required.
+     */
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            if ($this->input('type') !== 'menu') {
+                return;
+            }
+            $sections = $this->input('menu_sections');
+            $hasSections = !empty($sections) && is_array($sections) && count($sections) > 0;
+            $hasFile = $this->hasFile('menu_file');
+            $hasUrl = !empty(trim((string) $this->input('menu_url', '')));
+            if (!$hasSections && !$hasFile && !$hasUrl) {
+                $validator->errors()->add(
+                    'menu_content',
+                    'Please add at least one menu section, or upload a PDF, or enter a menu URL.'
+                );
+            }
+        });
+    }
+
+    /**
      * Get custom validation messages
      */
     public function messages(): array
@@ -160,7 +184,7 @@ class StoreQrCodeRequest extends FormRequest
             'text.max' => 'Text cannot exceed 500 characters.',
             'pdf_file.required' => 'Please upload a PDF file.',
             'pdf_file.mimes' => 'Only PDF files are allowed.',
-            'pdf_file.max' => 'PDF file cannot exceed 10MB.',
+            'pdf_file.max' => 'PDF file cannot exceed 5MB.',
             'coupon_image.required' => 'Please upload a presentation image for your coupon.',
             'coupon_image.image' => 'Coupon presentation file must be an image.',
             'coupon_image.max' => 'Coupon image cannot exceed 5MB.',
@@ -183,6 +207,7 @@ class StoreQrCodeRequest extends FormRequest
             'mp3_file.max' => 'Audio file cannot exceed 20MB.',
             'song_name.required' => 'Please enter a song name.',
             'artist_name.required' => 'Please enter an artist name.',
+            'menu_content.required' => 'Please add at least one menu section, or upload a PDF, or enter a menu URL.',
             'menu_url.regex' => 'Menu URL must start with https://',
             'website_url.regex' => 'Website URL must start with https://',
             'app_store_link.regex' => 'App Store Link must start with https://apps.apple.com/',

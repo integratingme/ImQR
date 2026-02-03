@@ -181,7 +181,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
             </svg>
             <p class="text-dark-300 font-medium">Click to upload PDF</p>
-            <p class="text-sm text-dark-200 mt-1">Maximum file size: 10MB</p>
+            <p class="text-sm text-dark-200 mt-1">Maximum file size: 5MB</p>
         </label>
     </div>
     <div id="pdf-preview" class="mt-4 hidden">
@@ -222,14 +222,13 @@ function handlePdfSelect(input) {
             return;
         }
         
-        // Proveri veličinu (10MB = 10485760 bytes)
-        if (file.size > 10485760) {
-            alert('PDF fajl je prevelik. Maksimalna veličina je 10MB.');
+        // Check size (5MB = 5242880 bytes)
+        if (file.size > 5242880) {
+            alert('PDF file is too large. Maximum size is 5MB.');
             input.value = '';
             return;
         }
         
-        // Prikaži informacije o fajlu
         document.getElementById('pdf-preview').classList.remove('hidden');
         document.getElementById('pdf-upload-area').classList.add('border-green-400', 'bg-green-50');
         document.getElementById('pdf-filename').textContent = file.name;

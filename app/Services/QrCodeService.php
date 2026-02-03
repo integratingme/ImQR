@@ -55,7 +55,7 @@ class QrCodeService
             'email' => $this->generateEmailContent($data),
             'text' => $this->generateTextContent($data),
             'pdf' => $this->generatePdfContent($data),
-            'menu' => $data['menu_url'] ?? $data['menu_file_url'] ?? '',
+            'menu' => $this->generateMenuContent($data),
             'coupon' => $this->generateCouponContent($data),
             'event' => $this->generateEventContent($data),
             'app' => $this->generateAppContent($data),
@@ -221,6 +221,23 @@ class QrCodeService
             return $data['phone_page_url'];
         }
         return url('/phone/preview');
+    }
+
+    /**
+     * Generate menu QR content (URL to menu page; use placeholder when not yet saved)
+     */
+    protected function generateMenuContent(array $data): string
+    {
+        if (isset($data['menu_page_url']) && !empty($data['menu_page_url'])) {
+            return $data['menu_page_url'];
+        }
+        if (!empty($data['menu_url'] ?? '')) {
+            return $data['menu_url'];
+        }
+        if (!empty($data['menu_file_url'] ?? '')) {
+            return $data['menu_file_url'];
+        }
+        return url('/menu/preview');
     }
 
     /**

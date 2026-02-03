@@ -523,7 +523,7 @@
                     <h2 class="text-2xl font-bold text-dark-500 mb-6 text-center">Your QR Code</h2>
                 
                 <div class="text-center mb-8">
-                    <div id="qr-preview" class="inline-block p-8 bg-primary-50 rounded-lg">
+                    <div id="qr-preview" class="inline-block">
                         <!-- Loading State -->
                         <div id="qr-loading" class="w-64 h-64 flex flex-col items-center justify-center">
                             <svg class="animate-spin h-16 w-16 text-primary-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -665,36 +665,34 @@ function setupRealTimeValidation() {
         }
     }
     
-    // Special handling for Menu - either file or URL must be filled
+    // Special handling for Menu - at least one of (sections, PDF, URL) must be filled
     if (type === 'menu') {
         const menuFile = document.getElementById('menu_file');
         const menuUrl = document.getElementById('menu_url');
-        
+        const menuSectionsContainer = document.getElementById('menu-sections-container');
         const clearMenuErrors = () => {
             if (menuFile) menuFile.closest('.border-dashed')?.classList.remove('border-red-500');
             if (menuUrl) menuUrl.classList.remove('border-red-500');
+            if (menuSectionsContainer) menuSectionsContainer.classList.remove('border-red-500');
         };
-        
         if (menuFile) {
             menuFile.addEventListener('change', () => {
-                if (menuFile.files && menuFile.files.length > 0) {
-                    clearMenuErrors();
-                }
+                if (menuFile.files && menuFile.files.length > 0) clearMenuErrors();
             });
         }
-        
         if (menuUrl) {
             menuUrl.addEventListener('input', () => {
                 if (menuUrl.value.trim()) {
-                    if (isValidUrl(menuUrl.value.trim())) {
-                        menuUrl.classList.remove('border-red-500');
-                    } else {
-                        menuUrl.classList.add('border-red-500');
-                    }
-                } else {
-                    menuUrl.classList.remove('border-red-500');
-                }
+                    if (isValidUrl(menuUrl.value.trim())) clearMenuErrors();
+                    else menuUrl.classList.add('border-red-500');
+                } else menuUrl.classList.remove('border-red-500');
             });
+        }
+        if (menuSectionsContainer) {
+            const observer = new MutationObserver(() => {
+                if (menuSectionsContainer.querySelectorAll('.menu-section-block').length > 0) clearMenuErrors();
+            });
+            observer.observe(menuSectionsContainer, { childList: true, subtree: true });
         }
     }
     
@@ -811,7 +809,18 @@ function setupRealTimeValidation() {
 }
 
 // Color picker sync
-// Color picker sync for Step 2
+// Normalize hex to #rrggbb for backend (regex expects # + 6 hex digits)
+function normalizeHexColor(val) {
+    if (!val || typeof val !== 'string') return '#000000';
+    let hex = val.trim().replace(/^#/, '');
+    if (hex.length === 3) {
+        hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+    }
+    if (!/^[0-9A-Fa-f]{6}$/.test(hex)) return '#000000';
+    return '#' + hex;
+}
+
+// Color picker sync for Step 2 (only named inputs primary_color, secondary_color are submitted)
 const primaryColorInput = document.getElementById('primary_color');
 const primaryColorHex = document.getElementById('primary_color_hex');
 if (primaryColorInput && primaryColorHex) {
@@ -819,9 +828,10 @@ if (primaryColorInput && primaryColorHex) {
         primaryColorHex.value = e.target.value;
         updateStep2QRPreview();
     });
-
     primaryColorHex.addEventListener('input', (e) => {
-        primaryColorInput.value = e.target.value;
+        const normalized = normalizeHexColor(e.target.value);
+        primaryColorInput.value = normalized;
+        primaryColorHex.value = normalized;
         updateStep2QRPreview();
     });
 }
@@ -1719,17 +1729,14 @@ function buildQrContentFromForm() {
             // For text type, use text page URL (similar to PDF)
             return '/text/preview';
         case 'pdf':
-            // Kao na backend preview-u: placeholder URL, pravi URL se postavlja pri snimanju
             return '/pdf/preview';
-        case 'menu': {
-            const menuUrl = getValue('menu_url');
-            return menuUrl;
-        }
+        case 'menu':
+            // Placeholder URL so QR renders on step 2; real URL is set when saved
+            return (typeof window !== 'undefined' && window.location && window.location.origin ? window.location.origin + '/menu/preview' : '/menu/preview');
         case 'coupon':
-            // Za preview nemamo URL fajla, koristimo placeholder
             return '/coupon/preview';
         case 'event': {
-            const amenities = []; // za preview možemo ignorisati detaljne amenity stavke
+            const amenities = []; 
             return JSON.stringify({
                 type: 'event',
                 event_name: getValue('event_name'),
@@ -1780,7 +1787,6 @@ function buildQrContentFromForm() {
             return 'tel:' + phone;
         }
         case 'mp3':
-            // Za preview nema realnog URL-a fajla, koristimo placeholder
             return '/mp3/preview';
         default:
             return '';
@@ -1816,7 +1822,6 @@ async function updateStep2QRPreview() {
         return;
     }
 
-    // Mapiramo naše UI vrijednosti na tipove koje koristi qr-code-styling
     const dotsTypeMap = {
         square: 'square',
         circle: 'dots',
@@ -1872,7 +1877,7 @@ async function updateStep2QRPreview() {
         },
     };
 
-    // Inicijalizacija ili update postojeće QR instance
+    // Create or update QR code instance
     if (!qrStylingInstance) {
         qrContainer.innerHTML = '';
         qrStylingInstance = new window.QRCodeStyling(options);
@@ -1931,7 +1936,9 @@ if (secondaryColorInput && secondaryColorHex) {
     });
 
     secondaryColorHex.addEventListener('input', (e) => {
-        secondaryColorInput.value = e.target.value;
+        const normalized = normalizeHexColor(e.target.value);
+        secondaryColorInput.value = normalized;
+        secondaryColorHex.value = normalized;
         updateStep2QRPreview();
     });
 }
@@ -2336,18 +2343,22 @@ function validateStep1() {
             }
             break;
             
-        case 'menu':
+        case 'menu': {
             const menuFile = document.getElementById('menu_file');
             const menuUrl = document.getElementById('menu_url');
+            const menuSectionsContainer = document.getElementById('menu-sections-container');
             const hasMenuFile = menuFile && menuFile.files && menuFile.files.length > 0;
             const hasMenuUrl = menuUrl && menuUrl.value.trim();
-            
-            if (!hasMenuFile && !hasMenuUrl) {
-                errors.push('Please upload a menu PDF file or enter a menu URL');
+            const hasMenuSections = menuSectionsContainer && menuSectionsContainer.querySelectorAll('.menu-section-block').length > 0;
+            const hasAny = hasMenuSections || hasMenuFile || hasMenuUrl;
+            if (!hasAny) {
+                errors.push('Please add at least one menu section, or upload a PDF, or enter a menu URL.');
                 if (menuFile) menuFile.closest('.border-dashed')?.classList.add('border-red-500');
                 if (menuUrl) menuUrl.classList.add('border-red-500');
+                if (menuSectionsContainer) menuSectionsContainer.classList.add('border-red-500');
             } else {
                 if (menuFile) menuFile.closest('.border-dashed')?.classList.remove('border-red-500');
+                if (menuSectionsContainer) menuSectionsContainer.classList.remove('border-red-500');
                 if (menuUrl) {
                     if (hasMenuUrl && !isValidUrl(menuUrl.value.trim())) {
                         errors.push('Menu URL must be a valid URL starting with https://');
@@ -2358,6 +2369,7 @@ function validateStep1() {
                 }
             }
             break;
+        }
             
         case 'coupon': {
             const couponCompany = document.getElementById('coupon_company');
@@ -2694,6 +2706,17 @@ function prevStep(step) {
 }
 
 async function generateQRCode() {
+    // Sync Step 2 color hex fields into named inputs so primary_color/secondary_color are always valid #rrggbb
+    const primaryColorInput = document.getElementById('primary_color');
+    const primaryColorHex = document.getElementById('primary_color_hex');
+    const secondaryColorInput = document.getElementById('secondary_color');
+    const secondaryColorHex = document.getElementById('secondary_color_hex');
+    if (primaryColorInput && primaryColorHex) {
+        primaryColorInput.value = normalizeHexColor(primaryColorHex.value);
+    }
+    if (secondaryColorInput && secondaryColorHex) {
+        secondaryColorInput.value = normalizeHexColor(secondaryColorHex.value);
+    }
     const formData = new FormData(document.getElementById('qr-form'));
     
     // Show loading state in Step 3
@@ -2713,13 +2736,32 @@ async function generateQRCode() {
             }
         });
         
-        const data = await response.json();
+        const text = await response.text();
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (e) {
+            // Server returned non-JSON (e.g. 500 HTML error page)
+            const errMsg = currentStep === 2
+                ? 'Server error. Please check your input and try again.'
+                : 'Server error. Please try again.';
+            if (currentStep === 2) {
+                showErrorInStep2(errMsg);
+            } else {
+                showError(errMsg);
+            }
+            return false;
+        }
         
         if (data.success) {
             qrCodeId = data.qr_code_id;
+            window.step3MenuPageUrl = data.menu_page_url || null;
             
-            // Hide loading, show QR code
-            document.getElementById('qr-preview').innerHTML = `<img src="${data.preview_url}" alt="QR Code" class="w-64 h-64">`;
+            // Hide loading
+            document.getElementById('qr-loading').classList.add('hidden');
+            
+            // Step 3: use real URL (/menu/{id}) from server so QR leads to menu page, not /menu/preview
+            await generateStep3CustomizedQR(data.menu_page_url || null);
             
             // Enable download buttons
             document.getElementById('download-png-btn').disabled = false;
@@ -2727,25 +2769,120 @@ async function generateQRCode() {
             
             return true; // Success
         } else {
-            // Show error in Step 2
+            const msg = data.message || data.errors ? (typeof data.errors === 'object' ? Object.values(data.errors).flat().join(' ') : String(data.errors)) : 'Failed to generate QR code. Please check your input and try again.';
             if (currentStep === 2) {
-                showErrorInStep2(data.message || 'Failed to generate QR code. Please check your input and try again.');
+                showErrorInStep2(msg);
             } else {
-                showError(data.message || 'Failed to generate QR code. Please check your input and try again.');
+                showError(msg);
             }
-            return false; // Failed
+            return false;
         }
     } catch (error) {
         console.error('Error:', error);
-        
-        // Show error
+        const errMsg = currentStep === 2
+            ? 'Network error. Please check your connection and try again.'
+            : 'Network error. Please check your connection and try again.';
         if (currentStep === 2) {
-            showErrorInStep2('Network error. Please check your connection and try again.');
+            showErrorInStep2(errMsg);
         } else {
-            showError('Network error. Please check your connection and try again.');
+            showError(errMsg);
         }
-        return false; // Failed
+        return false;
     }
+}
+
+// Generate customized QR code for Step 3 with same styling as Step 2
+// menuPageUrl: for type=menu, the actual URL to the menu page (/menu/{id}) from the server so the QR never points to /menu/preview
+async function generateStep3CustomizedQR(menuPageUrl) {
+    const qrPreviewContainer = document.getElementById('qr-preview');
+    if (!qrPreviewContainer) return;
+    
+    // Get customization parameters from Step 2
+    const type = document.querySelector('input[name="type"]').value;
+    const primaryColor = document.getElementById('primary_color')?.value || '#000000';
+    const secondaryColor = document.getElementById('secondary_color')?.value || '#FFFFFF';
+    const pattern = document.getElementById('selected_pattern')?.value || 'square';
+    const cornerStyle = document.getElementById('selected_corner')?.value || 'square';
+    const cornerDotStyle = document.getElementById('selected_corner_dot')?.value || 'square';
+    const logoDataUrl = document.getElementById('qr_logo_data_url')?.value || '';
+    
+    // Build QR content; for menu type always use real menu page URL (/menu/{id}), never placeholder /menu/preview
+    let qrContent;
+    if (type === 'menu') {
+        qrContent = menuPageUrl || (qrCodeId ? (window.location.origin + '/menu/' + qrCodeId) : buildQrContentFromForm());
+    } else {
+        qrContent = buildQrContentFromForm();
+    }
+    
+    if (!window.QRCodeStyling) {
+        console.warn('QR Code Styling library is not loaded.');
+        qrPreviewContainer.innerHTML = '<p class="text-red-500">Failed to load QR code styling library</p>';
+        return;
+    }
+    
+    // Map UI values to qr-code-styling types
+    const dotsTypeMap = {
+        square: 'square',
+        circle: 'dots',
+        rounded: 'rounded',
+    };
+    
+    const cornersSquareTypeMap = {
+        square: 'square',
+        rounded: 'rounded',
+        'extra-rounded': 'extra-rounded',
+    };
+    
+    const cornersDotTypeMap = {
+        square: 'square',
+        circle: 'dot',
+        rounded: 'rounded',
+    };
+    
+    const dotsType = dotsTypeMap[pattern] || 'square';
+    const cornersSquareType = cornersSquareTypeMap[cornerStyle] || 'square';
+    const cornersDotType = cornersDotTypeMap[cornerDotStyle] || 'dot';
+    
+    const options = {
+        width: 300,
+        height: 300,
+        type: 'svg',
+        data: qrContent,
+        margin: 0,
+        qrOptions: {
+            errorCorrectionLevel: 'H',
+        },
+        dotsOptions: {
+            color: primaryColor,
+            type: dotsType,
+        },
+        backgroundOptions: {
+            color: secondaryColor,
+        },
+        cornersSquareOptions: {
+            type: cornersSquareType,
+            color: primaryColor,
+        },
+        cornersDotOptions: {
+            type: cornersDotType,
+            color: primaryColor,
+        },
+        image: logoDataUrl || undefined,
+        imageOptions: {
+            hideBackgroundDots: true,
+            imageSize: 0.4,
+            margin: 4,
+            crossOrigin: 'anonymous',
+        },
+    };
+    
+    // Clear container and generate new QR code
+    qrPreviewContainer.innerHTML = '';
+    const qrCodeStyling = new window.QRCodeStyling(options);
+    qrCodeStyling.append(qrPreviewContainer);
+    
+    // Store the instance globally for download functionality
+    window.step3QrInstance = qrCodeStyling;
 }
 
 function showErrorInStep2(message) {
@@ -2798,7 +2935,25 @@ function downloadQR(format) {
         return;
     }
     
-    window.location.href = `/qr-codes/${qrCodeId}/download/${format}`;
+    // Use the customized QR code from Step 3 if available
+    if (window.step3QrInstance) {
+        const fileName = `qr-code-${qrCodeId}`;
+        
+        if (format === 'png') {
+            window.step3QrInstance.download({
+                name: fileName,
+                extension: 'png'
+            });
+        } else if (format === 'svg') {
+            window.step3QrInstance.download({
+                name: fileName,
+                extension: 'svg'
+            });
+        }
+    } else {
+        // Fallback to server download if customized instance is not available
+        window.location.href = `/qr-codes/${qrCodeId}/download/${format}`;
+    }
 }
 </script>
 @endpush
