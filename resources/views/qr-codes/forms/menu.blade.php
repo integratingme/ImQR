@@ -301,7 +301,6 @@
 function handleMenuSelect(input) {
     const file = input.files[0];
     if (file) {
-        // Proveri da li je PDF
         if (file.type !== 'application/pdf') {
             alert('Please select a PDF file.');
             input.value = '';
@@ -315,7 +314,6 @@ function handleMenuSelect(input) {
             return;
         }
         
-        // Prikaži informacije o fajlu
         document.getElementById('menu-preview').classList.remove('hidden');
         document.getElementById('menu-upload-area').classList.add('border-green-400', 'bg-green-50');
         document.getElementById('menu-filename').textContent = file.name;

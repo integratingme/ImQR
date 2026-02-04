@@ -156,12 +156,23 @@ class QrCodeService
     }
 
     /**
-     * Generate location QR content (Google Maps format)
+     * Generate location QR content.
+     * If location_url is provided (e.g. maps.app.goo.gl), use it as-is so the QR opens that link in the browser → Google Maps.
+     * Otherwise use coordinates or address to build a maps URL.
      */
     protected function generateLocationContent(array $data): string
     {
+        $locationUrl = trim((string) ($data['location_url'] ?? ''));
+        if ($locationUrl !== '' && str_starts_with(strtolower($locationUrl), 'https://')) {
+            return $locationUrl;
+        }
+        $lat = isset($data['latitude']) && $data['latitude'] !== '' ? (float) $data['latitude'] : null;
+        $lng = isset($data['longitude']) && $data['longitude'] !== '' ? (float) $data['longitude'] : null;
+        if ($lat !== null && $lng !== null) {
+            return 'https://www.google.com/maps?q=' . $lat . ',' . $lng;
+        }
         $address = $data['address'] ?? '';
-        return "https://www.google.com/maps/search/?api=1&query=" . urlencode($address);
+        return 'https://www.google.com/maps?q=' . rawurlencode($address);
     }
 
     /**

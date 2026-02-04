@@ -6,6 +6,7 @@ use App\Http\Requests\StoreQrCodeRequest;
 use App\Models\QrCode;
 use App\Services\QrCodeService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class QrCodeController extends Controller
 {
@@ -218,6 +219,133 @@ class QrCodeController extends Controller
         return response()->json($payload);
     }
 
+    public function update(StoreQrCodeRequest $request, string $id)
+    {
+        $qrCode = QrCode::findOrFail($id);
+        if ($qrCode->type !== $request->input('type')) {
+            return response()->json(['success' => false, 'message' => 'QR code type cannot be changed.'], 422);
+        }
+        try {
+            return $this->performUpdate($request, $qrCode);
+        } catch (\Throwable $e) {
+            \Log::error('QR code update failed', ['id' => $id, 'message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return response()->json([
+                'success' => false,
+                'message' => config('app.debug') ? $e->getMessage() : 'Server error. Please try again.',
+            ], 500);
+        }
+    }
+
+    protected function performUpdate(StoreQrCodeRequest $request, QrCode $qrCode)
+    {
+        $type = $qrCode->type;
+        $validated = $request->validated();
+
+        $colors = [
+            'primary' => $validated['primary_color'] ?? $qrCode->colors['primary'] ?? '#000000',
+            'secondary' => $validated['secondary_color'] ?? $qrCode->colors['secondary'] ?? '#FFFFFF',
+        ];
+        $customization = [
+            'pattern' => $request->input('pattern', $qrCode->customization['pattern'] ?? 'square'),
+            'corner_style' => $request->input('corner_style', $qrCode->customization['corner_style'] ?? 'square'),
+            'corner_dot_style' => $request->input('corner_dot_style', $qrCode->customization['corner_dot_style'] ?? 'square'),
+        ];
+
+        $fileField = null;
+        $fileType = null;
+        $urlField = null;
+        switch ($type) {
+            case 'pdf':
+                $fileField = 'pdf_file';
+                $fileType = 'pdf';
+                $urlField = 'pdf_url';
+                break;
+            case 'coupon':
+                $fileField = 'coupon_image';
+                $fileType = 'image';
+                $urlField = 'coupon_image_url';
+                break;
+            case 'mp3':
+                $fileField = 'mp3_file';
+                $fileType = 'audio';
+                $urlField = 'mp3_url';
+                break;
+        }
+
+        $existingData = $qrCode->data ?? [];
+        $dataToStore = array_merge($existingData, $validated);
+
+        if ($fileField && $request->hasFile($fileField)) {
+            $file = $this->qrCodeService->handleFileUpload($qrCode, $request->file($fileField), $fileType);
+            $dataToStore[$urlField] = asset('storage/' . $file->file_path);
+            if ($type === 'pdf') {
+                $dataToStore['pdf_page_url'] = route('qr-codes.pdf-page', $qrCode->id);
+            }
+        }
+        if ($type === 'coupon' && $request->hasFile($fileField)) {
+            $this->handleFileUploads($request, $qrCode, $type);
+            $dataToStore['coupon_page_url'] = route('qr-codes.coupon-page', $qrCode->id);
+        }
+
+        $dataToStore = $this->stripFilesFromArray($dataToStore);
+        if ($type === 'menu') {
+            unset($dataToStore['menu_file'], $dataToStore['menu_restaurant_image']);
+            $this->handleFileUploads($request, $qrCode, $type);
+            if (!empty($dataToStore['menu_sections'])) {
+                foreach ($dataToStore['menu_sections'] as $si => &$section) {
+                    if (!empty($section['products'])) {
+                        foreach ($section['products'] as $pi => &$product) {
+                            if (isset($product['product_image']) && $product['product_image'] instanceof \Illuminate\Http\UploadedFile) {
+                                $file = $this->qrCodeService->handleFileUpload(
+                                    $qrCode,
+                                    $product['product_image'],
+                                    'menu_product_' . $si . '_' . $pi
+                                );
+                                $product['product_image_url'] = asset('storage/' . $file->file_path);
+                                unset($product['product_image']);
+                            }
+                        }
+                    }
+                }
+                unset($section, $product);
+                $dataToStore['menu_sections'] = $this->stripFilesFromArray($dataToStore['menu_sections'] ?? []);
+            }
+            $dataToStore['menu_page_url'] = route('qr-codes.menu-page', $qrCode->id);
+        }
+        if ($type === 'text') {
+            $dataToStore['text_page_url'] = route('qr-codes.text-page', $qrCode->id);
+        }
+        if ($type === 'app') {
+            $dataToStore['app_page_url'] = route('qr-codes.app-page', $qrCode->id);
+        }
+        if ($type === 'phone') {
+            $dataToStore['phone_page_url'] = route('qr-codes.phone-page', $qrCode->id);
+        }
+
+        $this->handleFileUploads($request, $qrCode, $type);
+
+        $dataToStore = $this->stripFilesFromArray($dataToStore);
+
+        $qrCode->update([
+            'name' => $dataToStore['name'] ?? $qrCode->name,
+            'data' => $dataToStore,
+            'colors' => $colors,
+            'customization' => $customization,
+        ]);
+
+        $this->qrCodeService->regenerateQrCode($qrCode, $colors, $customization);
+
+        $payload = [
+            'success' => true,
+            'qr_code_id' => $qrCode->id,
+            'preview_url' => asset('storage/' . $qrCode->qr_image_path),
+        ];
+        if ($type === 'menu') {
+            $payload['menu_page_url'] = route('qr-codes.menu-page', $qrCode->id);
+        }
+        return response()->json($payload);
+    }
+
     public function preview(Request $request)
     {
         $type = $request->input('type');
@@ -274,12 +402,41 @@ class QrCodeController extends Controller
         return response()->download($path, 'qr-code-' . $qrCode->id . '.png');
     }
 
-    public function history()
+    public function history(Request $request)
     {
-        $qrCodes = QrCode::whereIn('type', ['text', 'coupon', 'pdf', 'app', 'phone', 'menu'])
-            ->latest()
-            ->paginate(12);
-        return view('qr-codes.history', compact('qrCodes'));
+        $historyTypes = ['text', 'coupon', 'pdf', 'app', 'phone', 'menu', 'location'];
+        $typeFilter = $request->get('type');
+
+        $query = QrCode::whereIn('type', $historyTypes)->latest();
+        if ($typeFilter && in_array($typeFilter, $historyTypes)) {
+            $query->where('type', $typeFilter);
+        }
+        $qrCodes = $query->paginate(12)->withQueryString();
+
+        return view('qr-codes.history', [
+            'qrCodes' => $qrCodes,
+            'currentType' => $typeFilter,
+            'historyTypes' => $historyTypes,
+        ]);
+    }
+
+    public function destroy(string $id)
+    {
+        $qrCode = QrCode::with('files')->findOrFail($id);
+
+        if ($qrCode->qr_image_path && Storage::disk('public')->exists($qrCode->qr_image_path)) {
+            Storage::disk('public')->delete($qrCode->qr_image_path);
+        }
+
+        foreach ($qrCode->files as $file) {
+            if ($file->file_path && Storage::disk('public')->exists($file->file_path)) {
+                Storage::disk('public')->delete($file->file_path);
+            }
+        }
+        $qrCode->files()->delete();
+        $qrCode->delete();
+
+        return redirect()->route('qr-codes.history')->with('success', 'QR code deleted.');
     }
 
     public function showPdfPage($id)

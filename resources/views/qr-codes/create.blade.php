@@ -585,7 +585,24 @@
 <script>
 let currentStep = 1;
 let qrCodeId = null;
+let lastSubmittedFormFingerprint = null;
 let qrStylingInstance = null;
+
+function getFormFingerprint() {
+    const form = document.getElementById('qr-form');
+    if (!form) return '';
+    const fd = new FormData(form);
+    const parts = [];
+    for (const [k, v] of fd.entries()) {
+        if (v instanceof File) {
+            parts.push(k + '=' + (v.name || '') + '|' + (v.size || 0));
+        } else {
+            parts.push(k + '=' + String(v));
+        }
+    }
+    parts.sort();
+    return parts.join('&');
+}
 
 // Real-time validation - remove error styling when field is filled
 function setupRealTimeValidation() {
@@ -614,7 +631,7 @@ function setupRealTimeValidation() {
         'email': ['email', 'message'],
         'text': ['text'],
         'event': ['event_name'],
-        'location': ['address'],
+        'location': ['address', 'latitude', 'longitude', 'location_url'],
         'wifi': ['ssid', 'encryption', 'password'],
         'phone': ['full_name', 'phone_number', 'phone_background_color_hex', 'phone_font_family'],
         'mp3': ['song_name', 'artist_name'],
@@ -1754,8 +1771,17 @@ function buildQrContentFromForm() {
             // For app type, use app page URL (similar to PDF and text)
             return '/app/preview';
         case 'location': {
+            const locationUrl = getValue('location_url');
+            if (locationUrl && locationUrl.trim().startsWith('https://')) {
+                return locationUrl.trim();
+            }
+            const lat = getValue('latitude');
+            const lng = getValue('longitude');
+            if (lat && lng) {
+                return 'https://www.google.com/maps?q=' + lat + ',' + lng;
+            }
             const address = getValue('address');
-            return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(address);
+            return 'https://www.google.com/maps?q=' + encodeURIComponent(address || '');
         }
         case 'wifi': {
             const escapeWifi = (val) =>
@@ -2438,15 +2464,22 @@ function validateStep1() {
             }
             break;
             
-        case 'location':
-            const address = document.getElementById('address');
-            if (!address || !address.value.trim()) {
-                errors.push('Address is required');
-                if (address) address.classList.add('border-red-500');
-            } else if (address) {
-                address.classList.remove('border-red-500');
+        case 'location': {
+            const addressEl = document.getElementById('address');
+            const latEl = document.getElementById('latitude');
+            const lngEl = document.getElementById('longitude');
+            const locationUrlEl = document.getElementById('location_url');
+            const hasAddress = addressEl && addressEl.value.trim() !== '';
+            const hasCoords = latEl && lngEl && latEl.value.trim() !== '' && lngEl.value.trim() !== '';
+            const hasLocationUrl = locationUrlEl && locationUrlEl.value.trim() !== '' && locationUrlEl.value.trim().startsWith('https://');
+            if (!hasAddress && !hasCoords && !hasLocationUrl) {
+                errors.push('Please enter an address or search for a location, paste a Google Maps link, or use your current location.');
+                if (addressEl) addressEl.classList.add('border-red-500');
+            } else {
+                if (addressEl) addressEl.classList.remove('border-red-500');
             }
             break;
+        }
             
         case 'wifi':
             const ssid = document.getElementById('ssid');
@@ -2611,38 +2644,47 @@ async function nextStep(step) {
         }
     }
     
-    // If going to Step 3, generate QR code first and wait for it
+    // If going to Step 3, create/update QR code when needed, or skip API if nothing changed
     if (step === 3) {
-        // Show loading state on Next Step button
         const nextBtn = document.getElementById('step2-next-btn');
         const nextText = document.getElementById('step2-next-text');
         const nextLoading = document.getElementById('step2-next-loading');
         const backBtn = document.getElementById('step2-back-btn');
-        
-        if (nextBtn && nextText && nextLoading) {
-            nextBtn.disabled = true;
-            nextText.classList.add('hidden');
-            nextLoading.classList.remove('hidden');
-        }
-        if (backBtn) {
-            backBtn.disabled = true;
-        }
-        
-        const success = await generateQRCode();
-        
-        // Restore button state
-        if (nextBtn && nextText && nextLoading) {
-            nextBtn.disabled = false;
-            nextText.classList.remove('hidden');
-            nextLoading.classList.add('hidden');
-        }
-        if (backBtn) {
-            backBtn.disabled = false;
-        }
-        
-        if (!success) {
-            // Don't proceed to Step 3 if QR code generation failed
-            return;
+
+        // Sync Step 2 color hex into hidden inputs so fingerprint matches what would be submitted
+        const primaryColorInput = document.getElementById('primary_color');
+        const primaryColorHex = document.getElementById('primary_color_hex');
+        const secondaryColorInput = document.getElementById('secondary_color');
+        const secondaryColorHex = document.getElementById('secondary_color_hex');
+        if (primaryColorInput && primaryColorHex) primaryColorInput.value = normalizeHexColor(primaryColorHex.value);
+        if (secondaryColorInput && secondaryColorHex) secondaryColorInput.value = normalizeHexColor(secondaryColorHex.value);
+
+        const fingerprint = getFormFingerprint();
+        const nothingChanged = qrCodeId !== null && fingerprint === lastSubmittedFormFingerprint;
+
+        if (nothingChanged) {
+            // No API call: just show Step 3 with existing QR
+        } else {
+            if (nextBtn && nextText && nextLoading) {
+                nextBtn.disabled = true;
+                nextText.classList.add('hidden');
+                nextLoading.classList.remove('hidden');
+            }
+            if (backBtn) backBtn.disabled = true;
+
+            const success = qrCodeId === null
+                ? await generateQRCode()
+                : await updateQRCode(qrCodeId);
+
+            if (nextBtn && nextText && nextLoading) {
+                nextBtn.disabled = false;
+                nextText.classList.remove('hidden');
+                nextLoading.classList.add('hidden');
+            }
+            if (backBtn) backBtn.disabled = false;
+
+            if (!success) return;
+            lastSubmittedFormFingerprint = getFormFingerprint();
         }
     }
     
@@ -2787,6 +2829,64 @@ async function generateQRCode() {
         } else {
             showError(errMsg);
         }
+        return false;
+    }
+}
+
+async function updateQRCode(id) {
+    const primaryColorInput = document.getElementById('primary_color');
+    const primaryColorHex = document.getElementById('primary_color_hex');
+    const secondaryColorInput = document.getElementById('secondary_color');
+    const secondaryColorHex = document.getElementById('secondary_color_hex');
+    if (primaryColorInput && primaryColorHex) primaryColorInput.value = normalizeHexColor(primaryColorHex.value);
+    if (secondaryColorInput && secondaryColorHex) secondaryColorInput.value = normalizeHexColor(secondaryColorHex.value);
+
+    const form = document.getElementById('qr-form');
+    if (!form) return false;
+    const formData = new FormData(form);
+    formData.append('_method', 'PUT');
+
+    const qrLoading = document.getElementById('qr-loading');
+    const qrError = document.getElementById('qr-error');
+    const downloadPngBtn = document.getElementById('download-png-btn');
+    const downloadSvgBtn = document.getElementById('download-svg-btn');
+    if (qrLoading) qrLoading.classList.remove('hidden');
+    if (qrError) qrError.classList.add('hidden');
+    if (downloadPngBtn) downloadPngBtn.disabled = true;
+    if (downloadSvgBtn) downloadSvgBtn.disabled = true;
+
+    try {
+        const url = `{{ url("/qr-codes") }}/${id}`;
+        const response = await fetch(url, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        });
+        const text = await response.text();
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (e) {
+            showErrorInStep2('Server error. Please try again.');
+            return false;
+        }
+        if (data.success) {
+            window.step3MenuPageUrl = data.menu_page_url || null;
+            if (qrLoading) qrLoading.classList.add('hidden');
+            await generateStep3CustomizedQR(data.menu_page_url || null);
+            if (downloadPngBtn) downloadPngBtn.disabled = false;
+            if (downloadSvgBtn) downloadSvgBtn.disabled = false;
+            return true;
+        }
+        showErrorInStep2(data.message || (data.errors ? Object.values(data.errors).flat().join(' ') : 'Update failed.'));
+        return false;
+    } catch (error) {
+        console.error('Error:', error);
+        showErrorInStep2('Network error. Please try again.');
+        if (downloadPngBtn) downloadPngBtn.disabled = false;
+        if (downloadSvgBtn) downloadSvgBtn.disabled = false;
         return false;
     }
 }

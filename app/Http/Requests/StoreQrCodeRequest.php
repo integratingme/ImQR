@@ -122,7 +122,10 @@ class StoreQrCodeRequest extends FormRequest
                 'app_store_button_text_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
             ],
             'location' => [
-                'address' => 'required|string|max:500',
+                'address' => 'nullable|string|max:500',
+                'latitude' => 'nullable|numeric|between:-90,90',
+                'longitude' => 'nullable|numeric|between:-180,180',
+                'location_url' => 'nullable|string|max:2048',
             ],
             'wifi' => [
                 'ssid' => 'required|string|max:255',
@@ -152,18 +155,33 @@ class StoreQrCodeRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
-            if ($this->input('type') !== 'menu') {
+            if ($this->input('type') === 'menu') {
+                $sections = $this->input('menu_sections');
+                $hasSections = !empty($sections) && is_array($sections) && count($sections) > 0;
+                $hasFile = $this->hasFile('menu_file');
+                $hasUrl = !empty(trim((string) $this->input('menu_url', '')));
+                if (!$hasSections && !$hasFile && !$hasUrl) {
+                    $validator->errors()->add(
+                        'menu_content',
+                        'Please add at least one menu section, or upload a PDF, or enter a menu URL.'
+                    );
+                }
                 return;
             }
-            $sections = $this->input('menu_sections');
-            $hasSections = !empty($sections) && is_array($sections) && count($sections) > 0;
-            $hasFile = $this->hasFile('menu_file');
-            $hasUrl = !empty(trim((string) $this->input('menu_url', '')));
-            if (!$hasSections && !$hasFile && !$hasUrl) {
-                $validator->errors()->add(
-                    'menu_content',
-                    'Please add at least one menu section, or upload a PDF, or enter a menu URL.'
-                );
+            if ($this->input('type') === 'location') {
+                $address = trim((string) $this->input('address', ''));
+                $lat = $this->input('latitude');
+                $lng = $this->input('longitude');
+                $locationUrl = trim((string) $this->input('location_url', ''));
+                $hasAddress = $address !== '';
+                $hasCoords = is_numeric($lat) && is_numeric($lng);
+                $hasLocationUrl = $locationUrl !== '' && preg_match('/^https:\/\//i', $locationUrl);
+                if (!$hasAddress && !$hasCoords && !$hasLocationUrl) {
+                    $validator->errors()->add(
+                        'location_content',
+                        'Please enter an address or search for a location, paste a Google Maps link, or use your current location.'
+                    );
+                }
             }
         });
     }
