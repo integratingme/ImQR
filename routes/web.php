@@ -11,6 +11,7 @@ Route::post('/qr-codes', [QrCodeController::class, 'store'])->name('qr-codes.sto
 Route::put('/qr-codes/{id}', [QrCodeController::class, 'update'])->name('qr-codes.update');
 Route::delete('/qr-codes/{id}', [QrCodeController::class, 'destroy'])->name('qr-codes.destroy');
 Route::post('/qr-codes/preview', [QrCodeController::class, 'preview'])->name('qr-codes.preview');
+Route::get('/qr-codes/resolve-maps-link', [QrCodeController::class, 'resolveMapsLink'])->name('qr-codes.resolve-maps-link');
 Route::get('/qr-codes/{id}/download/{format}', [QrCodeController::class, 'download'])->name('qr-codes.download');
 Route::get('/qr-codes/history', [QrCodeController::class, 'history'])->name('qr-codes.history');
 Route::get('/pdf/{id}', [QrCodeController::class, 'showPdfPage'])->name('qr-codes.pdf-page');

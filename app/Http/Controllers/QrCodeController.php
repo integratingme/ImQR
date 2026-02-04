@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreQrCodeRequest;
 use App\Models\QrCode;
 use App\Services\QrCodeService;
+use GuzzleHttp\TransferStats;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 
 class QrCodeController extends Controller
@@ -344,6 +346,63 @@ class QrCodeController extends Controller
             $payload['menu_page_url'] = route('qr-codes.menu-page', $qrCode->id);
         }
         return response()->json($payload);
+    }
+
+    /**
+     * Resolve a short Google Maps link and return the place name from the final URL.
+     */
+    public function resolveMapsLink(Request $request)
+    {
+        $url = $request->get('url');
+        if (! is_string($url) || trim($url) === '') {
+            return response()->json(['success' => false, 'place_name' => null], 400);
+        }
+        $url = trim($url);
+        $allowed = [
+            'https://www.google.com/maps',
+            'https://maps.google.com',
+            'https://goo.gl/maps',
+            'https://maps.app.goo.gl',
+        ];
+        $isMapsLink = false;
+        foreach ($allowed as $prefix) {
+            if (str_starts_with(strtolower($url), $prefix)) {
+                $isMapsLink = true;
+                break;
+            }
+        }
+        if (! $isMapsLink) {
+            return response()->json(['success' => false, 'place_name' => null], 400);
+        }
+        try {
+            $finalUrl = $url;
+            Http::timeout(10)->withOptions([
+                'allow_redirects' => true,
+                'on_stats' => function (TransferStats $stats) use (&$finalUrl) {
+                    $uri = $stats->getEffectiveUri();
+                    if ($uri) {
+                        $finalUrl = (string) $uri;
+                    }
+                },
+            ])->get($url);
+            $placeName = $this->extractPlaceNameFromMapsUrl($finalUrl);
+            return response()->json([
+                'success' => true,
+                'place_name' => $placeName,
+            ]);
+        } catch (\Throwable $e) {
+            \Log::warning('resolveMapsLink failed', ['url' => $url, 'message' => $e->getMessage()]);
+            return response()->json(['success' => false, 'place_name' => null], 422);
+        }
+    }
+
+    private function extractPlaceNameFromMapsUrl(string $url): ?string
+    {
+        if (preg_match('#/place/([^/@]+)(?:/|$)#', $url, $m)) {
+            $decoded = str_replace('+', ' ', $m[1]);
+            return urldecode($decoded) ?: null;
+        }
+        return null;
     }
 
     public function preview(Request $request)

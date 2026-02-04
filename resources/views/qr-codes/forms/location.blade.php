@@ -67,6 +67,7 @@
 
     function setAddress(value) {
         addressInput.value = value || '';
+        addressInput.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
     function isGoogleMapsLink(url) {
@@ -97,12 +98,17 @@
     }
 
     function reverseGeocode(lat, lng, callback) {
+        var fallbackAddress = lat + ', ' + lng;
         deviceStatus.textContent = 'Loading address…';
         fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&zoom=18&addressdetails=1', {
             headers: { 'Accept': 'application/json' }
         })
             .then(function(r) { return r.json(); })
             .then(function(data) {
+                if (!data || data.error) {
+                    setAddress(fallbackAddress);
+                    return;
+                }
                 const name = data.address?.name || data.address?.road || '';
                 const parts = [
                     name,
@@ -111,9 +117,11 @@
                     data.address?.state,
                     data.address?.country
                 ].filter(Boolean);
-                setAddress(parts.join(', ') || data.display_name || '');
+                setAddress(parts.join(', ') || data.display_name || fallbackAddress);
             })
-            .catch(function() { setAddress(''); })
+            .catch(function() {
+                setAddress(fallbackAddress);
+            })
             .finally(function() {
                 deviceStatus.textContent = '';
                 if (typeof callback === 'function') callback();
@@ -155,19 +163,52 @@
         }
     });
 
+    function tryParsePlaceNameFromUrl(url) {
+        var s = (url || '').trim();
+        var placeMatch = s.match(/\/place\/([^/]+)(?:\/|$)/);
+        if (placeMatch) {
+            try {
+                return decodeURIComponent(placeMatch[1].replace(/\+/g, ' '));
+            } catch (e) {
+                return placeMatch[1].replace(/\+/g, ' ');
+            }
+        }
+        return null;
+    }
+
     function processPastedOrEnteredLink(url) {
         const u = (url || '').trim();
         if (!u) return;
         const coords = parseGoogleMapsUrl(u);
         if (coords) {
             setCoordinates(coords.lat, coords.lng);
-            setAddress('');
+            var placeName = tryParsePlaceNameFromUrl(u);
+            if (placeName) {
+                setAddress(placeName);
+            } else {
+                setAddress(coords.lat + ', ' + coords.lng);
+            }
             reverseGeocode(coords.lat, coords.lng);
         } else if (isGoogleMapsLink(u)) {
             setLocationUrl(u);
-            setAddress('');
-            deviceStatus.textContent = 'Link will be used as-is. QR will open Google Maps.';
-            setTimeout(function() { deviceStatus.textContent = ''; }, 3000);
+            deviceStatus.textContent = 'Resolving link…';
+            fetch('{{ route("qr-codes.resolve-maps-link") }}?url=' + encodeURIComponent(u))
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.success && data.place_name) {
+                        setAddress(data.place_name);
+                        deviceStatus.textContent = 'Location loaded.';
+                    } else {
+                        setAddress(u);
+                        deviceStatus.textContent = 'Link will be used as-is.';
+                    }
+                    setTimeout(function() { deviceStatus.textContent = ''; }, 2000);
+                })
+                .catch(function() {
+                    setAddress(u);
+                    deviceStatus.textContent = 'Could not resolve name. Link will be used.';
+                    setTimeout(function() { deviceStatus.textContent = ''; }, 3000);
+                });
         } else if (u) {
             deviceStatus.textContent = 'Not a Google Maps link. Enter a link from Google Maps (e.g. maps.app.goo.gl or google.com/maps).';
             setTimeout(function() { deviceStatus.textContent = ''; }, 4000);
