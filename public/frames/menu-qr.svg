@@ -1,0 +1,49 @@
+<svg width="400" height="500" viewBox="0 0 400 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .cta-text { font-family: 'Helvetica', sans-serif; font-weight: bold; font-size: 18px; letter-spacing: 1px; }
+      .title-text { font-family: 'Georgia', serif; font-weight: bold; font-size: 24px; }
+    </style>
+  </defs>
+
+  <!-- 1. Background Card (palette: secondary = background, primary = border) -->
+  <rect x="5" y="5" width="390" height="490" rx="20" fill="#SECONDARY#" stroke="#PRIMARY#" stroke-width="2"/>
+
+  <!-- 2. "Plate" Circle Decoration (Behind the QR area) -->
+  <circle cx="200" cy="200" r="190" stroke="#e0e0e0" stroke-width="2" stroke-dasharray="10 10"/>
+
+  <!-- 3. Corner Brackets (palette: primary) -->
+  <path d="M 40 40 L 20 40 L 20 80" stroke="#PRIMARY#" stroke-width="6" stroke-linecap="round"/>
+  <path d="M 360 40 L 380 40 L 380 80" stroke="#PRIMARY#" stroke-width="6" stroke-linecap="round"/>
+  <path d="M 40 360 L 20 360 L 20 320" stroke="#PRIMARY#" stroke-width="6" stroke-linecap="round"/>
+  <path d="M 360 360 L 380 360 L 380 320" stroke="#PRIMARY#" stroke-width="6" stroke-linecap="round"/>
+
+  <!-- 4. BOTTOM AREA (Y > 390) -->
+  
+  <!-- FORK ICON (Left Side) -->
+<g transform="translate(50, 415)" stroke="#PRIMARY#" stroke-width="4" stroke-linecap="round" fill="none">
+    <!-- Outer shape: Left tine down, curve, right tine up -->
+    <path d="M 0 0 L 0 25 Q 0 45 15 45 Q 30 45 30 25 L 30 0" />
+    <!-- Inner tines -->
+    <path d="M 10 0 L 10 25" />
+    <path d="M 20 0 L 20 25" />
+    <!-- Handle -->
+    <path d="M 15 45 L 15 70" />
+  </g>
+
+
+  <!-- KNIFE ICON (Right Side) -->
+  <g transform="translate(330, 415)">
+    <path d="M 15 0 L 15 45 Q 15 55 5 45 Q 5 0 15 0" stroke="#PRIMARY#" stroke-width="4" fill="none" stroke-linecap="round"/> <!-- Blade -->
+    <path d="M 15 45 L 15 75" stroke="#PRIMARY#" stroke-width="4" stroke-linecap="round"/> <!-- Handle -->
+  </g>
+
+  <!-- CTA BUTTON (Center) -->
+  <rect x="90" y="430" width="220" height="50" rx="25" fill="#PRIMARY#"/>
+  <text x="200" y="462" text-anchor="middle" fill="#SECONDARY#" class="cta-text">MENU</text>
+
+  <!-- Top Label -->
+  <rect x="130" y="0" width="140" height="36" rx="0" fill="#SECONDARY#" stroke="#PRIMARY#" stroke-width="2"/>
+  <text x="200" y="26" text-anchor="middle" fill="#PRIMARY#" class="title-text">SCAN ME</text>
+
+</svg>

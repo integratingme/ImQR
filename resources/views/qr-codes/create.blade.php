@@ -4,6 +4,10 @@
 
 @section('content')
 <style>
+/* When a frame is selected, show full frame without clipping by rounded phone overlay */
+#phone-mockup-overlay-step2.frame-selected {
+    border-radius: 0;
+}
 /* Coupon mockup card – interior uses secondary color, left/right semicircles use primary */
 .coupon-card {
     background: var(--coupon-card-bg, white);
@@ -482,6 +486,47 @@
                                 </button>
                             </div>
                             <input type="hidden" id="selected_corner_dot" name="corner_dot_style" value="square">
+                        </div>
+
+                        <!-- Frame (around QR) -->
+                        <div class="mb-6">
+                            <label class="label">Frame</label>
+                            <p class="text-sm text-dark-300 mb-4">Add a frame around your QR code (e.g. border + "Scan me!").</p>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                                <button type="button" class="frame-option border-2 border-primary-500 p-3 hover:border-primary-600 transition-colors flex flex-col items-center" data-frame="none" onclick="selectFrame(this, 'none')">
+                                    <div class="w-full h-16 bg-dark-100 border border-dark-200 flex items-center justify-center text-dark-400 text-xs">No frame</div>
+                                    <p class="text-xs text-center mt-2 text-dark-400">No frame</p>
+                                </button>
+                                <button type="button" class="frame-option border-2 border-dark-200 p-3 hover:border-primary-400 transition-colors flex flex-col items-center" data-frame="standard-border" onclick="selectFrame(this, 'standard-border')">
+                                    <img src="{{ asset('frames/standard-border.svg') }}" alt="Standard" class="w-full h-16 object-contain object-center border border-dark-200">
+                                    <p class="text-xs text-center mt-2 text-dark-400">Standard</p>
+                                </button>
+                                <button type="button" class="frame-option border-2 border-dark-200 p-3 hover:border-primary-400 transition-colors flex flex-col items-center" data-frame="thick-border" onclick="selectFrame(this, 'thick-border')">
+                                    <img src="{{ asset('frames/thick-border.svg') }}" alt="Thick" class="w-full h-16 object-contain object-center border border-dark-200">
+                                    <p class="text-xs text-center mt-2 text-dark-400">Thick</p>
+                                </button>
+                                <button type="button" class="frame-option border-2 border-dark-200 p-3 hover:border-primary-400 transition-colors flex flex-col items-center" data-frame="speech-bubble" onclick="selectFrame(this, 'speech-bubble')">
+                                    <img src="{{ asset('frames/speech-bubble.svg') }}" alt="Speech bubble" class="w-full h-16 object-contain object-center border border-dark-200">
+                                    <p class="text-xs text-center mt-2 text-dark-400">Speech bubble</p>
+                                </button>
+                                <button type="button" class="frame-option border-2 border-dark-200 p-3 hover:border-primary-400 transition-colors flex flex-col items-center" data-frame="menu-qr" onclick="selectFrame(this, 'menu-qr')">
+                                    <img src="{{ asset('frames/menu-qr.svg') }}" alt="Menu" class="w-full h-16 object-contain object-center border border-dark-200">
+                                    <p class="text-xs text-center mt-2 text-dark-400">Menu</p>
+                                </button>
+                                <button type="button" class="frame-option border-2 border-dark-200 p-3 hover:border-primary-400 transition-colors flex flex-col items-center" data-frame="location" onclick="selectFrame(this, 'location')">
+                                    <img src="{{ asset('frames/location.svg') }}" alt="Location" class="w-full h-16 object-contain object-center border border-dark-200">
+                                    <p class="text-xs text-center mt-2 text-dark-400">Location</p>
+                                </button>
+                                <button type="button" class="frame-option border-2 border-dark-200 p-3 hover:border-primary-400 transition-colors flex flex-col items-center" data-frame="wifi" onclick="selectFrame(this, 'wifi')">
+                                    <img src="{{ asset('frames/wifi.svg') }}" alt="Wi‑Fi" class="w-full h-16 object-contain object-center border border-dark-200">
+                                    <p class="text-xs text-center mt-2 text-dark-400">Wi‑Fi</p>
+                                </button>
+                                <button type="button" class="frame-option border-2 border-dark-200 p-3 hover:border-primary-400 transition-colors flex flex-col items-center" data-frame="chat" onclick="selectFrame(this, 'chat')">
+                                    <img src="{{ asset('frames/chat.svg') }}" alt="Chat" class="w-full h-16 object-contain object-center border border-dark-200">
+                                    <p class="text-xs text-center mt-2 text-dark-400">Chat</p>
+                                </button>
+                            </div>
+                            <input type="hidden" id="selected_frame" name="frame" value="none">
                         </div>
 
                         <div class="flex justify-between mt-6">
@@ -1020,6 +1065,18 @@ function selectCorner(button, cornerValue) {
     document.getElementById('selected_corner').value = cornerValue;
     
     // Update QR code preview
+    updateStep2QRPreview();
+}
+
+// Frame selection
+function selectFrame(button, frameValue) {
+    document.querySelectorAll('.frame-option').forEach(btn => {
+        btn.classList.remove('border-primary-500', 'border-primary-600');
+        btn.classList.add('border-dark-200');
+    });
+    button.classList.remove('border-dark-200');
+    button.classList.add('border-primary-500');
+    document.getElementById('selected_frame').value = frameValue;
     updateStep2QRPreview();
 }
 
@@ -1815,6 +1872,65 @@ function buildQrContentFromForm() {
     }
 }
 
+// Frame config: SVG path and QR area as % of frame size (left, top, width, height)
+// themable: true = SVG may use #PRIMARY# and #SECONDARY# placeholders, replaced by palette colors
+const FRAME_CONFIG = {
+    'none': null,
+    'standard-border': {
+        url: '{{ asset("frames/standard-border.svg") }}',
+        qrLeft: 5, qrTop: 4, qrWidth: 90, qrHeight: 72,
+        frameWidth: 400, frameHeight: 500,
+        themable: true
+    },
+    'thick-border': {
+        url: '{{ asset("frames/thick-border.svg") }}',
+        qrLeft: 5, qrTop: 4, qrWidth: 90, qrHeight: 72,
+        frameWidth: 400, frameHeight: 500,
+        themable: true
+    },
+    'speech-bubble': {
+        url: '{{ asset("frames/speech-bubble.svg") }}',
+        qrLeft: 5, qrTop: 3.85, qrWidth: 90, qrHeight: 69.2,
+        frameWidth: 400, frameHeight: 520,
+        themable: true
+    },
+    'menu-qr': {
+        url: '{{ asset("frames/menu-qr.svg") }}',
+        qrLeft: 5, qrTop: 4, qrWidth: 90, qrHeight: 72,
+        frameWidth: 400, frameHeight: 500,
+        themable: true
+    },
+    'location': {
+        url: '{{ asset("frames/location.svg") }}',
+        qrLeft: 5, qrTop: 4, qrWidth: 90, qrHeight: 72,
+        frameWidth: 400, frameHeight: 500,
+        themable: true
+    },
+    'wifi': {
+        url: '{{ asset("frames/wifi.svg") }}',
+        qrLeft: 5, qrTop: 4, qrWidth: 90, qrHeight: 72,
+        frameWidth: 400, frameHeight: 500,
+        themable: true
+    },
+    'chat': {
+        url: '{{ asset("frames/chat.svg") }}',
+        qrLeft: 5, qrTop: 4, qrWidth: 90, qrHeight: 72,
+        frameWidth: 400, frameHeight: 500,
+        themable: true
+    }
+};
+
+// Fetch SVG, replace #PRIMARY# and #SECONDARY# with palette colors, return blob URL for use in img/canvas
+async function getThemedFrameUrl(svgUrl, primaryHex, secondaryHex) {
+    const primary = (primaryHex || '#000000').trim();
+    const secondary = (secondaryHex || '#FFFFFF').trim();
+    const res = await fetch(svgUrl);
+    let text = await res.text();
+    text = text.replace(/#PRIMARY#/gi, primary).replace(/#SECONDARY#/gi, secondary);
+    const blob = new Blob([text], { type: 'image/svg+xml' });
+    return URL.createObjectURL(blob);
+}
+
 // Update Step 2 QR code preview with customization using qr-code-styling
 async function updateStep2QRPreview() {
     if (currentStep !== 2) return;
@@ -1823,6 +1939,7 @@ async function updateStep2QRPreview() {
     const overlay = document.getElementById('phone-mockup-overlay-step2');
     if (!qrContainer) return;
 
+    const frameId = document.getElementById('selected_frame')?.value || 'none';
     const type = document.querySelector('input[name="type"]').value;
     const primaryColor = document.getElementById('primary_color')?.value || '#000000';
     const secondaryColor = document.getElementById('secondary_color')?.value || '#FFFFFF';
@@ -1834,6 +1951,11 @@ async function updateStep2QRPreview() {
     // Update overlay background color (Step 2 pozadina)
     if (overlay) {
         overlay.style.backgroundColor = secondaryColor;
+        if (frameId && frameId !== 'none') {
+            overlay.classList.add('frame-selected');
+        } else {
+            overlay.classList.remove('frame-selected');
+        }
     }
 
     const data = buildQrContentFromForm();
@@ -1842,6 +1964,49 @@ async function updateStep2QRPreview() {
         console.warn('QR Code Styling library is not loaded. Make sure you ran `npm install qr-code-styling` and Vite bundle je učitan.');
         qrContainer.innerHTML = '';
         return;
+    }
+
+    // Build frame wrapper when a frame is selected; get the element to which we append the QR
+    let appendTarget = qrContainer;
+    const QR_HOLE_SIZE = 260;
+    const qrDisplaySize = (frameId && frameId !== 'none') ? 220 : QR_HOLE_SIZE;
+    if (frameId && frameId !== 'none' && FRAME_CONFIG[frameId]) {
+        const cfg = FRAME_CONFIG[frameId];
+        if (cfg.url && cfg.qrLeft !== undefined) {
+            // Full-frame layout: frame image + QR over the "hole" (QR drawn smaller for gap)
+            const wrapper = document.createElement('div');
+            wrapper.className = 'frame-wrapper relative mx-auto';
+            const holePx = QR_HOLE_SIZE;
+            const totalW = holePx / (cfg.qrWidth / 100);
+            const totalH = totalW * (cfg.frameHeight / cfg.frameWidth);
+            wrapper.style.width = totalW + 'px';
+            wrapper.style.height = totalH + 'px';
+            const img = document.createElement('img');
+            img.src = cfg.themable
+                ? await getThemedFrameUrl(cfg.url, primaryColor, secondaryColor)
+                : cfg.url;
+            img.alt = 'Frame';
+            img.className = 'frame-img w-full h-full object-contain block';
+            const qrInFrame = document.createElement('div');
+            qrInFrame.className = 'qr-in-frame absolute flex items-center justify-center';
+            qrInFrame.style.left = cfg.qrLeft + '%';
+            qrInFrame.style.top = cfg.qrTop + '%';
+            qrInFrame.style.width = cfg.qrWidth + '%';
+            qrInFrame.style.height = cfg.qrHeight + '%';
+            wrapper.appendChild(img);
+            wrapper.appendChild(qrInFrame);
+            qrContainer.innerHTML = '';
+            qrContainer.appendChild(wrapper);
+            appendTarget = qrInFrame;
+            qrStylingInstance = null;
+        }
+    } else {
+        // No frame: clear any previous wrapper so QR appends directly
+        if (qrContainer.querySelector('.frame-wrapper')) {
+            qrContainer.innerHTML = '';
+            qrStylingInstance = null;
+        }
+        appendTarget = qrContainer;
     }
 
     const dotsTypeMap = {
@@ -1867,9 +2032,9 @@ async function updateStep2QRPreview() {
     const cornersDotType = cornersDotTypeMap[cornerDotStyle] || 'dot';
 
     const options = {
-        width: 260,
-        height: 260,
-        type: 'svg',
+        width: qrDisplaySize,
+        height: qrDisplaySize,
+        type: 'canvas',
         data,
         margin: 0,
         qrOptions: {
@@ -1899,11 +2064,11 @@ async function updateStep2QRPreview() {
         },
     };
 
-    // Create or update QR code instance
+    // Create or update QR code instance (append to appendTarget: either qrContainer or qr-in-frame)
     if (!qrStylingInstance) {
-        qrContainer.innerHTML = '';
+        appendTarget.innerHTML = '';
         qrStylingInstance = new window.QRCodeStyling(options);
-        qrStylingInstance.append(qrContainer);
+        qrStylingInstance.append(appendTarget);
     } else {
         qrStylingInstance.update(options);
     }
@@ -2939,10 +3104,14 @@ async function generateStep3CustomizedQR(menuPageUrl) {
     const cornersSquareType = cornersSquareTypeMap[cornerStyle] || 'square';
     const cornersDotType = cornersDotTypeMap[cornerDotStyle] || 'dot';
     
+    const frameId = document.getElementById('selected_frame')?.value || 'none';
+    const STEP3_HOLE_SIZE = 300;
+    const step3QrDisplaySize = (frameId && frameId !== 'none') ? 260 : STEP3_HOLE_SIZE;
+    
     const options = {
-        width: 300,
-        height: 300,
-        type: 'svg',
+        width: step3QrDisplaySize,
+        height: step3QrDisplaySize,
+        type: 'canvas',
         data: qrContent,
         margin: 0,
         qrOptions: {
@@ -2971,13 +3140,44 @@ async function generateStep3CustomizedQR(menuPageUrl) {
             crossOrigin: 'anonymous',
         },
     };
-    
-    // Clear container and generate new QR code
-    qrPreviewContainer.innerHTML = '';
+
+    let step3AppendTarget = qrPreviewContainer;
+
+    if (frameId && frameId !== 'none' && FRAME_CONFIG[frameId]) {
+        const cfg = FRAME_CONFIG[frameId];
+        if (cfg.url && cfg.qrLeft !== undefined) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'frame-wrapper relative mx-auto inline-block';
+            const holePx = STEP3_HOLE_SIZE;
+            const totalW = holePx / (cfg.qrWidth / 100);
+            const totalH = totalW * (cfg.frameHeight / cfg.frameWidth);
+            wrapper.style.width = totalW + 'px';
+            wrapper.style.height = totalH + 'px';
+            const img = document.createElement('img');
+            img.src = cfg.themable
+                ? await getThemedFrameUrl(cfg.url, primaryColor, secondaryColor)
+                : cfg.url;
+            img.alt = 'Frame';
+            img.className = 'frame-img w-full h-full object-contain block';
+            const qrInFrame = document.createElement('div');
+            qrInFrame.className = 'qr-in-frame absolute flex items-center justify-center';
+            qrInFrame.style.left = cfg.qrLeft + '%';
+            qrInFrame.style.top = cfg.qrTop + '%';
+            qrInFrame.style.width = cfg.qrWidth + '%';
+            qrInFrame.style.height = cfg.qrHeight + '%';
+            wrapper.appendChild(img);
+            wrapper.appendChild(qrInFrame);
+            qrPreviewContainer.innerHTML = '';
+            qrPreviewContainer.appendChild(wrapper);
+            step3AppendTarget = qrInFrame;
+        }
+    } else {
+        qrPreviewContainer.innerHTML = '';
+    }
+
     const qrCodeStyling = new window.QRCodeStyling(options);
-    qrCodeStyling.append(qrPreviewContainer);
-    
-    // Store the instance globally for download functionality
+    qrCodeStyling.append(step3AppendTarget);
+
     window.step3QrInstance = qrCodeStyling;
 }
 
@@ -3025,29 +3225,65 @@ function retryGeneration() {
 }
 
 
-function downloadQR(format) {
+async function downloadQR(format) {
     if (!qrCodeId) {
         alert('Please generate a QR code first.');
         return;
     }
-    
-    // Use the customized QR code from Step 3 if available
+
+    const frameId = document.getElementById('selected_frame')?.value || 'none';
+    const hasFrame = frameId && frameId !== 'none' && FRAME_CONFIG[frameId] && FRAME_CONFIG[frameId].qrLeft !== undefined;
+
+    // When a frame is selected, download composite (frame + QR) as PNG
+    if (hasFrame && window.step3QrInstance) {
+        const cfg = FRAME_CONFIG[frameId];
+        const primaryColor = document.getElementById('primary_color')?.value || '#000000';
+        const secondaryColor = document.getElementById('secondary_color')?.value || '#FFFFFF';
+        const frameUrl = cfg.themable
+            ? await getThemedFrameUrl(cfg.url, primaryColor, secondaryColor)
+            : cfg.url;
+
+        const holePx = 300;
+        const qrSize = 260;
+        const totalW = Math.round(holePx / (cfg.qrWidth / 100));
+        const totalH = Math.round(totalW * (cfg.frameHeight / cfg.frameWidth));
+        const qrX = totalW * (cfg.qrLeft / 100);
+        const qrY = totalH * (cfg.qrTop / 100);
+
+        const canvas = document.createElement('canvas');
+        canvas.width = totalW;
+        canvas.height = totalH;
+        const ctx = canvas.getContext('2d');
+
+        const frameImg = new Image();
+        frameImg.crossOrigin = 'anonymous';
+        frameImg.onload = function() {
+            ctx.drawImage(frameImg, 0, 0, totalW, totalH);
+            const qrCanvas = document.querySelector('#qr-preview canvas');
+            if (qrCanvas) {
+                ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+            }
+            const link = document.createElement('a');
+            link.download = `qr-code-${qrCodeId}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        };
+        frameImg.onerror = function() {
+            window.step3QrInstance.download({ name: `qr-code-${qrCodeId}`, extension: 'png' });
+        };
+        frameImg.src = frameUrl;
+        return;
+    }
+
+    // No frame: download only QR
     if (window.step3QrInstance) {
         const fileName = `qr-code-${qrCodeId}`;
-        
         if (format === 'png') {
-            window.step3QrInstance.download({
-                name: fileName,
-                extension: 'png'
-            });
+            window.step3QrInstance.download({ name: fileName, extension: 'png' });
         } else if (format === 'svg') {
-            window.step3QrInstance.download({
-                name: fileName,
-                extension: 'svg'
-            });
+            window.step3QrInstance.download({ name: fileName, extension: 'svg' });
         }
     } else {
-        // Fallback to server download if customized instance is not available
         window.location.href = `/qr-codes/${qrCodeId}/download/${format}`;
     }
 }

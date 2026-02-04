@@ -1,0 +1,22 @@
+<svg width="400" height="500" viewBox="0 0 400 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect x="5" y="5" width="390" height="490" rx="20" fill="#SECONDARY#" stroke="#eeeeee" stroke-width="2"/>
+
+  <!-- Corner brackets -->
+  <path d="M 40 40 L 20 40 L 20 80" stroke="#PRIMARY#" stroke-width="6" stroke-linecap="round"/>
+  <path d="M 360 40 L 380 40 L 380 80" stroke="#PRIMARY#" stroke-width="6" stroke-linecap="round"/>
+  <path d="M 40 360 L 20 360 L 20 320" stroke="#PRIMARY#" stroke-width="6" stroke-linecap="round"/>
+  <path d="M 360 360 L 380 360 L 380 320" stroke="#PRIMARY#" stroke-width="6" stroke-linecap="round"/>
+
+  <!-- Wi-Fi signal + lock (password) icon -->
+  <g transform="translate(170, 415)" stroke="#333" stroke-width="6" stroke-linecap="round">
+    <!-- Signal Arcs -->
+    <path d="M 5 15 Q 30 -10 55 15" fill="none"/>
+    <path d="M 15 28 Q 30 18 45 28" fill="none"/>
+    <circle cx="30" cy="45" r="4" fill="#333" stroke="none"/>
+    
+    <!-- Lock (indicates password) -->
+    <rect x="55" y="30" width="14" height="12" rx="2" stroke-width="2" fill="#SECONDARY#"/>
+    <path d="M 58 30 V 26 A 4 4 0 0 1 66 26 V 30" stroke-width="2" fill="none"/>
+  </g>
+</svg>

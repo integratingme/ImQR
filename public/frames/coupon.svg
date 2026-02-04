@@ -1,0 +1,10 @@
+<svg width="400" height="500" viewBox="0 0 400 500" xmlns="http://www.w3.org/2000/svg">
+  <!-- Coupon shape with wavy sides and QR cutout area -->
+  <path fill="#ffffff" stroke="#333333" stroke-width="2" fill-rule="evenodd" d="M0 0H400C405 5,405 15,400 20S405 35,400 40S405 55,400 60S405 75,400 80S405 95,400 100S405 115,400 120S405 135,400 140S405 155,400 160S405 175,400 180S405 195,400 200S405 215,400 220S405 235,400 240S405 255,400 260S405 275,400 280S405 295,400 300S405 315,400 320S405 335,400 340S405 355,400 360S405 375,400 380L400 390H0L0 380C-5 375,-5 365,0 360S-5 345,0 340S-5 325,0 320S-5 305,0 300S-5 285,0 280S-5 265,0 260S-5 245,0 240S-5 225,0 220S-5 205,0 200S-5 185,0 180S-5 165,0 160S-5 145,0 140S-5 125,0 120S-5 105,0 100S-5 85,0 80S-5 65,0 60S-5 45,0 40S-5 25,0 20S-5 5,0 0ZM20 20H380V380H20Z"/>
+
+  <!-- Dashed line (perforation) below QR area -->
+  <line x1="20" y1="390" x2="380" y2="390" stroke="#999999" stroke-width="2" stroke-dasharray="5,5"/>
+
+  <!-- Bottom section of coupon -->
+  <rect x="0" y="390" width="400" height="110" fill="#SECONDARY#" />
+</svg>

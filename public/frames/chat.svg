@@ -1,0 +1,20 @@
+<svg width="400" height="500" viewBox="0 0 400 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect x="5" y="5" width="390" height="490" rx="20" fill="#SECONDARY#" stroke="#eeeeee" stroke-width="2"/>
+
+  <!-- Corner brackets -->
+  <path d="M 40 40 L 20 40 L 20 80" stroke="#PRIMARY#" stroke-width="6" stroke-linecap="round"/>
+  <path d="M 360 40 L 380 40 L 380 80" stroke="#PRIMARY#" stroke-width="6" stroke-linecap="round"/>
+  <path d="M 40 360 L 20 360 L 20 320" stroke="#PRIMARY#" stroke-width="6" stroke-linecap="round"/>
+  <path d="M 360 360 L 380 360 L 380 320" stroke="#PRIMARY#" stroke-width="6" stroke-linecap="round"/>
+
+  <!-- Chat bubble icon -->
+  <g transform="translate(170, 415)">
+    <!-- Bubble shape -->
+    <path d="M 10 10 H 50 A 10 10 0 0 1 60 20 V 40 A 10 10 0 0 1 50 50 H 20 L 5 60 V 20 A 10 10 0 0 1 10 10 Z" fill="#PRIMARY#"/>
+    <!-- Three dots -->
+    <circle cx="22" cy="30" r="3" fill="#SECONDARY#"/>
+    <circle cx="35" cy="30" r="3" fill="#SECONDARY#"/>
+    <circle cx="48" cy="30" r="3" fill="#SECONDARY#"/>
+  </g>
+</svg>
