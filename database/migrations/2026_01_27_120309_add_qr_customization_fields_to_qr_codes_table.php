@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('qr_codes', function (Blueprint $table) {
             $table->json('customization')->nullable()->after('colors');
-            // customization will store: pattern, corner_style, corner_dot_style, etc.
+            // customization will store: pattern, corner_style, corner_dot_style, frame, logo_url, review_us_config, etc.
         });
     }
 

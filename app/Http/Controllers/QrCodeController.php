@@ -101,7 +101,22 @@ class QrCodeController extends Controller
             'pattern' => $request->input('pattern', 'square'),
             'corner_style' => $request->input('corner_style', 'square'),
             'corner_dot_style' => $request->input('corner_dot_style', 'square'),
+            'frame' => $request->input('frame', 'none'),
+            'logo_url' => $request->input('qr_logo_data_url', null),
         ];
+        
+        // For review-us frame, save the custom configuration
+        if ($request->input('frame') === 'review-us') {
+            $customization['review_us_config'] = [
+                'color' => $request->input('review_frame_color') ?? '#84BD00',
+                'text_color' => $request->input('review_frame_text_color') ?? '#000000',
+                'line1' => $request->input('review_frame_line1') ?? 'your',
+                'line2' => $request->input('review_frame_line2') ?? 'text',
+                'line3' => $request->input('review_frame_line3') ?? 'here',
+                'icon' => $request->input('review_frame_icon') ?? 'default',
+                'logo_url' => $validated['review_frame_logo_url'] ?? null,
+            ];
+        }
 
         $hasFileUpload = false;
         $fileField = null;
@@ -295,7 +310,22 @@ class QrCodeController extends Controller
             'pattern' => $request->input('pattern', $qrCode->customization['pattern'] ?? 'square'),
             'corner_style' => $request->input('corner_style', $qrCode->customization['corner_style'] ?? 'square'),
             'corner_dot_style' => $request->input('corner_dot_style', $qrCode->customization['corner_dot_style'] ?? 'square'),
+            'frame' => $request->input('frame', $qrCode->customization['frame'] ?? 'none'),
+            'logo_url' => $request->input('qr_logo_data_url', $qrCode->customization['logo_url'] ?? null),
         ];
+        
+        // For review-us frame, save the custom configuration
+        if ($request->input('frame') === 'review-us') {
+            $customization['review_us_config'] = [
+                'color' => $request->input('review_frame_color') ?? '#84BD00',
+                'text_color' => $request->input('review_frame_text_color') ?? '#000000',
+                'line1' => $request->input('review_frame_line1') ?? 'your',
+                'line2' => $request->input('review_frame_line2') ?? 'text',
+                'line3' => $request->input('review_frame_line3') ?? 'here',
+                'icon' => $request->input('review_frame_icon') ?? 'default',
+                'logo_url' => $dataToStore['review_frame_logo_url'] ?? $qrCode->data['review_frame_logo_url'] ?? null,
+            ];
+        }
 
         $fileField = null;
         $fileType = null;
@@ -488,21 +518,13 @@ class QrCodeController extends Controller
     public function download($id, $format = 'png')
     {
         $qrCode = QrCode::findOrFail($id);
-
-        if ($format === 'svg') {
-            $svg = $this->qrCodeService->generateSvg($qrCode);
-            return response($svg)
-                ->header('Content-Type', 'image/svg+xml')
-                ->header('Content-Disposition', 'attachment; filename="qr-code-' . $qrCode->id . '.svg"');
-        }
-
-        $path = storage_path('app/public/' . $qrCode->qr_image_path);
         
-        if (!file_exists($path)) {
-            abort(404);
-        }
-
-        return response()->download($path, 'qr-code-' . $qrCode->id . '.png');
+        // Return a download page that will generate the styled QR code client-side
+        // This ensures the downloaded image matches what's shown in Step 3 and history
+        return view('qr-codes.download', [
+            'qrCode' => $qrCode,
+            'format' => $format,
+        ]);
     }
 
     public function history(Request $request)
@@ -515,11 +537,18 @@ class QrCodeController extends Controller
             $query->where('type', $typeFilter);
         }
         $qrCodes = $query->paginate(12)->withQueryString();
+        
+        // Pass frame configuration to view
+        $frameConfig = [];
+        foreach (['standard-border', 'thick-border', 'speech-bubble', 'menu-qr', 'location', 'wifi', 'chat', 'coupon', 'review-us'] as $frameId) {
+            $frameConfig[$frameId] = $this->qrCodeService->getFrameConfig($frameId);
+        }
 
         return view('qr-codes.history', [
             'qrCodes' => $qrCodes,
             'currentType' => $typeFilter,
             'historyTypes' => $historyTypes,
+            'frameConfig' => $frameConfig,
         ]);
     }
 

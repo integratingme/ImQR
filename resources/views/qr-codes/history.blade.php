@@ -61,18 +61,21 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                 @foreach($qrCodes as $qrCode)
                     <article class="group relative bg-white rounded-2xl border border-dark-100 shadow-sm hover:shadow-xl hover:border-dark-200/60 transition-all duration-300 overflow-hidden">
-                        {{-- QR preview area --}}
-                        <div class="p-6 pb-4">
-                            <div class="aspect-square max-w-[200px] mx-auto rounded-2xl bg-dark-50/80 p-4 flex items-center justify-center ring-1 ring-dark-100/50">
-                                @if($qrCode->qr_image_path)
-                                    <img src="{{ asset('storage/' . $qrCode->qr_image_path) }}" alt="{{ $qrCode->name }}" class="w-full h-full object-contain rounded-lg">
-                                @else
-                                    <div class="w-full h-full rounded-lg bg-dark-100 flex items-center justify-center">
-                                        <svg class="w-12 h-12 text-dark-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
-                                        </svg>
-                                    </div>
-                                @endif
+                        {{-- QR preview area – tall enough for frames (e.g. review-us), no aspect lock --}}
+                        <div class="p-5 pb-4">
+                            <div class="min-h-[320px] h-[440px] max-w-[360px] w-full mx-auto rounded-2xl bg-dark-50/80 p-3 flex items-center justify-center ring-1 ring-dark-100/50 overflow-hidden" 
+                                 id="qr-preview-{{ $qrCode->id }}"
+                                 data-qr-id="{{ $qrCode->id }}"
+                                 data-qr-type="{{ $qrCode->type }}"
+                                 data-qr-data="{{ json_encode($qrCode->data) }}"
+                                 data-qr-colors="{{ json_encode($qrCode->colors) }}"
+                                 data-qr-customization="{{ json_encode($qrCode->customization) }}">
+                                {{-- QR code will be rendered here by JavaScript --}}
+                                <div class="w-10 h-10 text-dark-300 animate-spin" aria-hidden="true">
+                                    <svg class="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                    </svg>
+                                </div>
                             </div>
                         </div>
 
@@ -179,4 +182,275 @@
         @endif
     </div>
 </div>
+
+@push('scripts')
+<script>
+(function() {
+// Base URL for frame SVGs (ensure trailing slash)
+var BASE_URL = '{{ rtrim(url("/"), "/") }}/';
+
+// Frame configuration (same as in create.blade.php)
+var FRAME_CONFIG = @json($frameConfig);
+
+// Wait for QRCodeStyling (set by app.js / qr-preview.js which loads as deferred module)
+function waitForQRCodeStyling(callback, maxWaitMs) {
+    maxWaitMs = maxWaitMs || 4000;
+    var start = Date.now();
+    function check() {
+        if (window.QRCodeStyling) {
+            callback(window.QRCodeStyling);
+            return;
+        }
+        if (Date.now() - start >= maxWaitMs) {
+            document.querySelectorAll('[data-qr-id]').forEach(function(el) {
+                el.innerHTML = '<div class="text-xs text-dark-400 text-center px-2">Preview unavailable</div>';
+            });
+            return;
+        }
+        setTimeout(check, 80);
+    }
+    check();
+}
+
+// Helper: normalize hex color
+function normalizeHexColor(val) {
+    if (!val || typeof val !== 'string') return '#000000';
+    val = val.trim().replace(/^#/, '');
+    if (/^[0-9A-Fa-f]{6}$/.test(val)) return '#' + val;
+    if (/^[0-9A-Fa-f]{3}$/.test(val)) return '#' + val[0] + val[0] + val[1] + val[1] + val[2] + val[2];
+    return '#000000';
+}
+
+// Helper: escape SVG text
+function escapeSvgText(s) {
+    if (s == null) return '';
+    return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+// Get themed frame URL
+async function getThemedFrameUrl(svgPath, primaryHex, secondaryHex) {
+    var primary = normalizeHexColor(primaryHex);
+    var secondary = normalizeHexColor(secondaryHex);
+    var res = await fetch(BASE_URL + svgPath);
+    let text = await res.text();
+    text = text.replace(/#PRIMARY#/gi, primary).replace(/#SECONDARY#/gi, secondary);
+    const blob = new Blob([text], { type: 'image/svg+xml' });
+    return URL.createObjectURL(blob);
+}
+
+// Get review-us frame with custom config
+async function getReviewUsFrameUrl(config) {
+    var svgPath = FRAME_CONFIG['review-us'] && FRAME_CONFIG['review-us'].url;
+    if (!svgPath) return '';
+    var res = await fetch(BASE_URL + svgPath);
+    let svg = await res.text();
+    
+    const frameColor = normalizeHexColor(config.color || '#84BD00');
+    const textColor = normalizeHexColor(config.text_color || '#000000');
+    
+    svg = svg.replace(/fill="#84BD00"/, 'fill="' + frameColor + '"');
+    svg = svg.replace(/(<text[^>]*?)fill="#000000"([^>]*>)/g, '$1fill="' + textColor + '"$2');
+    
+    const line1 = config.line1 || 'your';
+    const line2 = config.line2 || 'text';
+    const line3 = config.line3 || 'here';
+    
+    svg = svg.replace(/>your<\/text>/, '>' + escapeSvgText(line1) + '</text>');
+    svg = svg.replace(/>text<\/text>/, '>' + escapeSvgText(line2) + '</text>');
+    svg = svg.replace(/>here<\/text>/, '>' + escapeSvgText(line3) + '</text>');
+    
+    // Handle icon
+    const iconValue = config.icon || 'default';
+    const iconGroupRegex = /<g transform="translate\(100 480\)">[\s\S]*?<\/g>/;
+    
+    if (iconValue === 'custom' && config.logo_url) {
+        const iconReplacement = '<image x="100" y="480" width="200" height="80" href="' + config.logo_url.replace(/"/g, '&quot;') + '" preserveAspectRatio="xMidYMid meet"/>';
+        svg = svg.replace(iconGroupRegex, iconReplacement);
+    } else if (iconValue !== 'default' && iconValue !== 'custom') {
+        // Predefined icon URL
+        try {
+            const iconRes = await fetch(iconValue);
+            const iconSvgText = await iconRes.text();
+            const iconDataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(iconSvgText)));
+            const iconReplacement = '<image x="100" y="480" width="200" height="80" href="' + iconDataUrl.replace(/"/g, '&quot;') + '" preserveAspectRatio="xMidYMid meet"/>';
+            svg = svg.replace(iconGroupRegex, iconReplacement);
+        } catch (e) {
+            console.warn('Could not load icon', e);
+        }
+    }
+    
+    const blob = new Blob([svg], { type: 'image/svg+xml' });
+    return URL.createObjectURL(blob);
+}
+
+// Render QR code with customization (QRCodeStylingClass = window.QRCodeStyling from app.js)
+async function renderQRCode(container, QRCodeStylingClass) {
+    var QRS = QRCodeStylingClass || window.QRCodeStyling;
+    var qrId = container.dataset.qrId;
+    var qrType = container.dataset.qrType;
+    const qrData = JSON.parse(container.dataset.qrData || '{}');
+    const colors = JSON.parse(container.dataset.qrColors || '{}');
+    const customization = JSON.parse(container.dataset.qrCustomization || '{}');
+    
+    const primaryColor = normalizeHexColor(colors.primary || '#000000');
+    const secondaryColor = normalizeHexColor(colors.secondary || '#FFFFFF');
+    const pattern = customization.pattern || 'square';
+    const cornerStyle = customization.corner_style || 'square';
+    const cornerDotStyle = customization.corner_dot_style || 'square';
+    const frameId = customization.frame || 'none';
+    const logoUrl = customization.logo_url || '';
+    
+    // Build QR content based on type
+    let qrContent = '';
+    switch (qrType) {
+        case 'text':
+            qrContent = qrData.text_page_url || '';
+            break;
+        case 'pdf':
+            qrContent = qrData.pdf_page_url || '';
+            break;
+        case 'coupon':
+            qrContent = qrData.coupon_page_url || '';
+            break;
+        case 'app':
+            qrContent = qrData.app_page_url || '';
+            break;
+        case 'phone':
+            qrContent = qrData.phone_page_url || '';
+            break;
+        case 'menu':
+            qrContent = qrData.menu_page_url || '';
+            break;
+        case 'location':
+            qrContent = qrData.location_url || '';
+            break;
+        default:
+            qrContent = qrData.url || '';
+    }
+    
+    if (!qrContent) {
+        container.innerHTML = '<div class="text-xs text-dark-400">No QR data</div>';
+        return;
+    }
+    
+    // Map pattern/corner types to QRCodeStyling format
+    const dotsTypeMap = { square: 'square', circle: 'dots', rounded: 'rounded' };
+    const cornersSquareTypeMap = { square: 'square', rounded: 'rounded', 'extra-rounded': 'extra-rounded' };
+    const cornersDotTypeMap = { square: 'square', circle: 'dot', rounded: 'rounded' };
+    
+    const dotsType = dotsTypeMap[pattern] || 'square';
+    const cornersSquareType = cornersSquareTypeMap[cornerStyle] || 'square';
+    const cornersDotType = cornersDotTypeMap[cornerDotStyle] || 'square';
+    
+    // Calculate QR size based on frame (larger so preview is clear)
+    var HISTORY_QR_SIZE = 200;
+    var qrSize = (frameId && frameId !== 'none') ? 165 : HISTORY_QR_SIZE;
+    
+    const options = {
+        width: qrSize,
+        height: qrSize,
+        type: 'canvas',
+        data: qrContent,
+        margin: 0,
+        qrOptions: { errorCorrectionLevel: 'H' },
+        dotsOptions: { color: primaryColor, type: dotsType },
+        backgroundOptions: { color: secondaryColor },
+        cornersSquareOptions: { type: cornersSquareType, color: primaryColor },
+        cornersDotOptions: { type: cornersDotType, color: primaryColor },
+        image: logoUrl || undefined,
+        imageOptions: {
+            hideBackgroundDots: true,
+            imageSize: 0.4,
+            margin: 4,
+            crossOrigin: 'anonymous',
+        },
+    };
+    
+    container.innerHTML = '';
+    
+    // If frame is selected, create frame wrapper
+    if (frameId && frameId !== 'none' && FRAME_CONFIG[frameId]) {
+        const cfg = FRAME_CONFIG[frameId];
+        if (cfg && cfg.url) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'frame-wrapper relative mx-auto inline-block';
+            
+            const holePx = HISTORY_QR_SIZE;
+            const totalW = holePx / (cfg.qrWidth / 100);
+            const totalH = totalW * (cfg.frameHeight / cfg.frameWidth);
+            wrapper.style.width = totalW + 'px';
+            wrapper.style.height = totalH + 'px';
+            
+            const img = document.createElement('img');
+            if (frameId === 'review-us') {
+                img.src = await getReviewUsFrameUrl(customization.review_us_config || {});
+            } else {
+                img.src = cfg.themable
+                    ? await getThemedFrameUrl(cfg.url, primaryColor, secondaryColor)
+                    : BASE_URL + cfg.url;
+            }
+            img.alt = 'Frame';
+            img.className = 'frame-img w-full h-full object-contain block';
+            
+            const qrInFrame = document.createElement('div');
+            qrInFrame.className = 'qr-in-frame absolute flex items-center justify-center';
+            qrInFrame.style.left = cfg.qrLeft + '%';
+            qrInFrame.style.top = cfg.qrTop + '%';
+            qrInFrame.style.width = cfg.qrWidth + '%';
+            qrInFrame.style.height = cfg.qrHeight + '%';
+            
+            wrapper.appendChild(img);
+            wrapper.appendChild(qrInFrame);
+            container.appendChild(wrapper);
+            
+            var qrCodeStyling = new QRS(options);
+            qrCodeStyling.append(qrInFrame);
+            
+            // Scale wrapper to fit container so full frame is visible
+            setTimeout(function() {
+                var cw = container.clientWidth;
+                var ch = container.clientHeight;
+                var ww = totalW;
+                var wh = totalH;
+                if (cw > 0 && ch > 0 && (ww > cw || wh > ch)) {
+                    var scale = Math.min(cw / ww, ch / wh, 1);
+                    wrapper.style.transform = 'scale(' + scale + ')';
+                    wrapper.style.transformOrigin = 'center center';
+                }
+            }, 80);
+        }
+    } else {
+        // No frame - render QR directly
+        var qrCodeStyling = new QRS(options);
+        qrCodeStyling.append(container);
+    }
+}
+
+// Render all QR codes after DOM and app.js (QRCodeStyling) are ready
+document.addEventListener('DOMContentLoaded', function() {
+    waitForQRCodeStyling(function(QRCodeStylingClass) {
+        var containers = document.querySelectorAll('[data-qr-id]');
+        var i = 0;
+        function renderNext() {
+            if (i >= containers.length) return;
+            var container = containers[i];
+            i++;
+            renderQRCode(container, QRCodeStylingClass).then(function() {
+                renderNext();
+            }).catch(function(error) {
+                console.error('Error rendering QR code:', error);
+                container.innerHTML = '<div class="text-xs text-red-500 text-center px-2">Error loading</div>';
+                renderNext();
+            });
+        }
+        renderNext();
+    });
+});
+})();
+</script>
+@endpush
 @endsection

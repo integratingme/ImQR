@@ -2193,7 +2193,7 @@ async function updateStep2QRPreview() {
     const cornerDotStyle = document.getElementById('selected_corner_dot')?.value || 'square';
     const logoDataUrl = document.getElementById('qr_logo_data_url')?.value || '';
 
-    // Update overlay background color (Step 2 pozadina)
+    // Update overlay background color (Step 2 background)
     if (overlay) {
         overlay.style.backgroundColor = secondaryColor;
         if (frameId && frameId !== 'none') {
@@ -2206,7 +2206,7 @@ async function updateStep2QRPreview() {
     const data = buildQrContentFromForm();
 
     if (!window.QRCodeStyling) {
-        console.warn('QR Code Styling library is not loaded. Make sure you ran `npm install qr-code-styling` and Vite bundle je učitan.');
+        console.warn('QR Code Styling library is not loaded. Make sure you ran `npm install qr-code-styling` and the Vite bundle is loaded.');
         qrContainer.innerHTML = '';
         return;
     }

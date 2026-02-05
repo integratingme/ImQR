@@ -52,25 +52,25 @@
 function handleMp3Select(input) {
     const file = input.files[0];
     if (file) {
-        // Proveri da li je podržan audio format (MP3, M4A)
+        // Check if audio format is supported (MP3, M4A)
         const validTypes = ['audio/mpeg', 'audio/mp3', 'audio/mpeg3', 'audio/m4a', 'audio/x-m4a'];
         const validExtensions = ['.mp3', '.m4a'];
         const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
         
         if (!validTypes.includes(file.type) && !validExtensions.includes(fileExtension)) {
-            alert('Molimo odaberite audio fajl (MP3 ili M4A format).');
+            alert('Please select an audio file (MP3 or M4A format).');
             input.value = '';
             return;
         }
         
-        // Proveri veličinu (20MB = 20971520 bytes)
+        // Check file size (20MB = 20971520 bytes)
         if (file.size > 20971520) {
-            alert('Audio fajl je prevelik. Maksimalna veličina je 20MB.');
+            alert('Audio file is too large. Maximum size is 20MB.');
             input.value = '';
             return;
         }
         
-        // Prikaži informacije o fajlu
+        // Show file info
         document.getElementById('mp3-preview').classList.remove('hidden');
         document.getElementById('mp3-upload-area').classList.add('border-green-400', 'bg-green-50');
         document.getElementById('mp3-filename').textContent = file.name;

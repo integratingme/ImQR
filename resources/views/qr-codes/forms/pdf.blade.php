@@ -215,9 +215,9 @@
 function handlePdfSelect(input) {
     const file = input.files[0];
     if (file) {
-        // Proveri da li je PDF
+        // Check if file is PDF
         if (file.type !== 'application/pdf') {
-            alert('Molimo odaberite PDF fajl.');
+            alert('Please select a PDF file.');
             input.value = '';
             return;
         }

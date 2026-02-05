@@ -349,7 +349,7 @@ class QrCodeService
     }
 
     /**
-     * Generate QR code in SVG format
+     * Generate QR code in SVG format (basic, without frame)
      */
     public function generateSvg(QrCode $qrCode): string
     {
@@ -370,6 +370,17 @@ class QrCodeService
 
         // Apply customization
         return $this->applyCustomization($svg, $customization, $colors['primary'], $colors['secondary']);
+    }
+    
+    /**
+     * Generate QR code in SVG format with frame and full styling
+     * This method returns configuration data for client-side rendering
+     */
+    public function generateStyledSvg(QrCode $qrCode): string
+    {
+        // For styled SVG with frames, we need to generate it client-side
+        // Return the basic SVG for now (frames are handled client-side)
+        return $this->generateSvg($qrCode);
     }
 
     /**
@@ -417,5 +428,69 @@ class QrCodeService
 
         // For preview, return SVG as data URI (browsers can display SVG directly)
         return 'data:image/svg+xml;base64,' . base64_encode($customizedSvg);
+    }
+    
+    /**
+     * Get frame configuration for a given frame ID
+     */
+    public function getFrameConfig(string $frameId): ?array
+    {
+        $frames = [
+            'standard-border' => [
+                'url' => 'frames/standard-border.svg',
+                'qrLeft' => 5, 'qrTop' => 4, 'qrWidth' => 90, 'qrHeight' => 72,
+                'frameWidth' => 400, 'frameHeight' => 500,
+                'themable' => true
+            ],
+            'thick-border' => [
+                'url' => 'frames/thick-border.svg',
+                'qrLeft' => 5, 'qrTop' => 4, 'qrWidth' => 90, 'qrHeight' => 72,
+                'frameWidth' => 400, 'frameHeight' => 500,
+                'themable' => true
+            ],
+            'speech-bubble' => [
+                'url' => 'frames/speech-bubble.svg',
+                'qrLeft' => 5, 'qrTop' => 3.85, 'qrWidth' => 90, 'qrHeight' => 69.2,
+                'frameWidth' => 400, 'frameHeight' => 520,
+                'themable' => true
+            ],
+            'menu-qr' => [
+                'url' => 'frames/menu-qr.svg',
+                'qrLeft' => 5, 'qrTop' => 4, 'qrWidth' => 90, 'qrHeight' => 72,
+                'frameWidth' => 400, 'frameHeight' => 500,
+                'themable' => true
+            ],
+            'location' => [
+                'url' => 'frames/location.svg',
+                'qrLeft' => 5, 'qrTop' => 4, 'qrWidth' => 90, 'qrHeight' => 72,
+                'frameWidth' => 400, 'frameHeight' => 500,
+                'themable' => true
+            ],
+            'wifi' => [
+                'url' => 'frames/wifi.svg',
+                'qrLeft' => 5, 'qrTop' => 4, 'qrWidth' => 90, 'qrHeight' => 72,
+                'frameWidth' => 400, 'frameHeight' => 500,
+                'themable' => true
+            ],
+            'chat' => [
+                'url' => 'frames/chat.svg',
+                'qrLeft' => 5, 'qrTop' => 4, 'qrWidth' => 90, 'qrHeight' => 72,
+                'frameWidth' => 400, 'frameHeight' => 500,
+                'themable' => true
+            ],
+            'coupon' => [
+                'url' => 'frames/coupon.svg',
+                'qrLeft' => 5, 'qrTop' => 4, 'qrWidth' => 90, 'qrHeight' => 72,
+                'frameWidth' => 400, 'frameHeight' => 500,
+                'themable' => true
+            ],
+            'review-us' => [
+                'url' => 'frames/review-us.svg',
+                'qrLeft' => 15, 'qrTop' => 6.15, 'qrWidth' => 70, 'qrHeight' => 43.08,
+                'frameWidth' => 400, 'frameHeight' => 650
+            ]
+        ];
+        
+        return $frames[$frameId] ?? null;
     }
 }
