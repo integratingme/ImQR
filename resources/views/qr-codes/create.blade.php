@@ -348,7 +348,7 @@
                                                     <p class="text-xs text-dark-300">PNG, JPEG or SVG, max ~2 MB</p>
                                                 </div>
                                             </div>
-                                            <input id="qr_logo" name="qr_logo" type="file" accept="image/*" class="hidden">
+                                            <input id="qr_logo" name="qr_logo" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" class="hidden">
                                         </label>
                                     </div>
                                 </div>
@@ -524,6 +524,10 @@
                                 <button type="button" class="frame-option border-2 border-dark-200 p-3 hover:border-primary-400 transition-colors flex flex-col items-center" data-frame="chat" onclick="selectFrame(this, 'chat')">
                                     <img src="{{ asset('frames/chat.svg') }}" alt="Chat" class="w-full h-16 object-contain object-center border border-dark-200">
                                     <p class="text-xs text-center mt-2 text-dark-400">Chat</p>
+                                </button>
+                                <button type="button" class="frame-option border-2 border-dark-200 p-3 hover:border-primary-400 transition-colors flex flex-col items-center" data-frame="review-us" onclick="selectFrame(this, 'review-us')">
+                                    <img src="{{ asset('frames/review-us.svg') }}" alt="Review us" class="w-full h-16 object-contain object-center border border-dark-200">
+                                    <p class="text-xs text-center mt-2 text-dark-400">Review us</p>
                                 </button>
                             </div>
                             <input type="hidden" id="selected_frame" name="frame" value="none">
@@ -1917,6 +1921,11 @@ const FRAME_CONFIG = {
         qrLeft: 5, qrTop: 4, qrWidth: 90, qrHeight: 72,
         frameWidth: 400, frameHeight: 500,
         themable: true
+    },
+    'review-us': {
+        url: '{{ asset("frames/review-us.svg") }}',
+        qrLeft: 15, qrTop: 6.15, qrWidth: 70, qrHeight: 43.08,
+        frameWidth: 400, frameHeight: 650
     }
 };
 

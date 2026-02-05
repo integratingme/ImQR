@@ -28,6 +28,7 @@ class StoreQrCodeRequest extends FormRequest
             'name' => 'required|string|max:255',
             'primary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
             'secondary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'qr_logo' => 'nullable|image|mimes:jpeg,png,jpg|mimetypes:image/jpeg,image/png|max:2048', // Step 2 logo, JPG/PNG only
         ];
 
         $typeSpecificRules = match($type) {
@@ -43,15 +44,15 @@ class StoreQrCodeRequest extends FormRequest
                 'text' => 'required|string|max:500',
             ],
             'pdf' => [
-                'pdf_file' => 'required|file|mimes:pdf|max:5120', // 5MB
+                'pdf_file' => 'required|file|mimes:pdf|mimetypes:application/pdf|max:5120', // 5MB, PDF only
             ],
             'menu' => [
-                'menu_file' => 'nullable|file|mimes:pdf|max:5120', // 5MB
+                'menu_file' => 'nullable|file|mimes:pdf|mimetypes:application/pdf|max:5120', // 5MB, PDF only
                 'menu_url' => ['nullable', 'url', 'max:2048', 'regex:/^https:\/\//'],
                 'menu_primary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
                 'menu_secondary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
                 'menu_font_family' => 'nullable|string|max:100',
-                'menu_restaurant_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,svg|max:5120',
+                'menu_restaurant_image' => 'nullable|image|mimes:jpeg,png,jpg|mimetypes:image/jpeg,image/png|max:5120',
                 'restaurant_name' => 'nullable|string|max:255',
                 'restaurant_description' => 'nullable|string|max:1000',
                 'menu_restaurant_name_font_size' => 'nullable|integer|min:12|max:28',
@@ -66,11 +67,11 @@ class StoreQrCodeRequest extends FormRequest
                 'menu_sections.*.products.*.product_description' => 'nullable|string|max:500',
                 'menu_sections.*.products.*.price' => 'nullable|string|max:50',
                 'menu_sections.*.products.*.allergens' => 'nullable|string|max:255',
-                'menu_sections.*.products.*.product_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,svg|max:3072', // 3MB
+                'menu_sections.*.products.*.product_image' => 'nullable|image|mimes:jpeg,png,jpg|mimetypes:image/jpeg,image/png|max:3072', // 3MB, JPG/PNG only
             ],
             'coupon' => [
-                'coupon_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,svg|max:5120', // 5MB presentation image
-                'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,svg|max:2048', // 2MB
+                'coupon_image' => 'nullable|image|mimes:jpeg,png,jpg|mimetypes:image/jpeg,image/png|max:5120', // 5MB, JPG/PNG only
+                'logo' => 'nullable|image|mimes:jpeg,png,jpg|mimetypes:image/jpeg,image/png|max:2048', // 2MB, JPG/PNG only
                 'coupon_primary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
                 'coupon_secondary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
                 'coupon_button_text' => 'nullable|string|max:255',
@@ -85,13 +86,13 @@ class StoreQrCodeRequest extends FormRequest
                 'coupon_sales_badge_text_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
                 'coupon_code_button_text' => 'nullable|string|max:255',
                 'coupon_use_barcode' => 'nullable',
-                'coupon_barcode_image' => 'required_if:coupon_use_barcode,1|nullable|image|mimes:jpeg,png,jpg,gif,webp,svg|max:2048', // 2MB; required when use barcode
+                'coupon_barcode_image' => 'required_if:coupon_use_barcode,1|nullable|image|mimes:jpeg,png,jpg|mimetypes:image/jpeg,image/png|max:2048', // 2MB, JPG/PNG only
                 'coupon_valid_until' => 'required|date',
                 'coupon_view_more_text' => 'nullable|string|max:255',
                 'coupon_view_more_website' => ['required_without:coupon_barcode_image', 'nullable', 'url', 'max:2048', 'regex:/^https:\/\//'], // required if no barcode
             ],
             'event' => [
-                'event_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,svg|max:5120',
+                'event_image' => 'nullable|image|mimes:jpeg,png,jpg|mimetypes:image/jpeg,image/png|max:5120',
                 'company_name' => 'nullable|string|max:255',
                 'event_name' => 'required|string|max:255',
                 'description' => 'nullable|string|max:1000',
@@ -104,7 +105,7 @@ class StoreQrCodeRequest extends FormRequest
                 'contact' => 'nullable|string|max:255',
             ],
             'app' => [
-                'app_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,svg|max:5120',
+                'app_image' => 'nullable|image|mimes:jpeg,png,jpg|mimetypes:image/jpeg,image/png|max:5120',
                 'app_name' => 'nullable|string|max:255',
                 'app_description' => 'nullable|string|max:1000',
                 'app_primary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
@@ -202,9 +203,14 @@ class StoreQrCodeRequest extends FormRequest
             'text.max' => 'Text cannot exceed 500 characters.',
             'pdf_file.required' => 'Please upload a PDF file.',
             'pdf_file.mimes' => 'Only PDF files are allowed.',
+            'pdf_file.mimetypes' => 'Only PDF files are allowed.',
             'pdf_file.max' => 'PDF file cannot exceed 5MB.',
+            'menu_file.mimes' => 'Only PDF files are allowed.',
+            'menu_file.mimetypes' => 'Only PDF files are allowed.',
             'coupon_image.required' => 'Please upload a presentation image for your coupon.',
             'coupon_image.image' => 'Coupon presentation file must be an image.',
+            'coupon_image.mimes' => 'Only JPG and PNG images are allowed.',
+            'coupon_image.mimetypes' => 'Only JPG and PNG images are allowed.',
             'coupon_image.max' => 'Coupon image cannot exceed 5MB.',
             'coupon_company.required' => 'Company name is required.',
             'coupon_title.required' => 'Coupon title is required.',
@@ -214,6 +220,20 @@ class StoreQrCodeRequest extends FormRequest
             'coupon_view_more_website.required_without' => 'Please enter a website URL or upload a barcode (at least one is required).',
             'coupon_view_more_website.regex' => 'Website URL must start with https://',
             'coupon_barcode_image.required_if' => 'Please upload a barcode image when "Use barcode" is enabled.',
+            'coupon_barcode_image.mimes' => 'Only JPG and PNG images are allowed.',
+            'coupon_barcode_image.mimetypes' => 'Only JPG and PNG images are allowed.',
+            'logo.mimes' => 'Only JPG and PNG images are allowed.',
+            'logo.mimetypes' => 'Only JPG and PNG images are allowed.',
+            'qr_logo.mimes' => 'Only JPG and PNG images are allowed.',
+            'qr_logo.mimetypes' => 'Only JPG and PNG images are allowed.',
+            'menu_restaurant_image.mimes' => 'Only JPG and PNG images are allowed.',
+            'menu_restaurant_image.mimetypes' => 'Only JPG and PNG images are allowed.',
+            'event_image.mimes' => 'Only JPG and PNG images are allowed.',
+            'event_image.mimetypes' => 'Only JPG and PNG images are allowed.',
+            'app_image.mimes' => 'Only JPG and PNG images are allowed.',
+            'app_image.mimetypes' => 'Only JPG and PNG images are allowed.',
+            'menu_sections.*.products.*.product_image.mimes' => 'Only JPG and PNG images are allowed.',
+            'menu_sections.*.products.*.product_image.mimetypes' => 'Only JPG and PNG images are allowed.',
             'event_name.required' => 'Please enter an event name.',
             'ssid.required' => 'Please enter the WiFi network name.',
             'encryption.required' => 'Please select an encryption type.',

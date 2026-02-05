@@ -116,7 +116,7 @@
             <div>
                 <label for="coupon_image" class="label">Presentation image for your coupon</label>
                 <div id="coupon-upload-area" class="border-2 border-dashed border-dark-200 rounded-lg p-8 text-center hover:border-primary-400 transition-colors">
-                    <input type="file" id="coupon_image" name="coupon_image" accept="image/jpeg,image/png,image/jpg,image/gif,image/webp,image/svg+xml" class="hidden" onchange="handleCouponImagePreview(this)">
+                    <input type="file" id="coupon_image" name="coupon_image" accept=".jpg,.jpeg,.png,image/jpeg,image/png" class="hidden" onchange="handleCouponImagePreview(this)">
                     <label for="coupon_image" class="cursor-pointer">
                         <svg class="w-12 h-12 text-dark-200 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
@@ -212,7 +212,7 @@
             <div id="coupon-barcode-upload-wrap" class="hidden">
                 <label for="coupon_barcode_image" class="label">Upload barcode <span class="text-red-500">*</span></label>
                 <div id="coupon-barcode-upload-area" class="border-2 border-dashed border-dark-200 rounded-lg p-6 text-center hover:border-primary-400 transition-colors">
-                    <input type="file" id="coupon_barcode_image" name="coupon_barcode_image" accept="image/jpeg,image/png,image/jpg,image/gif,image/webp,image/svg+xml" class="hidden" onchange="handleImagePreview(this, 'coupon-barcode-preview', 'coupon-barcode-upload-area', function() { if (typeof updateStep1Preview === 'function') updateStep1Preview(); });">
+                    <input type="file" id="coupon_barcode_image" name="coupon_barcode_image" accept=".jpg,.jpeg,.png,image/jpeg,image/png" class="hidden" onchange="handleImagePreview(this, 'coupon-barcode-preview', 'coupon-barcode-upload-area', function() { if (typeof updateStep1Preview === 'function') updateStep1Preview(); });">
                     <label for="coupon_barcode_image" class="cursor-pointer">
                         <svg class="w-10 h-10 text-dark-200 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
@@ -273,7 +273,7 @@
     <div>
         <label for="logo" class="label">Logo (Optional)</label>
         <div id="logo-upload-area" class="border-2 border-dashed border-dark-200 rounded-lg p-6 text-center hover:border-primary-400 transition-colors">
-            <input type="file" id="logo" name="logo" accept="image/jpeg,image/png,image/jpg,image/gif,image/webp,image/svg+xml" class="hidden" onchange="handleImagePreview(this, 'logo-img-preview', 'logo-upload-area', function() { if (typeof updateStep1Preview === 'function') updateStep1Preview(); });">
+            <input type="file" id="logo" name="logo" accept=".jpg,.jpeg,.png,image/jpeg,image/png" class="hidden" onchange="handleImagePreview(this, 'logo-img-preview', 'logo-upload-area', function() { if (typeof updateStep1Preview === 'function') updateStep1Preview(); });">
             <label for="logo" class="cursor-pointer">
                 <svg class="w-10 h-10 text-dark-200 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
