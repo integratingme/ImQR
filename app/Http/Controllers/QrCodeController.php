@@ -32,7 +32,36 @@ class QrCodeController extends Controller
             abort(404);
         }
 
-        return view('qr-codes.create', compact('type'));
+        $reviewUsIcons = $this->getReviewUsPredefinedIcons();
+
+        return view('qr-codes.create', compact('type', 'reviewUsIcons'));
+    }
+
+    /**
+     * List predefined SVG icons from public/frames/review-us-icons/ for the Review us frame.
+     *
+     * @return array<int, array{url: string, name: string}>
+     */
+    protected function getReviewUsPredefinedIcons(): array
+    {
+        $dir = public_path('frames/review-us-icons');
+        if (!is_dir($dir)) {
+            return [];
+        }
+        $icons = [];
+        foreach (glob($dir . '/*.svg') ?: [] as $path) {
+            $basename = basename($path);
+            $filename = basename($path, '.svg');
+            if (strtolower($basename) === 'default.svg') {
+                continue;
+            }
+            $icons[] = [
+                'url' => asset('frames/review-us-icons/' . $basename),
+                'name' => ucfirst(str_replace(['-', '_'], ' ', $filename)),
+            ];
+        }
+        usort($icons, fn ($a, $b) => strcasecmp($a['name'], $b['name']));
+        return array_values($icons);
     }
 
     public function store(StoreQrCodeRequest $request)
@@ -126,6 +155,7 @@ class QrCodeController extends Controller
                 }
             }
 
+            unset($validated['review_frame_logo']);
             $qrCode->update(['data' => $validated]);
             // For coupon, also handle optional logo and barcode uploads, then set coupon page URL and regenerate QR
             if ($type === 'coupon') {
@@ -133,10 +163,17 @@ class QrCodeController extends Controller
                 $validated['coupon_page_url'] = route('qr-codes.coupon-page', $qrCode->id);
                 $qrCode->update(['data' => $validated]);
             }
+            // Review-us frame: upload custom logo if provided
+            if ($request->input('frame') === 'review-us' && $request->hasFile('review_frame_logo')) {
+                $file = $this->qrCodeService->handleFileUpload($qrCode, $request->file('review_frame_logo'), 'review_frame_logo');
+                $validated['review_frame_logo_url'] = asset('storage/' . $file->file_path);
+                $qrCode->update(['data' => array_merge($qrCode->data ?? [], ['review_frame_logo_url' => $validated['review_frame_logo_url']])]);
+            }
             $this->qrCodeService->regenerateQrCode($qrCode, $colors, $customization);
         } else {
             // For menu type, strip file inputs from data so we can store JSON (files are handled via handleFileUploads)
             $dataForStorage = $validated;
+            unset($dataForStorage['review_frame_logo']); // file handled below
             if ($type === 'menu') {
                 unset($dataForStorage['menu_file'], $dataForStorage['menu_restaurant_image']);
                 if (!empty($dataForStorage['menu_sections'])) {
@@ -207,6 +244,13 @@ class QrCodeController extends Controller
                 $qrCode->update(['data' => $dataForStorage]);
                 // Regenerate QR code with menu page URL
                 $this->qrCodeService->regenerateQrCode($qrCode, $colors, $customization);
+            }
+
+            // Review-us frame: upload custom logo if provided
+            if ($request->input('frame') === 'review-us' && $request->hasFile('review_frame_logo')) {
+                $file = $this->qrCodeService->handleFileUpload($qrCode, $request->file('review_frame_logo'), 'review_frame_logo');
+                $dataForStorage['review_frame_logo_url'] = asset('storage/' . $file->file_path);
+                $qrCode->update(['data' => array_merge($qrCode->data ?? [], ['review_frame_logo_url' => $dataForStorage['review_frame_logo_url']])]);
             }
         }
 

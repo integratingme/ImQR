@@ -29,6 +29,13 @@ class StoreQrCodeRequest extends FormRequest
             'primary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
             'secondary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
             'qr_logo' => 'nullable|image|mimes:jpeg,png,jpg|mimetypes:image/jpeg,image/png|max:2048', // Step 2 logo, JPG/PNG only
+            'frame' => 'nullable|string|max:50',
+            'review_frame_line1' => 'nullable|string|max:100',
+            'review_frame_line2' => 'nullable|string|max:100',
+            'review_frame_line3' => 'nullable|string|max:100',
+            'review_frame_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'review_frame_text_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'review_frame_logo' => 'nullable|image|mimes:jpeg,png,jpg|mimetypes:image/jpeg,image/png|max:2048', // Review-us frame custom icon, JPG/PNG only
         ];
 
         $typeSpecificRules = match($type) {

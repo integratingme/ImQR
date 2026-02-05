@@ -531,6 +531,79 @@
                                 </button>
                             </div>
                             <input type="hidden" id="selected_frame" name="frame" value="none">
+
+                            <!-- Review-us frame options (visible only when this frame is selected) -->
+                            <div id="review-us-frame-options" class="hidden mt-4 p-4 border border-dark-200 rounded-xl bg-dark-50 space-y-4">
+                                <p class="text-sm font-medium text-dark-600">Customize Review us frame</p>
+                                <div class="flex flex-wrap items-center gap-6">
+                                    <div>
+                                        <label for="review_frame_color" class="block text-xs font-medium text-dark-500 mb-1">Frame color</label>
+                                        <div class="flex items-center gap-2">
+                                            <input type="color" id="review_frame_color" name="review_frame_color" value="#84BD00" class="h-10 w-14 cursor-pointer rounded border border-dark-200 bg-white p-0.5">
+                                            <input type="text" id="review_frame_color_hex" maxlength="7" value="#84BD00" class="w-24 rounded-lg border border-dark-200 px-2 py-1.5 text-sm font-mono" placeholder="#84BD00">
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label for="review_frame_text_color" class="block text-xs font-medium text-dark-500 mb-1">Text color</label>
+                                        <div class="flex items-center gap-2">
+                                            <input type="color" id="review_frame_text_color" name="review_frame_text_color" value="#000000" class="h-10 w-14 cursor-pointer rounded border border-dark-200 bg-white p-0.5">
+                                            <input type="text" id="review_frame_text_color_hex" maxlength="7" value="#000000" class="w-24 rounded-lg border border-dark-200 px-2 py-1.5 text-sm font-mono" placeholder="#000000">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 gap-3">
+                                    <div>
+                                        <label for="review_frame_line1" class="block text-xs font-medium text-dark-500 mb-1">Line 1</label>
+                                        <input type="text" id="review_frame_line1" name="review_frame_line1" value="your" maxlength="100" class="w-full rounded-lg border border-dark-200 px-3 py-2 text-sm" placeholder="your">
+                                    </div>
+                                    <div>
+                                        <label for="review_frame_line2" class="block text-xs font-medium text-dark-500 mb-1">Line 2</label>
+                                        <input type="text" id="review_frame_line2" name="review_frame_line2" value="text" maxlength="100" class="w-full rounded-lg border border-dark-200 px-3 py-2 text-sm" placeholder="text">
+                                    </div>
+                                    <div>
+                                        <label for="review_frame_line3" class="block text-xs font-medium text-dark-500 mb-1">Line 3</label>
+                                        <input type="text" id="review_frame_line3" name="review_frame_line3" value="here" maxlength="100" class="w-full rounded-lg border border-dark-200 px-3 py-2 text-sm" placeholder="here">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-dark-500 mb-1">Icon</label>
+                                    <p class="text-xs text-dark-400 mb-2">Choose a predefined icon or upload your own (JPG/PNG, max 2MB).</p>
+                                    <input type="hidden" id="review_frame_icon" value="default">
+                                    <div id="review_frame_selected_preview" class="mb-3 p-3 rounded-lg border border-dark-200 bg-white flex items-center gap-2" data-default-icon-url="{{ asset('frames/review-us-icons/default.svg') }}">
+                                        <span class="text-xs text-dark-500 whitespace-nowrap">Selected:</span>
+                                        <img id="review_frame_selected_icon_img" src="{{ asset('frames/review-us-icons/default.svg') }}" alt="Selected icon" class="h-12 w-auto object-contain max-w-[200px]">
+                                    </div>
+                                    <div class="flex flex-wrap gap-2 mb-3">
+                                        <button type="button" class="review-frame-icon-option border-2 border-primary-500 px-3 py-2 rounded-lg text-xs font-medium flex flex-col items-center gap-1 min-w-[72px]" data-review-icon="default" onclick="selectReviewFrameIcon(this, 'default', 'here')" title="Default">
+                                            <img src="{{ asset('frames/review-us-icons/default.svg') }}" alt="Default" class="w-10 h-8 object-contain">
+                                            <span>Default</span>
+                                        </button>
+                                        @foreach($reviewUsIcons ?? [] as $icon)
+                                        <button type="button" class="review-frame-icon-option border-2 border-dark-200 px-3 py-2 rounded-lg text-xs font-medium flex flex-col items-center gap-1 min-w-[72px] hover:border-primary-400" data-review-icon-url="{{ $icon['url'] }}" data-review-icon-name="{{ $icon['name'] }}" onclick="selectReviewFrameIcon(this, this.getAttribute('data-review-icon-url'), this.getAttribute('data-review-icon-name'))" title="{{ $icon['name'] }}">
+                                            <img src="{{ $icon['url'] }}" alt="{{ $icon['name'] }}" class="w-10 h-8 object-contain">
+                                            <span class="truncate max-w-full">{{ $icon['name'] }}</span>
+                                        </button>
+                                        @endforeach
+                                        <button type="button" class="review-frame-icon-option border-2 border-dark-200 px-3 py-2 rounded-lg text-xs font-medium flex flex-col items-center gap-1 min-w-[72px] hover:border-primary-400" data-review-icon="custom" onclick="selectReviewFrameIcon(this, 'custom', null)" title="Upload your own">
+                                            <svg class="w-10 h-8 text-dark-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                                            <span>Custom</span>
+                                        </button>
+                                    </div>
+                                    <div id="review_frame_custom_upload" class="hidden border border-dark-200 rounded-lg p-3 bg-white">
+                                        <p class="text-xs text-dark-500 mb-2">Upload your own icon (JPG or PNG, max 2MB)</p>
+                                        <div class="flex items-center gap-3">
+                                            <input type="file" id="review_frame_logo" name="review_frame_logo" accept=".jpg,.jpeg,.png,image/jpeg,image/png" class="hidden">
+                                            <input type="hidden" id="review_frame_logo_data_url" value="">
+                                            <button type="button" onclick="document.getElementById('review_frame_logo').click()" class="btn btn-secondary btn-sm">Choose image</button>
+                                            <span id="review_frame_logo_filename" class="text-xs text-dark-400 truncate max-w-[140px]"></span>
+                                            <button type="button" id="review_frame_logo_remove" class="hidden btn btn-outline btn-xs" onclick="clearReviewFrameLogo()">Remove</button>
+                                        </div>
+                                        <div id="review_frame_logo_preview" class="mt-2 hidden">
+                                            <img id="review_frame_logo_preview_img" src="" alt="Logo preview" class="h-14 w-auto object-contain border border-dark-200 rounded-lg">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="flex justify-between mt-6">
@@ -1072,6 +1145,86 @@ function selectCorner(button, cornerValue) {
     updateStep2QRPreview();
 }
 
+var REVIEW_FRAME_PREDEFINED_TEXTS = {
+    'Tripadvisor': ['Review us', 'on', 'Tripadvisor'],
+    'Booking': ['Find us', 'on', 'Booking.com'],
+    'Airbnb': ['Book', 'via', 'Airbnb']
+};
+function selectReviewFrameIcon(button, value, line3Label) {
+    document.querySelectorAll('.review-frame-icon-option').forEach(btn => {
+        btn.classList.remove('border-primary-500');
+        btn.classList.add('border-dark-200');
+    });
+    button.classList.remove('border-dark-200');
+    button.classList.add('border-primary-500');
+    const hidden = document.getElementById('review_frame_icon');
+    if (hidden) hidden.value = value || '';
+    const customUpload = document.getElementById('review_frame_custom_upload');
+    if (customUpload) customUpload.classList.toggle('hidden', value !== 'custom');
+    var line1El = document.getElementById('review_frame_line1');
+    var line2El = document.getElementById('review_frame_line2');
+    var line3El = document.getElementById('review_frame_line3');
+    if (value === 'default' || value === 'custom') {
+        if (line1El) line1El.value = 'your';
+        if (line2El) line2El.value = 'text';
+        if (line3El) line3El.value = 'here';
+    } else if (value && (value.startsWith('http') || value.startsWith('/')) && line3Label) {
+        var texts = REVIEW_FRAME_PREDEFINED_TEXTS[line3Label];
+        if (texts) {
+            if (line1El) line1El.value = texts[0];
+            if (line2El) line2El.value = texts[1];
+            if (line3El) line3El.value = texts[2];
+        } else {
+            if (line1El) line1El.value = 'Review us';
+            if (line2El) line2El.value = 'on';
+            if (line3El) line3El.value = line3Label;
+        }
+    }
+    var previewImg = document.getElementById('review_frame_selected_icon_img');
+    var previewContainer = document.getElementById('review_frame_selected_preview');
+    if (previewImg && previewContainer) {
+        var defaultUrl = previewContainer.getAttribute('data-default-icon-url') || '';
+        if (value === 'default') {
+            previewImg.src = defaultUrl;
+            previewImg.alt = 'Default';
+        } else if (value === 'custom') {
+            var dataUrl = document.getElementById('review_frame_logo_data_url')?.value?.trim() || '';
+            previewImg.src = dataUrl || defaultUrl;
+            previewImg.alt = dataUrl ? 'Custom' : 'Default';
+        } else if (value && value !== 'custom') {
+            var btnImg = button.querySelector('img');
+            if (btnImg && btnImg.src) {
+                previewImg.src = btnImg.src;
+            } else {
+                previewImg.src = value;
+            }
+            previewImg.alt = line3Label || 'Icon';
+        }
+    }
+    if (currentStep === 2) updateStep2QRPreview();
+}
+
+function clearReviewFrameLogo() {
+    const input = document.getElementById('review_frame_logo');
+    const dataUrl = document.getElementById('review_frame_logo_data_url');
+    const filename = document.getElementById('review_frame_logo_filename');
+    const removeBtn = document.getElementById('review_frame_logo_remove');
+    const preview = document.getElementById('review_frame_logo_preview');
+    const previewImg = document.getElementById('review_frame_logo_preview_img');
+    if (input) input.value = '';
+    if (dataUrl) dataUrl.value = '';
+    if (filename) filename.textContent = '';
+    if (removeBtn) removeBtn.classList.add('hidden');
+    if (preview) preview.classList.add('hidden');
+    if (previewImg) previewImg.src = '';
+    var selectedIconImg = document.getElementById('review_frame_selected_icon_img');
+    var previewContainer = document.getElementById('review_frame_selected_preview');
+    if (selectedIconImg && previewContainer) {
+        selectedIconImg.src = previewContainer.getAttribute('data-default-icon-url') || '';
+    }
+    if (currentStep === 2) updateStep2QRPreview();
+}
+
 // Frame selection
 function selectFrame(button, frameValue) {
     document.querySelectorAll('.frame-option').forEach(btn => {
@@ -1081,6 +1234,10 @@ function selectFrame(button, frameValue) {
     button.classList.remove('border-dark-200');
     button.classList.add('border-primary-500');
     document.getElementById('selected_frame').value = frameValue;
+    const reviewUsOpts = document.getElementById('review-us-frame-options');
+    if (reviewUsOpts) {
+        reviewUsOpts.classList.toggle('hidden', frameValue !== 'review-us');
+    }
     updateStep2QRPreview();
 }
 
@@ -1940,6 +2097,85 @@ async function getThemedFrameUrl(svgUrl, primaryHex, secondaryHex) {
     return URL.createObjectURL(blob);
 }
 
+// Escape for SVG text content
+function escapeSvgText(s) {
+    if (s == null) return '';
+    return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+// Normalize hex color to #rrggbb
+function normalizeHexColor(val) {
+    if (!val || typeof val !== 'string') return '#84BD00';
+    val = val.trim().replace(/^#/, '');
+    if (/^[0-9A-Fa-f]{6}$/.test(val)) return '#' + val;
+    if (/^[0-9A-Fa-f]{3}$/.test(val)) return '#' + val[0] + val[0] + val[1] + val[1] + val[2] + val[2];
+    return '#84BD00';
+}
+
+// Build review-us frame SVG with custom text, color, and icon (default, predefined SVG, or custom upload); return blob URL
+async function getReviewUsFrameUrl() {
+    const url = FRAME_CONFIG['review-us']?.url;
+    if (!url) return '';
+    const res = await fetch(url);
+    let svg = await res.text();
+    const frameColor = normalizeHexColor(document.getElementById('review_frame_color')?.value || document.getElementById('review_frame_color_hex')?.value || '#84BD00');
+    const textColor = normalizeHexColor(document.getElementById('review_frame_text_color')?.value || document.getElementById('review_frame_text_color_hex')?.value || '#000000');
+    svg = svg.replace(/fill="#84BD00"/, 'fill="' + frameColor + '"');
+    svg = svg.replace(/(<text[^>]*?)fill="#000000"([^>]*>)/g, '$1fill="' + textColor + '"$2');
+    const line1 = document.getElementById('review_frame_line1')?.value ?? 'your';
+    const line2 = document.getElementById('review_frame_line2')?.value ?? 'text';
+    const line3 = document.getElementById('review_frame_line3')?.value ?? 'here';
+    svg = svg.replace(/>your<\/text>/, '>' + escapeSvgText(line1) + '</text>');
+    svg = svg.replace(/>text<\/text>/, '>' + escapeSvgText(line2) + '</text>');
+    svg = svg.replace(/>here<\/text>/, '>' + escapeSvgText(line3) + '</text>');
+    const iconValue = document.getElementById('review_frame_icon')?.value ?? 'default';
+    const iconGroupRegex = /<g transform="translate\(100 480\)">[\s\S]*?<\/g>/;
+    let iconReplacement = null;
+    var defaultIconUrl = document.getElementById('review_frame_selected_preview')?.getAttribute('data-default-icon-url') || '';
+    if (iconValue === 'custom') {
+        const logoDataUrl = document.getElementById('review_frame_logo_data_url')?.value?.trim() || '';
+        if (logoDataUrl) {
+            iconReplacement = '<image x="100" y="480" width="200" height="80" href="' + logoDataUrl.replace(/"/g, '&quot;') + '" preserveAspectRatio="xMidYMid meet"/>';
+        } else if (defaultIconUrl) {
+            try {
+                const iconRes = await fetch(defaultIconUrl);
+                const iconSvgText = await iconRes.text();
+                const iconDataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(iconSvgText)));
+                iconReplacement = '<image x="100" y="480" width="200" height="80" href="' + iconDataUrl.replace(/"/g, '&quot;') + '" preserveAspectRatio="xMidYMid meet"/>';
+            } catch (e) {
+                console.warn('Could not load default icon for custom fallback', e);
+            }
+        }
+    } else if (iconValue === 'default' && defaultIconUrl) {
+        try {
+            const iconRes = await fetch(defaultIconUrl);
+            const iconSvgText = await iconRes.text();
+            const iconDataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(iconSvgText)));
+            iconReplacement = '<image x="100" y="480" width="200" height="80" href="' + iconDataUrl.replace(/"/g, '&quot;') + '" preserveAspectRatio="xMidYMid meet"/>';
+        } catch (e) {
+            console.warn('Could not load default icon for preview', e);
+        }
+    } else if (iconValue && iconValue !== 'default' && (iconValue.startsWith('http') || iconValue.startsWith('/'))) {
+        try {
+            const iconRes = await fetch(iconValue);
+            const iconSvgText = await iconRes.text();
+            const iconDataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(iconSvgText)));
+            iconReplacement = '<image x="100" y="480" width="200" height="80" href="' + iconDataUrl.replace(/"/g, '&quot;') + '" preserveAspectRatio="xMidYMid meet"/>';
+        } catch (e) {
+            console.warn('Could not load predefined icon for preview', e);
+        }
+    }
+    if (iconReplacement) {
+        svg = svg.replace(iconGroupRegex, iconReplacement);
+    }
+    const blob = new Blob([svg], { type: 'image/svg+xml' });
+    return URL.createObjectURL(blob);
+}
+
 // Update Step 2 QR code preview with customization using qr-code-styling
 async function updateStep2QRPreview() {
     if (currentStep !== 2) return;
@@ -1991,9 +2227,13 @@ async function updateStep2QRPreview() {
             wrapper.style.width = totalW + 'px';
             wrapper.style.height = totalH + 'px';
             const img = document.createElement('img');
-            img.src = cfg.themable
-                ? await getThemedFrameUrl(cfg.url, primaryColor, secondaryColor)
-                : cfg.url;
+            if (frameId === 'review-us') {
+                img.src = await getReviewUsFrameUrl();
+            } else {
+                img.src = cfg.themable
+                    ? await getThemedFrameUrl(cfg.url, primaryColor, secondaryColor)
+                    : cfg.url;
+            }
             img.alt = 'Frame';
             img.className = 'frame-img w-full h-full object-contain block';
             const qrInFrame = document.createElement('div');
@@ -2292,6 +2532,97 @@ document.addEventListener('DOMContentLoaded', function() {
             logoRemoveBtn.style.display = 'none';
             updateStep2QRPreview();
         });
+    }
+
+    // Review-us frame: text fields update preview
+    ['review_frame_line1', 'review_frame_line2', 'review_frame_line3', 'review_frame_color', 'review_frame_color_hex', 'review_frame_text_color', 'review_frame_text_color_hex'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('input', () => { if (currentStep === 2) updateStep2QRPreview(); });
+            el.addEventListener('change', () => { if (currentStep === 2) updateStep2QRPreview(); });
+        }
+    });
+
+    // Review-us frame: sync color picker and hex input
+    const reviewFrameColor = document.getElementById('review_frame_color');
+    const reviewFrameColorHex = document.getElementById('review_frame_color_hex');
+    if (reviewFrameColor && reviewFrameColorHex) {
+        reviewFrameColor.addEventListener('input', function() {
+            reviewFrameColorHex.value = this.value;
+        });
+        reviewFrameColor.addEventListener('change', function() {
+            reviewFrameColorHex.value = this.value;
+        });
+        reviewFrameColorHex.addEventListener('input', function() {
+            var hex = this.value.trim();
+            if (/^#[0-9A-Fa-f]{6}$/.test(hex) || /^[0-9A-Fa-f]{6}$/.test(hex)) {
+                reviewFrameColor.value = hex.startsWith('#') ? hex : '#' + hex;
+            }
+        });
+        reviewFrameColorHex.addEventListener('change', function() {
+            var hex = normalizeHexColor(this.value);
+            this.value = hex;
+            reviewFrameColor.value = hex;
+        });
+    }
+    const reviewFrameTextColor = document.getElementById('review_frame_text_color');
+    const reviewFrameTextColorHex = document.getElementById('review_frame_text_color_hex');
+    if (reviewFrameTextColor && reviewFrameTextColorHex) {
+        reviewFrameTextColor.addEventListener('input', function() {
+            reviewFrameTextColorHex.value = this.value;
+        });
+        reviewFrameTextColor.addEventListener('change', function() {
+            reviewFrameTextColorHex.value = this.value;
+        });
+        reviewFrameTextColorHex.addEventListener('input', function() {
+            var hex = this.value.trim();
+            if (/^#[0-9A-Fa-f]{6}$/.test(hex) || /^[0-9A-Fa-f]{6}$/.test(hex)) {
+                reviewFrameTextColor.value = hex.startsWith('#') ? hex : '#' + hex;
+            }
+        });
+        reviewFrameTextColorHex.addEventListener('change', function() {
+            var hex = this.value.trim() ? normalizeHexColor(this.value) : '#000000';
+            this.value = hex;
+            reviewFrameTextColor.value = hex;
+        });
+    }
+
+    // Review-us frame: custom icon upload
+    const reviewFrameLogoInput = document.getElementById('review_frame_logo');
+    const reviewFrameLogoDataUrl = document.getElementById('review_frame_logo_data_url');
+    const reviewFrameLogoFilename = document.getElementById('review_frame_logo_filename');
+    const reviewFrameLogoRemove = document.getElementById('review_frame_logo_remove');
+    const reviewFrameLogoPreview = document.getElementById('review_frame_logo_preview');
+    const reviewFrameLogoPreviewImg = document.getElementById('review_frame_logo_preview_img');
+    if (reviewFrameLogoInput && reviewFrameLogoDataUrl) {
+        reviewFrameLogoInput.addEventListener('change', function() {
+            const file = this.files && this.files[0] ? this.files[0] : null;
+            if (!file) {
+                reviewFrameLogoDataUrl.value = '';
+                if (reviewFrameLogoFilename) reviewFrameLogoFilename.textContent = '';
+                if (reviewFrameLogoRemove) reviewFrameLogoRemove.classList.add('hidden');
+                if (reviewFrameLogoPreview) reviewFrameLogoPreview.classList.add('hidden');
+                if (currentStep === 2) updateStep2QRPreview();
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                reviewFrameLogoDataUrl.value = e.target.result;
+                if (reviewFrameLogoFilename) reviewFrameLogoFilename.textContent = file.name;
+                if (reviewFrameLogoRemove) reviewFrameLogoRemove.classList.remove('hidden');
+                if (reviewFrameLogoPreview && reviewFrameLogoPreviewImg) {
+                    reviewFrameLogoPreviewImg.src = e.target.result;
+                    reviewFrameLogoPreview.classList.remove('hidden');
+                }
+                var selectedIconImg = document.getElementById('review_frame_selected_icon_img');
+                if (selectedIconImg) selectedIconImg.src = e.target.result;
+                if (currentStep === 2) updateStep2QRPreview();
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+    if (reviewFrameLogoRemove && reviewFrameLogoInput) {
+        reviewFrameLogoRemove.addEventListener('click', clearReviewFrameLogo);
     }
 
     // Initial preview update
@@ -3115,7 +3446,11 @@ async function generateStep3CustomizedQR(menuPageUrl) {
     
     const frameId = document.getElementById('selected_frame')?.value || 'none';
     const STEP3_HOLE_SIZE = 300;
-    const step3QrDisplaySize = (frameId && frameId !== 'none') ? 260 : STEP3_HOLE_SIZE;
+    const STEP2_QR_IN_FRAME = 220;
+    const STEP2_HOLE_PX = 260;
+    const step3QrDisplaySize = (frameId && frameId !== 'none')
+        ? Math.round(STEP2_QR_IN_FRAME * STEP3_HOLE_SIZE / STEP2_HOLE_PX)
+        : STEP3_HOLE_SIZE;
     
     const options = {
         width: step3QrDisplaySize,
@@ -3163,9 +3498,13 @@ async function generateStep3CustomizedQR(menuPageUrl) {
             wrapper.style.width = totalW + 'px';
             wrapper.style.height = totalH + 'px';
             const img = document.createElement('img');
-            img.src = cfg.themable
-                ? await getThemedFrameUrl(cfg.url, primaryColor, secondaryColor)
-                : cfg.url;
+            if (frameId === 'review-us') {
+                img.src = await getReviewUsFrameUrl();
+            } else {
+                img.src = cfg.themable
+                    ? await getThemedFrameUrl(cfg.url, primaryColor, secondaryColor)
+                    : cfg.url;
+            }
             img.alt = 'Frame';
             img.className = 'frame-img w-full h-full object-contain block';
             const qrInFrame = document.createElement('div');
@@ -3248,16 +3587,22 @@ async function downloadQR(format) {
         const cfg = FRAME_CONFIG[frameId];
         const primaryColor = document.getElementById('primary_color')?.value || '#000000';
         const secondaryColor = document.getElementById('secondary_color')?.value || '#FFFFFF';
-        const frameUrl = cfg.themable
-            ? await getThemedFrameUrl(cfg.url, primaryColor, secondaryColor)
-            : cfg.url;
+        const frameUrl = frameId === 'review-us'
+            ? await getReviewUsFrameUrl()
+            : (cfg.themable
+                ? await getThemedFrameUrl(cfg.url, primaryColor, secondaryColor)
+                : cfg.url);
 
         const holePx = 300;
-        const qrSize = 260;
+        const qrSize = Math.round(220 * holePx / 260);
         const totalW = Math.round(holePx / (cfg.qrWidth / 100));
         const totalH = Math.round(totalW * (cfg.frameHeight / cfg.frameWidth));
-        const qrX = totalW * (cfg.qrLeft / 100);
-        const qrY = totalH * (cfg.qrTop / 100);
+        const holeLeft = totalW * (cfg.qrLeft / 100);
+        const holeTop = totalH * (cfg.qrTop / 100);
+        const holeWidth = totalW * (cfg.qrWidth / 100);
+        const holeHeight = totalH * (cfg.qrHeight / 100);
+        const qrX = holeLeft + (holeWidth - qrSize) / 2;
+        const qrY = holeTop + (holeHeight - qrSize) / 2;
 
         const canvas = document.createElement('canvas');
         canvas.width = totalW;

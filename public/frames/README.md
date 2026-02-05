@@ -36,7 +36,9 @@ This folder contains SVG frames that wrap around the QR code in the generator.
 
 4. **Themable frames (palette):** In your SVG use `#PRIMARY#` and `#SECONDARY#`; the app replaces them with the Step 2 colors. In FRAME_CONFIG add `themable: true`. See `menu-qr.svg` and `location.svg`.
 
-5. **Reference examples** in this folder:
+5. **Review-us frame icons:** Predefined icons for the “Review us” frame live in `frames/review-us-icons/`. Add `.svg` files there; they appear as selectable options (see that folder’s README).
+
+6. **Reference examples** in this folder:
    - `standard-border.svg` – single thick border + bar below.
    - `thick-border.svg` – extra thick border.
    - `speech-bubble.svg` – border + speech bubble below.

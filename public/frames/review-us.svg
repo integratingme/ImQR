@@ -1,0 +1,21 @@
+<svg width="400" height="650" viewBox="0 0 400 650" xmlns="http://www.w3.org/2000/svg">
+  <!-- Lime green pill shape: rounded top (rx=30), large curved bottom -->
+  <path fill="#84BD00" fill-rule="evenodd" d="M30 0H370Q400 0 400 30V570Q400 650 200 650Q0 650 0 570V30Q0 0 30 0Z"/>
+
+  <!-- Transparent hole for QR (280x280, centered); QR is drawn on top by the app -->
+  <rect x="60" y="40" width="280" height="280" rx="20" ry="20" fill="none"/>
+
+  <!-- Text: your / text / here (same size and spacing) -->
+  <text x="200" y="355" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="#000000" text-anchor="middle">your</text>
+  <text x="200" y="395" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="#000000" text-anchor="middle">text</text>
+  <text x="200" y="435" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="#000000" text-anchor="middle">here</text>
+
+  <!-- Default icon at bottom (replace with predefined or custom in the app) -->
+  <g transform="translate(100 480)">
+    <circle cx="50" cy="35" r="25" fill="#000000"/>
+    <circle cx="150" cy="35" r="25" fill="#000000"/>
+    <circle cx="50" cy="35" r="10" fill="#ffffff"/>
+    <circle cx="150" cy="35" r="10" fill="#ffffff"/>
+    <path d="M85 55 L100 75 L115 55 Z" fill="#000000"/>
+  </g>
+</svg>
