@@ -36,6 +36,9 @@ class StoreQrCodeRequest extends FormRequest
             'review_frame_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
             'review_frame_text_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
             'review_frame_logo' => 'nullable|image|mimes:jpeg,png,jpg|mimetypes:image/jpeg,image/png|max:2048', // Review-us frame custom icon, JPG/PNG only
+            // Honeypot – must be empty (bots often fill these)
+            'hp_url' => 'nullable|string|max:0',
+            'hp_comment' => 'nullable|string|max:0',
         ];
 
         $typeSpecificRules = match($type) {
@@ -257,6 +260,8 @@ class StoreQrCodeRequest extends FormRequest
             'website_url.regex' => 'Website URL must start with https://',
             'app_store_link.regex' => 'App Store Link must start with https://apps.apple.com/',
             'play_store_link.regex' => 'Google Play Store Link must start with https://play.google.com/store/apps/',
+            'hp_url.max' => 'An error occurred while submitting the form. Please try again later.',
+            'hp_comment.max' => 'An error occurred while submitting the form. Please try again later.',
         ];
     }
 }

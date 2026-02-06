@@ -238,7 +238,13 @@
     <form id="qr-form" enctype="multipart/form-data" @if($type === 'coupon') data-coupon-default-promo-url="{{ asset('coupon-icons/coupon-promo-image.webp') }}" @endif>
         @csrf
         <input type="hidden" name="type" value="{{ $type }}">
-        
+
+        {{-- Honeypot fields – invisible to users, bots often fill these --}}
+        <div style="display: none; position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden;">
+            <input type="text" name="hp_url" value="" autocomplete="off" tabindex="-1" disabled>
+            <input type="text" name="hp_comment" value="" autocomplete="off" tabindex="-1" disabled>
+        </div>
+
         <!-- Step 1: Setup Info -->
         <div id="step-1" class="step-content">
             <div class="max-w-7xl mx-auto">
