@@ -7,6 +7,7 @@ use App\Models\QrCodeFile;
 use SimpleSoftwareIO\QrCode\Facades\QrCode as QrCodeGenerator;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Str;
 
 class QrCodeService
 {
@@ -17,7 +18,12 @@ class QrCodeService
     {
         // Generate QR code content based on type
         $qrContent = $this->generateQrContent($type, $data);
-        
+
+        // For location type: always store the resolved URL in data so history/download can display the QR
+        if ($type === 'location' && $qrContent !== '') {
+            $data['location_url'] = $qrContent;
+        }
+
         // Create QR code record
         $qrCode = QrCode::create([
             'type' => $type,
@@ -302,19 +308,72 @@ class QrCodeService
     }
 
     /**
-     * Handle file upload
+     * Allowed extensions per category (whitelist only; never use client name for path).
+     */
+    private const EXTENSION_WHITELIST = [
+        'pdf' => ['pdf'],
+        'image' => ['jpg', 'jpeg', 'png'],
+        'audio' => ['mp3', 'm4a'],
+    ];
+
+    /**
+     * Handle file upload. Stores file with a generated safe name (UUID + whitelisted extension)
+     * to avoid path traversal, .htaccess overwrite, special chars, null byte injection.
      */
     public function handleFileUpload(QrCode $qrCode, UploadedFile $file, string $fileType): QrCodeFile
     {
-        $path = $file->store('qr-files', 'public');
-        
+        $safeExtension = $this->getSafeExtension($file, $fileType);
+        $safeName = Str::uuid()->toString() . '.' . $safeExtension;
+        $directory = 'qr-files';
+        $path = $file->storeAs($directory, $safeName, 'public');
+
+        $originalName = $this->sanitizeOriginalName($file->getClientOriginalName(), $safeExtension);
+
         return QrCodeFile::create([
             'qr_code_id' => $qrCode->id,
             'file_type' => $fileType,
             'file_path' => $path,
-            'original_name' => $file->getClientOriginalName(),
+            'original_name' => $originalName,
             'file_size' => $file->getSize(),
         ]);
+    }
+
+    /**
+     * Get a safe extension from whitelist based on file type (never trust client).
+     */
+    private function getSafeExtension(UploadedFile $file, string $fileType): string
+    {
+        $clientExt = strtolower($file->getClientOriginalExtension() ?? '');
+
+        if (str_starts_with($fileType, 'menu_product_') || $fileType === 'review_frame_logo') {
+            $allowed = self::EXTENSION_WHITELIST['image'];
+        } elseif ($fileType === 'pdf' || $fileType === 'menu') {
+            $allowed = self::EXTENSION_WHITELIST['pdf'];
+        } elseif ($fileType === 'audio' || $fileType === 'mp3_file') {
+            $allowed = self::EXTENSION_WHITELIST['audio'];
+        } else {
+            $allowed = self::EXTENSION_WHITELIST['image'];
+        }
+
+        return in_array($clientExt, $allowed, true) ? $clientExt : $allowed[0];
+    }
+
+    /**
+     * Sanitize original name for display/download only (never used for path).
+     */
+    private function sanitizeOriginalName(string $name, string $fallbackExtension): string
+    {
+        $name = str_replace(["\0", "\r", "\n"], '', $name);
+        $name = basename($name);
+        $name = preg_replace('/[^\w\s.\-]/u', '_', $name) ?? $name;
+        $name = trim($name);
+        if (strlen($name) > 200) {
+            $name = substr($name, 0, 200);
+        }
+        if ($name === '' || $name === '.') {
+            return 'download.' . $fallbackExtension;
+        }
+        return $name;
     }
 
     /**

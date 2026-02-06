@@ -232,9 +232,16 @@
                 case 'menu':
                     qrContent = qrData.menu_page_url || '';
                     break;
-                case 'location':
+                case 'location': {
                     qrContent = qrData.location_url || '';
+                    if (!qrContent && qrData.latitude != null && qrData.longitude != null) {
+                        qrContent = 'https://www.google.com/maps?q=' + qrData.latitude + ',' + qrData.longitude;
+                    }
+                    if (!qrContent && (qrData.address || '').trim()) {
+                        qrContent = 'https://www.google.com/maps?q=' + encodeURIComponent((qrData.address || '').trim());
+                    }
                     break;
+                }
                 default:
                     qrContent = qrData.url || '';
             }

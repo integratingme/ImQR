@@ -1,2 +1,13 @@
 User-agent: *
-Disallow:
+Disallow: /admin/
+Disallow: /login/
+Disallow: /wp-admin/
+Disallow: /phpmyadmin/
+Disallow: /.env
+Disallow: /.DS_Store
+Disallow: /.git/
+Disallow: /backup/
+Disallow: /config/
+Disallow: /*.bak
+Disallow: /*.old
+Disallow: /*.sql
