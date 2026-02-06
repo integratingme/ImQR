@@ -1,28 +1,71 @@
-*.log
+# =====================
+# System / hidden files & OS junk
+# =====================
 .DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.fseventsd
+Thumbs.db
+ehthumbs.db
+Icon?
+
+# Environment 
 .env
+.env.*
+!.env.example          
 .env.backup
 .env.production
+.env.testing
+
+# Editor / IDE files & temp
+*~
+.*.swp
+.*.swo
+.*.swn
+.#*
 .phpactor.json
 .phpunit.result.cache
+/.phpunit.cache
 /.fleet
 /.idea
 /.nova
-/.phpunit.cache
 /.vscode
 /.zed
-/auth.json
+/.sublime-*
+/.vscode/settings.json   
+
+# Laravel-specific
+/vendor
 /node_modules
-package-lock.json
-composer.lock
-yarn.lock
-pnpm-lock.yaml
-/public/build
 /public/hot
 /public/storage
+/public/build
 /storage/*.key
 /storage/pail
-/vendor
+/storage/framework/cache/data/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/logs/*
+/bootstrap/cache/*
+/composer.lock           
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Testing & misc
 Homestead.json
 Homestead.yaml
-Thumbs.db
+/.php_cs.cache
+/.php_cs.dist.cache
+phpunit.xml
+phpstan.neon
+psalm.xml
+rector.php
+
+# Logs & caches
+*.log
