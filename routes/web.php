@@ -7,7 +7,15 @@ use Illuminate\Support\Facades\Route;
 // QR Code Routes
 Route::get('/', [QrCodeController::class, 'index'])->name('qr-codes.index');
 Route::get('/qr-codes/create/{type}', [QrCodeController::class, 'create'])->name('qr-codes.create');
-Route::post('/qr-codes', [QrCodeController::class, 'store'])->middleware(['throttle:qr-create', 'throttle:qr-create-daily'])->name('qr-codes.store');
+
+Route::middleware(['throttle:qr-create', 'throttle:qr-create-daily'])->group(function () {
+    Route::post('/qr-codes', [QrCodeController::class, 'store'])->name('qr-codes.store');
+
+    Route::options('/qr-codes', function () {
+        return response()->noContent(204);
+    });
+});
+
 Route::put('/qr-codes/{id}', [QrCodeController::class, 'update'])->name('qr-codes.update');
 Route::delete('/qr-codes/{id}', [QrCodeController::class, 'destroy'])->name('qr-codes.destroy');
 Route::post('/qr-codes/preview', [QrCodeController::class, 'preview'])->name('qr-codes.preview');
