@@ -26,7 +26,7 @@ class QrCodeController extends Controller
 
     public function create(string $type)
     {
-        $validTypes = ['url', 'email', 'text', 'pdf', 'menu', 'coupon', 'event', 'app', 'location', 'wifi', 'phone', 'mp3'];
+        $validTypes = ['url', 'email', 'text', 'pdf', 'menu', 'coupon', 'event', 'app', 'location', 'wifi', 'phone', 'mp3', 'business_card'];
         
         if (!in_array($type, $validTypes)) {
             abort(404);
@@ -190,6 +190,9 @@ class QrCodeController extends Controller
             // For menu type, strip file inputs from data so we can store JSON (files are handled via handleFileUploads)
             $dataForStorage = $validated;
             unset($dataForStorage['review_frame_logo']); // file handled below
+            if ($type === 'business_card') {
+                $dataForStorage = $this->normalizeBusinessCardData($validated);
+            }
             if ($type === 'menu') {
                 unset($dataForStorage['menu_file'], $dataForStorage['menu_restaurant_image']);
                 if (!empty($dataForStorage['menu_sections'])) {
@@ -228,6 +231,18 @@ class QrCodeController extends Controller
             if ($type === 'phone') {
                 $validated['phone_page_url'] = route('qr-codes.phone-page', $qrCode->id);
                 $qrCode->update(['data' => $validated]);
+                $this->qrCodeService->regenerateQrCode($qrCode, $colors, $customization);
+            }
+
+            // For business_card type: normalize data for card page and set business_card_page_url
+            if ($type === 'business_card') {
+                $cardData = $this->normalizeBusinessCardData($validated);
+                $cardData['business_card_page_url'] = route('qr-codes.business-card-page', $qrCode->id);
+                $logoFile = $qrCode->fresh()->files()->where('file_type', 'business_card_logo')->orderByDesc('id')->first();
+                if ($logoFile) {
+                    $cardData['logo_url'] = asset('storage/' . $logoFile->file_path);
+                }
+                $qrCode->update(['data' => $cardData]);
                 $this->qrCodeService->regenerateQrCode($qrCode, $colors, $customization);
             }
 
@@ -398,8 +413,20 @@ class QrCodeController extends Controller
         if ($type === 'phone') {
             $dataToStore['phone_page_url'] = route('qr-codes.phone-page', $qrCode->id);
         }
+        if ($type === 'business_card') {
+            $dataToStore = array_merge($existingData, $this->normalizeBusinessCardData($validated));
+            $dataToStore['business_card_page_url'] = route('qr-codes.business-card-page', $qrCode->id);
+        }
 
         $this->handleFileUploads($request, $qrCode, $type);
+
+        // For business_card type, update logo_url after file uploads
+        if ($type === 'business_card') {
+            $logoFile = $qrCode->fresh()->files()->where('file_type', 'business_card_logo')->orderByDesc('id')->first();
+            if ($logoFile) {
+                $dataToStore['logo_url'] = asset('storage/' . $logoFile->file_path);
+            }
+        }
 
         $dataToStore = $this->stripFilesFromArray($dataToStore);
 
@@ -530,7 +557,7 @@ class QrCodeController extends Controller
 
     public function history(Request $request)
     {
-        $historyTypes = ['text', 'coupon', 'pdf', 'app', 'phone', 'menu', 'location'];
+        $historyTypes = ['text', 'coupon', 'pdf', 'app', 'phone', 'menu', 'location', 'business_card'];
         $typeFilter = $request->get('type');
 
         $query = QrCode::whereIn('type', $historyTypes)->latest();
@@ -740,6 +767,79 @@ class QrCodeController extends Controller
         ));
     }
 
+    public function showBusinessCardPage($id)
+    {
+        $qrCode = QrCode::findOrFail($id);
+
+        if ($qrCode->type !== 'business_card') {
+            abort(404);
+        }
+
+        $data = $qrCode->data ?? [];
+        $card = (object) [
+            'company_name' => $data['company_name'] ?? 'Company',
+            'subtitle' => $data['subtitle'] ?? '',
+            'logo_url' => $data['logo_url'] ?? null,
+            'primary_color' => $data['primary_color'] ?? '#6B5CE6',
+            'secondary_color' => $data['secondary_color'] ?? '#F3F4F6',
+            'font_family' => $data['font_family'] ?? 'Maven Pro',
+            'buttons' => $data['buttons'] ?? [],
+            'about' => $data['about'] ?? '',
+            'contact_name' => $data['contact_name'] ?? '',
+            'phone' => $data['phone'] ?? '',
+            'email' => $data['email'] ?? '',
+            'address' => $data['address'] ?? '',
+            'maps_link' => $data['maps_link'] ?? '',
+            'working_hours' => $data['working_hours'] ?? '',
+            'socials' => $data['socials'] ?? [],
+        ];
+
+        return view('qr-codes.business-card-page', compact('card'));
+    }
+
+    /**
+     * Normalize business card form data to stored card keys (for data and show page).
+     */
+    protected function normalizeBusinessCardData(array $validated): array
+    {
+        $buttons = [];
+        foreach ($validated['business_card_buttons'] ?? [] as $b) {
+            $label = trim((string) ($b['label'] ?? ''));
+            $url = trim((string) ($b['url'] ?? ''));
+            if ($label === '' && $url === '') {
+                continue;
+            }
+            $buttons[] = ['label' => $label ?: 'Link', 'url' => $url ?: '#'];
+        }
+
+        $socials = [];
+        foreach ($validated['business_card_socials'] ?? [] as $s) {
+            $url = trim((string) ($s['url'] ?? ''));
+            if ($url === '') {
+                continue;
+            }
+            $socials[] = ['platform' => $s['platform'] ?? 'website', 'url' => $url];
+        }
+
+        return [
+            'name' => $validated['name'] ?? 'Business Card',
+            'company_name' => $validated['business_card_company_name'] ?? 'Your Company Name',
+            'subtitle' => $validated['business_card_subtitle'] ?? '',
+            'primary_color' => $validated['business_card_primary_color'] ?? '#e54e1a',
+            'secondary_color' => $validated['business_card_secondary_color'] ?? '#FFFFFF',
+            'font_family' => $validated['business_card_font_family'] ?? 'Maven Pro',
+            'buttons' => $buttons,
+            'about' => $validated['business_card_about'] ?? '',
+            'contact_name' => $validated['business_card_contact_name'] ?? '',
+            'phone' => $validated['business_card_phone'] ?? '',
+            'email' => $validated['business_card_email'] ?? '',
+            'address' => $validated['business_card_address'] ?? '',
+            'maps_link' => $validated['business_card_maps_link'] ?? '',
+            'working_hours' => $validated['business_card_working_hours'] ?? '',
+            'socials' => $socials,
+        ];
+    }
+
     public function showCouponPage($id)
     {
         $qrCode = QrCode::with('files')->findOrFail($id);
@@ -892,6 +992,7 @@ class QrCodeController extends Controller
             'coupon' => ['logo' => 'logo', 'coupon_barcode_image' => 'barcode'],
             'event' => ['event_image' => 'image'],
             'app' => ['app_image' => 'image'],
+            'business_card' => ['business_card_logo' => 'business_card_logo'],
         ];
 
         if (!isset($fileFields[$type])) {

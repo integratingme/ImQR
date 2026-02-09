@@ -10,7 +10,7 @@
             Create Your <span class="text-gradient">QR Code</span>
         </h1>
         <p class="text-xl text-dark-300 max-w-2xl mx-auto">
-            Choose from 12 different QR code types to create professional, customizable QR codes in seconds
+            Choose from 13 different QR code types to create professional, customizable QR codes in seconds
         </p>
     </div>
 
@@ -144,6 +144,19 @@
                 </div>
                 <h3 class="text-lg font-semibold text-dark-500 mb-2">WiFi</h3>
                 <p class="text-sm text-dark-300">WiFi credentials</p>
+            </div>
+        </a>
+
+        <!-- Business Card QR Code -->
+        <a href="{{ route('qr-codes.create', 'business_card') }}" class="card card-hover group">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-violet-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-violet-200 transition-colors">
+                    <svg class="w-8 h-8 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold text-dark-500 mb-2">Business Card</h3>
+                <p class="text-sm text-dark-300">Digital business card</p>
             </div>
         </a>
 

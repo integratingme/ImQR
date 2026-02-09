@@ -47,6 +47,7 @@ class QrCode extends Model
             'wifi' => 'WiFi',
             'phone' => 'Phone',
             'mp3' => 'MP3',
+            'business_card' => 'Business Card',
             default => ucfirst($this->type),
         };
     }

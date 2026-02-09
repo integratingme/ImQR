@@ -25,7 +25,7 @@ class StoreQrCodeRequest extends FormRequest
         $type = $this->input('type');
 
         $baseRules = [
-            'type' => 'required|in:url,email,text,pdf,menu,coupon,event,app,location,wifi,phone,mp3',
+            'type' => 'required|in:url,email,text,pdf,menu,coupon,event,app,location,wifi,phone,mp3,business_card',
             'name' => 'required|string|max:255',
             'primary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
             'secondary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
@@ -159,6 +159,27 @@ class StoreQrCodeRequest extends FormRequest
                 'song_name' => 'required|string|max:255',
                 'artist_name' => 'required|string|max:255',
             ],
+            'business_card' => [
+                'business_card_company_name' => 'required|string|max:255',
+                'business_card_subtitle' => 'nullable|string|max:255',
+                'business_card_primary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+                'business_card_secondary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+                'business_card_font_family' => 'nullable|string|max:100',
+                'business_card_buttons' => 'nullable|array',
+                'business_card_buttons.*.label' => 'nullable|string|max:255',
+                'business_card_buttons.*.url' => 'nullable|url|max:2048',
+                'business_card_about' => 'required|string|max:5000',
+                'business_card_contact_name' => 'nullable|string|max:255',
+                'business_card_phone' => 'required|string|max:50',
+                'business_card_email' => 'required|email|max:255',
+                'business_card_address' => 'nullable|string|max:500',
+                'business_card_maps_link' => 'nullable|url|max:2048',
+                'business_card_working_hours' => 'nullable|string|max:2000',
+                'business_card_socials' => 'nullable|array',
+                'business_card_socials.*.platform' => 'nullable|string|max:50',
+                'business_card_socials.*.url' => 'nullable|url|max:2048',
+                'business_card_logo' => 'nullable|image|mimes:jpeg,png,jpg|mimetypes:image/jpeg,image/png|image_signature|max:2048',
+            ],
             default => [],
         };
 
@@ -260,6 +281,7 @@ class StoreQrCodeRequest extends FormRequest
             'menu_sections.*.products.*.product_image.mimes' => 'Only JPG and PNG images are allowed.',
             'menu_sections.*.products.*.product_image.mimetypes' => 'Only JPG and PNG images are allowed.',
             'menu_sections.*.products.*.product_image.image_signature' => 'The file is not a valid image (invalid file signature).',
+            'business_card_logo.image_signature' => 'The file is not a valid image (invalid file signature). Only JPG and PNG are allowed.',
             'event_name.required' => 'Please enter an event name.',
             'ssid.required' => 'Please enter the WiFi network name.',
             'encryption.required' => 'Please select an encryption type.',

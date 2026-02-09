@@ -39,6 +39,7 @@
                 'phone' => 'Phone',
                 'menu' => 'Menu',
                 'location' => 'Location',
+                'business_card' => 'Business Card',
             ];
         @endphp
 
@@ -92,7 +93,7 @@
 
                         {{-- Actions --}}
                         <div class="px-6 pb-6 pt-0 space-y-2">
-                            @if(in_array($qrCode->type, ['text', 'coupon', 'pdf', 'app', 'phone', 'menu']))
+                            @if(in_array($qrCode->type, ['text', 'coupon', 'pdf', 'app', 'phone', 'menu', 'business_card']))
                                 @php
                                     $pageRoutes = [
                                         'text' => ['route' => 'qr-codes.text-page', 'label' => 'View page'],
@@ -101,6 +102,7 @@
                                         'app' => ['route' => 'qr-codes.app-page', 'label' => 'View page'],
                                         'phone' => ['route' => 'qr-codes.phone-page', 'label' => 'View page'],
                                         'menu' => ['route' => 'qr-codes.menu-page', 'label' => 'View page'],
+                                        'business_card' => ['route' => 'qr-codes.business-card-page', 'label' => 'View page'],
                                     ];
                                     $page = $pageRoutes[$qrCode->type];
                                 @endphp
@@ -324,6 +326,9 @@ async function renderQRCode(container, QRCodeStylingClass) {
             break;
         case 'menu':
             qrContent = qrData.menu_page_url || '';
+            break;
+        case 'business_card':
+            qrContent = qrData.business_card_page_url || '';
             break;
         case 'location': {
             qrContent = qrData.location_url || '';

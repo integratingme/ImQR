@@ -68,6 +68,7 @@ class QrCodeService
             'location' => $this->generateLocationContent($data),
             'wifi' => $this->generateWifiContent($data),
             'phone' => $this->generatePhoneContent($data),
+            'business_card' => $this->generateBusinessCardContent($data),
             'mp3' => $data['mp3_url'] ?? '',
             default => '',
         };
@@ -238,6 +239,17 @@ class QrCodeService
             return $data['phone_page_url'];
         }
         return url('/phone/preview');
+    }
+
+    /**
+     * Generate business card QR content (URL to business card page)
+     */
+    protected function generateBusinessCardContent(array $data): string
+    {
+        if (isset($data['business_card_page_url']) && !empty($data['business_card_page_url'])) {
+            return $data['business_card_page_url'];
+        }
+        return url('/business-card/preview');
     }
 
     /**

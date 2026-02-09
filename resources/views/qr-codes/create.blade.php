@@ -1937,6 +1937,124 @@ function updateStep1Preview() {
                 </div>
             `;
             break;
+
+        case 'business_card': {
+            const escapeHtml = (s) => { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+            const bcPrimary = document.getElementById('business_card_primary_color_hex')?.value || '#e54e1a';
+            const bcSecondary = document.getElementById('business_card_secondary_color_hex')?.value || '#FFFFFF';
+            const bcFont = document.getElementById('business_card_font_family')?.value || 'Maven Pro';
+            const companyName = document.getElementById('business_card_company_name')?.value || 'Your Company Name';
+            const subtitleEl = document.getElementById('business_card_subtitle');
+            const subtitle = subtitleEl?.value?.trim() || subtitleEl?.placeholder || '';
+            const logoPreviewImg = document.getElementById('business-card-logo-preview-img');
+            const logoSrc = logoPreviewImg && logoPreviewImg.src && logoPreviewImg.src.startsWith('data:') ? logoPreviewImg.src : '';
+            const aboutEl = document.getElementById('business_card_about');
+            const about = aboutEl?.value?.trim() || aboutEl?.placeholder || 'We are leaders in providing innovative solutions for small and medium enterprises. Our team of experts is here to help you in every step of your growth.';
+            const contactNameEl = document.getElementById('business_card_contact_name');
+            const contactName = contactNameEl?.value?.trim() || contactNameEl?.placeholder || '';
+            const phoneEl = document.getElementById('business_card_phone');
+            const phone = phoneEl?.value?.trim() || phoneEl?.placeholder || '';
+            const emailEl = document.getElementById('business_card_email');
+            const email = emailEl?.value?.trim() || emailEl?.placeholder || '';
+            const addressEl = document.getElementById('business_card_address');
+            const address = addressEl?.value?.trim() || addressEl?.placeholder || '';
+            const workingHoursRaw = document.getElementById('business_card_working_hours')?.value || '';
+
+            if (overlay) overlay.style.backgroundColor = bcSecondary;
+            if (bcFont !== 'Maven Pro') {
+                const fontId = bcFont.replace(/\s+/g, '+');
+                const linkId = 'google-font-bc-' + fontId;
+                if (!document.getElementById(linkId)) {
+                    const link = document.createElement('link');
+                    link.id = linkId;
+                    link.rel = 'stylesheet';
+                    link.href = `https://fonts.googleapis.com/css2?family=${fontId}:wght@400;500;600;700&display=swap`;
+                    document.head.appendChild(link);
+                }
+            }
+
+            let buttonsHtml = '';
+            const buttonRows = document.querySelectorAll('#business-card-buttons-container .business-card-button-row');
+            buttonRows.forEach((row) => {
+                const labelInput = row.querySelector('input[name*="[label]"]');
+                const label = (labelInput?.value || '').trim() || (labelInput?.placeholder || 'Link');
+                buttonsHtml += `<a href="#" class="flex items-center justify-between p-3 bg-white rounded-xl border border-gray-100 shadow-sm">
+                    <span class="font-semibold text-sm" style="color: ${bcPrimary}">${escapeHtml(label)}</span>
+                    <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                </a>`;
+            });
+            if (!buttonsHtml) {
+                const firstButtonRow = document.querySelector('#business-card-buttons-container .business-card-button-row');
+                const firstLabelInput = firstButtonRow?.querySelector('input[name*="[label]"]');
+                const defaultLabel = firstLabelInput?.placeholder || 'Link';
+                buttonsHtml = `<a href="#" class="flex items-center justify-between p-3 bg-white rounded-xl border border-gray-100 shadow-sm"><span class="font-semibold text-sm" style="color: ${bcPrimary}">${escapeHtml(defaultLabel)}</span><svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></a>`;
+            }
+
+            let workingHoursHtml = '';
+            const workingHoursDisplay = workingHoursRaw.trim() || 'Monday - Friday: 07:00 AM - 05:00 PM';
+            const lines = workingHoursDisplay.split('\n').filter(l => l.trim());
+            if (lines.length) {
+                workingHoursHtml = `<section class="bg-white/50 p-3 rounded-2xl">
+                    <h3 class="font-bold text-gray-800 text-sm border-b border-gray-200 pb-2 mb-2 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full" style="background-color: ${bcPrimary}"></span>
+                        Working Hours
+                    </h3>
+                    <div class="space-y-1 text-xs text-gray-600">${lines.map(l => escapeHtml(l.trim())).join('<br>')}</div>
+                </section>`;
+            }
+
+            let socialsHtml = '';
+            const socialRows = document.querySelectorAll('#business-card-socials-container .business-card-social-row');
+            socialRows.forEach((row) => {
+                const urlInput = row.querySelector('input[name*="[url]"]');
+                if (urlInput?.value?.trim()) socialsHtml += `<a href="#" class="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-sm font-bold transition-transform hover:scale-110" style="color: ${bcPrimary}">${escapeHtml((row.querySelector('select')?.selectedOptions?.[0]?.text || '?').charAt(0))}</a>`;
+            });
+            if (!socialsHtml) {
+                socialsHtml = `<a href="#" class="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-xs font-bold" style="color: ${bcPrimary}">f</a><a href="#" class="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-xs font-bold" style="color: ${bcPrimary}">in</a>`;
+            }
+
+            mockupHtml = `
+                <div class="w-full h-full rounded-lg overflow-hidden flex flex-col min-h-0" style="font-family: '${bcFont}', sans-serif;">
+                    <div class="pt-12 pb-10 px-4 text-center flex-shrink-0" style="background-color: ${bcPrimary}">
+                        ${logoSrc ? `<img src="${logoSrc}" alt="" class="w-14 h-14 object-contain mx-auto mb-2 rounded-lg bg-white/10">` : ''}
+                        <h1 class="text-xl font-bold text-white mb-0.5">${escapeHtml(companyName)}</h1>
+                        <p class="text-white/90 font-light text-xs">${escapeHtml(subtitle)}</p>
+                    </div>
+                    <div class="p-4 -mt-5 rounded-t-[24px] flex-1 min-h-0 overflow-y-auto flex flex-col gap-4" style="background-color: ${bcSecondary}">
+                        <div class="space-y-2">${buttonsHtml}</div>
+                        <section class="bg-white/60 p-3 rounded-2xl flex-shrink-0">
+                            <h3 class="font-bold text-gray-800 text-sm border-b border-gray-200 pb-2 mb-2 flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full" style="background-color: ${bcPrimary}"></span>
+                                About Us
+                            </h3>
+                            <p class="text-gray-600 text-xs leading-relaxed line-clamp-3">${escapeHtml(about)}</p>
+                        </section>
+                        <section class="bg-white/60 p-3 rounded-2xl flex-shrink-0">
+                            <h3 class="font-bold text-gray-800 text-sm border-b border-gray-200 pb-2 mb-2 flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full" style="background-color: ${bcPrimary}"></span>
+                                Contact
+                            </h3>
+                            <div class="space-y-1.5 text-xs">
+                                ${contactName ? `<div class="flex items-center gap-2 text-gray-700"><span class="text-gray-400">👤</span>${escapeHtml(contactName)}</div>` : ''}
+                                ${phone ? `<a href="tel:${phone.replace(/ /g, '')}" class="flex items-center gap-2 font-medium" style="color: ${bcPrimary}"><span class="text-gray-400">📞</span>${escapeHtml(phone)}</a>` : ''}
+                                ${email ? `<a href="mailto:${email}" class="flex items-center gap-2 font-medium" style="color: ${bcPrimary}"><span class="text-gray-400">📧</span>${escapeHtml(email)}</a>` : ''}
+                            </div>
+                        </section>
+                        <section class="bg-white/60 p-3 rounded-2xl flex-shrink-0">
+                            <h3 class="font-bold text-gray-800 text-sm border-b border-gray-200 pb-2 mb-2 flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full" style="background-color: ${bcPrimary}"></span>
+                                Location
+                            </h3>
+                            ${address ? `<p class="text-xs text-gray-600 mb-2">${escapeHtml(address)}</p>` : ''}
+                            <span class="inline-block px-4 py-1.5 text-white text-xs font-bold rounded-full" style="background-color: ${bcPrimary}">Open in Google Maps</span>
+                        </section>
+                        ${workingHoursHtml}
+                        <div class="pt-2 pb-2 flex justify-center gap-2 flex-wrap flex-shrink-0">${socialsHtml}</div>
+                    </div>
+                </div>
+            `;
+            break;
+        }
             
         default:
             if (overlay) overlay.style.backgroundColor = '#FFFFFF'; // white
@@ -2040,6 +2158,8 @@ function buildQrContentFromForm() {
         }
         case 'mp3':
             return '/mp3/preview';
+        case 'business_card':
+            return (typeof window !== 'undefined' && window.location && window.location.origin ? window.location.origin + '/business-card/preview' : '/business-card/preview');
         default:
             return '';
     }
@@ -2488,7 +2608,11 @@ document.addEventListener('DOMContentLoaded', function() {
         'text_background_color_hex', 'text_text_color_hex', 'text_font_family',
         'coupon_primary_color_hex', 'coupon_secondary_color_hex', 'coupon_button_color_hex', 'coupon_button_text_color_hex', 'coupon_font_family',
         'coupon_company', 'coupon_title', 'coupon_description', 'coupon_sales_badge', 'coupon_sales_badge_color_hex', 'coupon_sales_badge_text_color_hex', 'coupon_code_button_text',
-        'coupon_valid_until', 'coupon_view_more_website'
+        'coupon_valid_until', 'coupon_view_more_website',
+        'business_card_company_name', 'business_card_subtitle', 'business_card_about',
+        'business_card_primary_color_hex', 'business_card_secondary_color_hex', 'business_card_font_family',
+        'business_card_contact_name', 'business_card_phone', 'business_card_email',
+        'business_card_address', 'business_card_maps_link', 'business_card_working_hours'
     ];
     
     step1Fields.forEach(fieldId => {
@@ -2505,6 +2629,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     updateStep1Preview();
                 }
             });
+        }
+    });
+    // Business card: dynamic button/social rows
+    ['business-card-buttons-container', 'business-card-socials-container'].forEach(containerId => {
+        const container = document.getElementById(containerId);
+        if (container) {
+            container.addEventListener('input', () => { if (currentStep === 1) updateStep1Preview(); });
+            container.addEventListener('change', () => { if (currentStep === 1) updateStep1Preview(); });
         }
     });
     
