@@ -26,7 +26,7 @@ class QrCodeController extends Controller
 
     public function create(string $type)
     {
-        $validTypes = ['url', 'email', 'text', 'pdf', 'menu', 'coupon', 'event', 'app', 'location', 'wifi', 'phone', 'mp3', 'business_card'];
+        $validTypes = ['url', 'email', 'text', 'pdf', 'menu', 'coupon', 'event', 'app', 'location', 'wifi', 'phone', 'mp3', 'business_card', 'personal_vcard'];
         
         if (!in_array($type, $validTypes)) {
             abort(404);
@@ -193,6 +193,9 @@ class QrCodeController extends Controller
             if ($type === 'business_card') {
                 $dataForStorage = $this->normalizeBusinessCardData($validated);
             }
+            if ($type === 'personal_vcard') {
+                $dataForStorage = $this->normalizePersonalVCardData($validated);
+            }
             if ($type === 'menu') {
                 unset($dataForStorage['menu_file'], $dataForStorage['menu_restaurant_image']);
                 if (!empty($dataForStorage['menu_sections'])) {
@@ -241,6 +244,18 @@ class QrCodeController extends Controller
                 $logoFile = $qrCode->fresh()->files()->where('file_type', 'business_card_logo')->orderByDesc('id')->first();
                 if ($logoFile) {
                     $cardData['logo_url'] = asset('storage/' . $logoFile->file_path);
+                }
+                $qrCode->update(['data' => $cardData]);
+                $this->qrCodeService->regenerateQrCode($qrCode, $colors, $customization);
+            }
+
+            // For personal_vcard type: normalize data and set personal_vcard_page_url
+            if ($type === 'personal_vcard') {
+                $cardData = $this->normalizePersonalVCardData($validated);
+                $cardData['personal_vcard_page_url'] = route('qr-codes.personal-vcard-page', $qrCode->id);
+                $profileFile = $qrCode->fresh()->files()->where('file_type', 'personal_vcard_profile')->orderByDesc('id')->first();
+                if ($profileFile) {
+                    $cardData['profile_image'] = asset('storage/' . $profileFile->file_path);
                 }
                 $qrCode->update(['data' => $cardData]);
                 $this->qrCodeService->regenerateQrCode($qrCode, $colors, $customization);
@@ -417,6 +432,10 @@ class QrCodeController extends Controller
             $dataToStore = array_merge($existingData, $this->normalizeBusinessCardData($validated));
             $dataToStore['business_card_page_url'] = route('qr-codes.business-card-page', $qrCode->id);
         }
+        if ($type === 'personal_vcard') {
+            $dataToStore = array_merge($existingData, $this->normalizePersonalVCardData($validated));
+            $dataToStore['personal_vcard_page_url'] = route('qr-codes.personal-vcard-page', $qrCode->id);
+        }
 
         $this->handleFileUploads($request, $qrCode, $type);
 
@@ -425,6 +444,13 @@ class QrCodeController extends Controller
             $logoFile = $qrCode->fresh()->files()->where('file_type', 'business_card_logo')->orderByDesc('id')->first();
             if ($logoFile) {
                 $dataToStore['logo_url'] = asset('storage/' . $logoFile->file_path);
+            }
+        }
+        // For personal_vcard type, update profile_image after file uploads
+        if ($type === 'personal_vcard') {
+            $profileFile = $qrCode->fresh()->files()->where('file_type', 'personal_vcard_profile')->orderByDesc('id')->first();
+            if ($profileFile) {
+                $dataToStore['profile_image'] = asset('storage/' . $profileFile->file_path);
             }
         }
 
@@ -557,7 +583,7 @@ class QrCodeController extends Controller
 
     public function history(Request $request)
     {
-        $historyTypes = ['text', 'coupon', 'pdf', 'app', 'phone', 'menu', 'location', 'business_card'];
+        $historyTypes = ['text', 'coupon', 'pdf', 'app', 'phone', 'menu', 'location', 'business_card', 'personal_vcard'];
         $typeFilter = $request->get('type');
 
         $query = QrCode::whereIn('type', $historyTypes)->latest();
@@ -797,6 +823,33 @@ class QrCodeController extends Controller
         return view('qr-codes.business-card-page', compact('card'));
     }
 
+    public function showPersonalVCardPage($id)
+    {
+        $qrCode = QrCode::findOrFail($id);
+
+        if ($qrCode->type !== 'personal_vcard') {
+            abort(404);
+        }
+
+        $data = $qrCode->data ?? [];
+        $card = (object) [
+            'name' => $data['name'] ?? 'Name',
+            'title' => $data['title'] ?? '',
+            'profile_image' => $data['profile_image'] ?? null,
+            'primary_color' => $data['primary_color'] ?? '#b45341',
+            'secondary_color' => $data['secondary_color'] ?? '#ffffff',
+            'font_family' => $data['font_family'] ?? 'Maven Pro',
+            'about' => $data['about'] ?? '',
+            'phone' => $data['phone'] ?? '',
+            'email' => $data['email'] ?? '',
+            'address' => $data['address'] ?? '',
+            'maps_link' => $data['maps_link'] ?? '',
+            'socials' => $data['socials'] ?? [],
+        ];
+
+        return view('qr-codes.personal-vcard-page', compact('card'));
+    }
+
     /**
      * Normalize business card form data to stored card keys (for data and show page).
      */
@@ -836,6 +889,35 @@ class QrCodeController extends Controller
             'address' => $validated['business_card_address'] ?? '',
             'maps_link' => $validated['business_card_maps_link'] ?? '',
             'working_hours' => $validated['business_card_working_hours'] ?? '',
+            'socials' => $socials,
+        ];
+    }
+
+    /**
+     * Normalize personal vCard form data to stored card keys (for data and show page).
+     */
+    protected function normalizePersonalVCardData(array $validated): array
+    {
+        $socials = [];
+        foreach ($validated['personal_vcard_socials'] ?? [] as $s) {
+            $url = trim((string) ($s['url'] ?? ''));
+            if ($url === '') {
+                continue;
+            }
+            $socials[] = ['platform' => $s['platform'] ?? 'website', 'url' => $url];
+        }
+
+        return [
+            'name' => $validated['personal_vcard_name'] ?? 'Name',
+            'title' => $validated['personal_vcard_title'] ?? '',
+            'primary_color' => $validated['personal_vcard_primary_color'] ?? '#b45341',
+            'secondary_color' => $validated['personal_vcard_secondary_color'] ?? '#ffffff',
+            'font_family' => $validated['personal_vcard_font_family'] ?? 'Maven Pro',
+            'about' => $validated['personal_vcard_about'] ?? '',
+            'phone' => $validated['personal_vcard_phone'] ?? '',
+            'email' => $validated['personal_vcard_email'] ?? '',
+            'address' => $validated['personal_vcard_address'] ?? '',
+            'maps_link' => $validated['personal_vcard_maps_link'] ?? '',
             'socials' => $socials,
         ];
     }
@@ -993,6 +1075,7 @@ class QrCodeController extends Controller
             'event' => ['event_image' => 'image'],
             'app' => ['app_image' => 'image'],
             'business_card' => ['business_card_logo' => 'business_card_logo'],
+            'personal_vcard' => ['personal_vcard_profile_image' => 'personal_vcard_profile'],
         ];
 
         if (!isset($fileFields[$type])) {

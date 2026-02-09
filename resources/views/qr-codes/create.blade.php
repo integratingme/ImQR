@@ -2014,42 +2014,119 @@ function updateStep1Preview() {
             }
 
             mockupHtml = `
-                <div class="w-full h-full rounded-lg overflow-hidden flex flex-col min-h-0" style="font-family: '${bcFont}', sans-serif;">
-                    <div class="pt-12 pb-10 px-4 text-center flex-shrink-0" style="background-color: ${bcPrimary}">
-                        ${logoSrc ? `<img src="${logoSrc}" alt="" class="w-14 h-14 object-contain mx-auto mb-2 rounded-lg bg-white/10">` : ''}
-                        <h1 class="text-xl font-bold text-white mb-0.5">${escapeHtml(companyName)}</h1>
-                        <p class="text-white/90 font-light text-xs">${escapeHtml(subtitle)}</p>
+                <div class="w-full h-full rounded-lg overflow-hidden flex flex-col min-h-0" style="font-family: '${bcFont}', sans-serif; background-color: ${bcSecondary};">
+                    <div class="w-full h-full flex flex-col min-h-0" style="transform: scale(0.95); transform-origin: top center;">
+                        <div class="pt-12 pb-10 px-4 text-center flex-shrink-0" style="background-color: ${bcPrimary}">
+                            ${logoSrc ? `<img src="${logoSrc}" alt="" class="w-14 h-14 object-contain mx-auto mb-2 rounded-lg bg-white/10">` : ''}
+                            <h1 class="text-xl font-bold text-white mb-0.5">${escapeHtml(companyName)}</h1>
+                            <p class="text-white/90 font-light text-xs">${escapeHtml(subtitle)}</p>
+                        </div>
+                        <div class="p-4 -mt-5 rounded-t-[24px] flex-1 min-h-0 overflow-y-auto flex flex-col gap-4" style="background-color: ${bcSecondary}">
+                            <div class="space-y-2">${buttonsHtml}</div>
+                            <section class="bg-white/60 p-3 rounded-2xl flex-shrink-0">
+                                <h3 class="font-bold text-gray-800 text-sm border-b border-gray-200 pb-2 mb-2 flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full" style="background-color: ${bcPrimary}"></span>
+                                    About Us
+                                </h3>
+                                <p class="text-gray-600 text-xs leading-relaxed line-clamp-3">${escapeHtml(about)}</p>
+                            </section>
+                            <section class="bg-white/60 p-3 rounded-2xl flex-shrink-0">
+                                <h3 class="font-bold text-gray-800 text-sm border-b border-gray-200 pb-2 mb-2 flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full" style="background-color: ${bcPrimary}"></span>
+                                    Contact
+                                </h3>
+                                <div class="space-y-1.5 text-xs">
+                                    ${contactName ? `<div class="flex items-center gap-2 text-gray-700"><span class="text-gray-400">👤</span>${escapeHtml(contactName)}</div>` : ''}
+                                    ${phone ? `<a href="tel:${phone.replace(/ /g, '')}" class="flex items-center gap-2 font-medium" style="color: ${bcPrimary}"><span class="text-gray-400">📞</span>${escapeHtml(phone)}</a>` : ''}
+                                    ${email ? `<a href="mailto:${email}" class="flex items-center gap-2 font-medium" style="color: ${bcPrimary}"><span class="text-gray-400">📧</span>${escapeHtml(email)}</a>` : ''}
+                                </div>
+                            </section>
+                            <section class="bg-white/60 p-3 rounded-2xl flex-shrink-0">
+                                <h3 class="font-bold text-gray-800 text-sm border-b border-gray-200 pb-2 mb-2 flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full" style="background-color: ${bcPrimary}"></span>
+                                    Location
+                                </h3>
+                                ${address ? `<p class="text-xs text-gray-600 mb-2">${escapeHtml(address)}</p>` : ''}
+                                <span class="inline-block px-4 py-1.5 text-white text-xs font-bold rounded-full" style="background-color: ${bcPrimary}">Open in Google Maps</span>
+                            </section>
+                            ${workingHoursHtml}
+                            <div class="pt-2 pb-2 flex justify-center gap-2 flex-wrap flex-shrink-0">${socialsHtml}</div>
+                        </div>
                     </div>
-                    <div class="p-4 -mt-5 rounded-t-[24px] flex-1 min-h-0 overflow-y-auto flex flex-col gap-4" style="background-color: ${bcSecondary}">
-                        <div class="space-y-2">${buttonsHtml}</div>
-                        <section class="bg-white/60 p-3 rounded-2xl flex-shrink-0">
-                            <h3 class="font-bold text-gray-800 text-sm border-b border-gray-200 pb-2 mb-2 flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full" style="background-color: ${bcPrimary}"></span>
-                                About Us
-                            </h3>
-                            <p class="text-gray-600 text-xs leading-relaxed line-clamp-3">${escapeHtml(about)}</p>
-                        </section>
-                        <section class="bg-white/60 p-3 rounded-2xl flex-shrink-0">
-                            <h3 class="font-bold text-gray-800 text-sm border-b border-gray-200 pb-2 mb-2 flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full" style="background-color: ${bcPrimary}"></span>
-                                Contact
-                            </h3>
-                            <div class="space-y-1.5 text-xs">
-                                ${contactName ? `<div class="flex items-center gap-2 text-gray-700"><span class="text-gray-400">👤</span>${escapeHtml(contactName)}</div>` : ''}
-                                ${phone ? `<a href="tel:${phone.replace(/ /g, '')}" class="flex items-center gap-2 font-medium" style="color: ${bcPrimary}"><span class="text-gray-400">📞</span>${escapeHtml(phone)}</a>` : ''}
-                                ${email ? `<a href="mailto:${email}" class="flex items-center gap-2 font-medium" style="color: ${bcPrimary}"><span class="text-gray-400">📧</span>${escapeHtml(email)}</a>` : ''}
+                </div>
+            `;
+            break;
+        }
+
+        case 'personal_vcard': {
+            const escapeHtml = (s) => { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+            const vcPrimary = document.getElementById('personal_vcard_primary_color_hex')?.value || '#b45341';
+            const vcSecondary = document.getElementById('personal_vcard_secondary_color_hex')?.value || '#ffffff';
+            const vcFont = document.getElementById('personal_vcard_font_family')?.value || 'Maven Pro';
+            const vcName = document.getElementById('personal_vcard_name')?.value || 'Your Name';
+            const vcTitle = document.getElementById('personal_vcard_title')?.value || 'Your Title';
+            const profilePreviewImg = document.getElementById('personal-vcard-profile-preview-img');
+            const profileSrc = profilePreviewImg && profilePreviewImg.src && profilePreviewImg.src.startsWith('data:') ? profilePreviewImg.src : '';
+            const vcAbout = (document.getElementById('personal_vcard_about')?.value || '').trim() || 'A short bio...';
+            const vcPhone = document.getElementById('personal_vcard_phone')?.value || '';
+            const vcEmail = document.getElementById('personal_vcard_email')?.value || '';
+            const vcMaps = document.getElementById('personal_vcard_maps_link')?.value || '';
+
+            if (overlay) overlay.style.backgroundColor = vcSecondary;
+            if (vcFont !== 'Maven Pro') {
+                const fontId = vcFont.replace(/\s+/g, '+');
+                const linkId = 'google-font-vc-' + fontId;
+                if (!document.getElementById(linkId)) {
+                    const link = document.createElement('link');
+                    link.id = linkId;
+                    link.rel = 'stylesheet';
+                    link.href = `https://fonts.googleapis.com/css2?family=${fontId}:wght@400;500;700&display=swap`;
+                    document.head.appendChild(link);
+                }
+            }
+
+            let socialsHtml = '';
+            const socialRows = document.querySelectorAll('#personal-vcard-socials-container .personal-vcard-social-row');
+            socialRows.forEach((row) => {
+                const urlInput = row.querySelector('input[name*="[url]"]');
+                const platformSelect = row.querySelector('select[name*="[platform]"]');
+                const platform = platformSelect?.value || 'facebook';
+                if (urlInput?.value?.trim()) {
+                    const platformIcon = platform === 'facebook' ? 'f' : platform === 'instagram' ? 'in' : platform === 'twitter' ? 't' : platform === 'linkedin' ? 'in' : platform === 'whatsapp' ? 'wa' : '?';
+                    socialsHtml += `<span class="w-7 h-7 rounded-full border border-gray-200 inline-flex items-center justify-center text-xs font-bold text-gray-400" style="color: ${vcPrimary}">${platformIcon}</span>`;
+                }
+            });
+            if (!socialsHtml) {
+                socialsHtml = `<span class="w-7 h-7 rounded-full border border-gray-200 inline-flex items-center justify-center text-xs font-bold text-gray-400">f</span><span class="w-7 h-7 rounded-full border border-gray-200 inline-flex items-center justify-center text-xs font-bold text-gray-400">in</span>`;
+            }
+
+            mockupHtml = `
+                <div class="w-full h-full rounded-lg overflow-hidden flex flex-col min-h-0" style="font-family: '${vcFont}', sans-serif;">
+                    <div class="relative pt-16 pb-16 text-center flex-shrink-0" style="background-color: ${vcPrimary}">
+                        <div class="relative z-10 mb-4 flex justify-center">
+                            <div class="w-24 h-24 rounded-full border-[4px] border-white shadow-xl overflow-hidden bg-white" style="width: 6rem; height: 6rem;">
+                                <img src="${profileSrc || 'https://via.placeholder.com/200'}" alt="" class="w-full h-full object-cover">
                             </div>
-                        </section>
-                        <section class="bg-white/60 p-3 rounded-2xl flex-shrink-0">
-                            <h3 class="font-bold text-gray-800 text-sm border-b border-gray-200 pb-2 mb-2 flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full" style="background-color: ${bcPrimary}"></span>
-                                Location
-                            </h3>
-                            ${address ? `<p class="text-xs text-gray-600 mb-2">${escapeHtml(address)}</p>` : ''}
-                            <span class="inline-block px-4 py-1.5 text-white text-xs font-bold rounded-full" style="background-color: ${bcPrimary}">Open in Google Maps</span>
-                        </section>
-                        ${workingHoursHtml}
-                        <div class="pt-2 pb-2 flex justify-center gap-2 flex-wrap flex-shrink-0">${socialsHtml}</div>
+                        </div>
+                        <h1 class="text-xl font-bold text-white mb-1">${escapeHtml(vcName)}</h1>
+                        <p class="text-white/90 text-sm font-medium italic opacity-90">${escapeHtml(vcTitle)}</p>
+                        <div class="absolute bottom-0 left-0 w-full overflow-hidden leading-[0]">
+                            <svg viewBox="0 0 500 150" preserveAspectRatio="none" class="relative block w-full" style="height: 2rem;">
+                                <path d="M0.00,49.98 C149.99,150.00 349.89,-49.98 500.00,49.98 L500.00,150.00 L0.00,150.00 Z" style="fill: ${vcSecondary}"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="flex justify-center gap-4 -mt-6 relative z-20 px-4 flex-shrink-0">
+                        <span class="w-11 h-11 bg-white rounded-full shadow-lg flex items-center justify-center border border-gray-50" style="color: ${vcPrimary}; font-size: 1.1rem;">📞</span>
+                        <span class="w-11 h-11 bg-white rounded-full shadow-lg flex items-center justify-center border border-gray-50" style="color: ${vcPrimary}; font-size: 1.1rem;">📧</span>
+                        ${vcMaps ? `<span class="w-11 h-11 bg-white rounded-full shadow-lg flex items-center justify-center border border-gray-50" style="color: ${vcPrimary}; font-size: 1.1rem;">📍</span>` : ''}
+                    </div>
+                    <div class="px-5 pt-6 pb-4 flex-1 min-h-0 overflow-y-auto text-center">
+                        ${vcAbout && vcAbout !== 'A short bio...' ? `<p class="text-gray-600 text-sm leading-relaxed italic">"${escapeHtml(vcAbout)}"</p>` : '<p class="text-gray-400 text-xs italic">Add your bio...</p>'}
+                    </div>
+                    <div class="px-5 pb-3 flex justify-center gap-3 flex-wrap flex-shrink-0">${socialsHtml}</div>
+                    <div class="px-5 pb-4 flex-shrink-0">
+                        <div class="w-full py-3 rounded-2xl text-white text-xs font-bold text-center uppercase tracking-wider shadow-lg" style="background-color: ${vcPrimary}">Save contact</div>
                     </div>
                 </div>
             `;
@@ -2160,6 +2237,8 @@ function buildQrContentFromForm() {
             return '/mp3/preview';
         case 'business_card':
             return (typeof window !== 'undefined' && window.location && window.location.origin ? window.location.origin + '/business-card/preview' : '/business-card/preview');
+        case 'personal_vcard':
+            return (typeof window !== 'undefined' && window.location && window.location.origin ? window.location.origin + '/vcard/preview' : '/vcard/preview');
         default:
             return '';
     }
@@ -2612,7 +2691,10 @@ document.addEventListener('DOMContentLoaded', function() {
         'business_card_company_name', 'business_card_subtitle', 'business_card_about',
         'business_card_primary_color_hex', 'business_card_secondary_color_hex', 'business_card_font_family',
         'business_card_contact_name', 'business_card_phone', 'business_card_email',
-        'business_card_address', 'business_card_maps_link', 'business_card_working_hours'
+        'business_card_address', 'business_card_maps_link', 'business_card_working_hours',
+        'personal_vcard_name', 'personal_vcard_title', 'personal_vcard_about',
+        'personal_vcard_primary_color_hex', 'personal_vcard_secondary_color_hex', 'personal_vcard_font_family',
+        'personal_vcard_phone', 'personal_vcard_email', 'personal_vcard_address', 'personal_vcard_maps_link'
     ];
     
     step1Fields.forEach(fieldId => {
@@ -2632,7 +2714,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     // Business card: dynamic button/social rows
-    ['business-card-buttons-container', 'business-card-socials-container'].forEach(containerId => {
+    ['business-card-buttons-container', 'business-card-socials-container', 'personal-vcard-socials-container'].forEach(containerId => {
         const container = document.getElementById(containerId);
         if (container) {
             container.addEventListener('input', () => { if (currentStep === 1) updateStep1Preview(); });

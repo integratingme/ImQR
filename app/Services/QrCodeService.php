@@ -69,6 +69,7 @@ class QrCodeService
             'wifi' => $this->generateWifiContent($data),
             'phone' => $this->generatePhoneContent($data),
             'business_card' => $this->generateBusinessCardContent($data),
+            'personal_vcard' => $this->generatePersonalVCardContent($data),
             'mp3' => $data['mp3_url'] ?? '',
             default => '',
         };
@@ -250,6 +251,17 @@ class QrCodeService
             return $data['business_card_page_url'];
         }
         return url('/business-card/preview');
+    }
+
+    /**
+     * Generate personal vCard QR content (URL to vCard page)
+     */
+    protected function generatePersonalVCardContent(array $data): string
+    {
+        if (isset($data['personal_vcard_page_url']) && !empty($data['personal_vcard_page_url'])) {
+            return $data['personal_vcard_page_url'];
+        }
+        return url('/vcard/preview');
     }
 
     /**

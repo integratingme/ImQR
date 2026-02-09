@@ -25,7 +25,7 @@ class StoreQrCodeRequest extends FormRequest
         $type = $this->input('type');
 
         $baseRules = [
-            'type' => 'required|in:url,email,text,pdf,menu,coupon,event,app,location,wifi,phone,mp3,business_card',
+            'type' => 'required|in:url,email,text,pdf,menu,coupon,event,app,location,wifi,phone,mp3,business_card,personal_vcard',
             'name' => 'required|string|max:255',
             'primary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
             'secondary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
@@ -180,6 +180,22 @@ class StoreQrCodeRequest extends FormRequest
                 'business_card_socials.*.url' => 'nullable|url|max:2048',
                 'business_card_logo' => 'nullable|image|mimes:jpeg,png,jpg|mimetypes:image/jpeg,image/png|image_signature|max:2048',
             ],
+            'personal_vcard' => [
+                'personal_vcard_name' => 'required|string|max:255',
+                'personal_vcard_title' => 'nullable|string|max:255',
+                'personal_vcard_primary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+                'personal_vcard_secondary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+                'personal_vcard_font_family' => 'nullable|string|max:100',
+                'personal_vcard_about' => 'nullable|string|max:2000',
+                'personal_vcard_phone' => 'required|string|max:50',
+                'personal_vcard_email' => 'required|email|max:255',
+                'personal_vcard_address' => 'nullable|string|max:500',
+                'personal_vcard_maps_link' => 'nullable|url|max:2048',
+                'personal_vcard_socials' => 'nullable|array',
+                'personal_vcard_socials.*.platform' => 'nullable|string|max:50',
+                'personal_vcard_socials.*.url' => 'nullable|url|max:2048',
+                'personal_vcard_profile_image' => 'nullable|image|mimes:jpeg,png,jpg|mimetypes:image/jpeg,image/png|image_signature|max:2048',
+            ],
             default => [],
         };
 
@@ -282,6 +298,7 @@ class StoreQrCodeRequest extends FormRequest
             'menu_sections.*.products.*.product_image.mimetypes' => 'Only JPG and PNG images are allowed.',
             'menu_sections.*.products.*.product_image.image_signature' => 'The file is not a valid image (invalid file signature).',
             'business_card_logo.image_signature' => 'The file is not a valid image (invalid file signature). Only JPG and PNG are allowed.',
+            'personal_vcard_profile_image.image_signature' => 'The file is not a valid image (invalid file signature). Only JPG and PNG are allowed.',
             'event_name.required' => 'Please enter an event name.',
             'ssid.required' => 'Please enter the WiFi network name.',
             'encryption.required' => 'Please select an encryption type.',

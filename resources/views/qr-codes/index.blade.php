@@ -160,6 +160,19 @@
             </div>
         </a>
 
+        <!-- Personal vCard QR Code -->
+        <a href="{{ route('qr-codes.create', 'personal_vcard') }}" class="card card-hover group">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-rose-200 transition-colors">
+                    <svg class="w-8 h-8 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold text-dark-500 mb-2">Personal vCard</h3>
+                <p class="text-sm text-dark-300">Digital contact card</p>
+            </div>
+        </a>
+
         <!-- Phone QR Code -->
         <a href="{{ route('qr-codes.create', 'phone') }}" class="card card-hover group">
             <div class="text-center">
