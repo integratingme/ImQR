@@ -33,8 +33,9 @@ class QrCodeController extends Controller
         }
 
         $reviewUsIcons = $this->getReviewUsPredefinedIcons();
+        $recaptchaSiteKey = config('services.recaptcha.enabled') ? config('services.recaptcha.site_key') : null;
 
-        return view('qr-codes.create', compact('type', 'reviewUsIcons'));
+        return view('qr-codes.create', compact('type', 'reviewUsIcons', 'recaptchaSiteKey'));
     }
 
     /**

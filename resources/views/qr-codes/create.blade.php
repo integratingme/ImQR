@@ -3,6 +3,12 @@
 @section('title', 'Create ' . ucfirst($type) . ' QR Code')
 
 @section('content')
+@if(!empty($recaptchaSiteKey))
+<script src="https://www.google.com/recaptcha/api.js?render={{ $recaptchaSiteKey }}" async></script>
+<script>
+window.recaptchaSiteKey = @json($recaptchaSiteKey);
+</script>
+@endif
 <style>
 /* When a frame is selected, show full frame without clipping by rounded phone overlay */
 #phone-mockup-overlay-step2.frame-selected {
@@ -3254,6 +3260,15 @@ function prevStep(step) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+function getRecaptchaToken() {
+    if (!window.recaptchaSiteKey || typeof grecaptcha === 'undefined') return Promise.resolve(null);
+    return new Promise(function(resolve) {
+        grecaptcha.ready(function() {
+            grecaptcha.execute(window.recaptchaSiteKey, { action: 'submit' }).then(resolve).catch(function() { resolve(null); });
+        });
+    });
+}
+
 async function generateQRCode() {
     // Sync Step 2 color hex fields into named inputs so primary_color/secondary_color are always valid #rrggbb
     const primaryColorInput = document.getElementById('primary_color');
@@ -3267,7 +3282,9 @@ async function generateQRCode() {
         secondaryColorInput.value = normalizeHexColor(secondaryColorHex.value);
     }
     const formData = new FormData(document.getElementById('qr-form'));
-    
+    const recaptchaToken = await getRecaptchaToken();
+    if (recaptchaToken) formData.append('recaptcha_token', recaptchaToken);
+
     // Show loading state in Step 3
     document.getElementById('qr-loading').classList.remove('hidden');
     document.getElementById('qr-error').classList.add('hidden');
@@ -3352,6 +3369,8 @@ async function updateQRCode(id) {
     if (!form) return false;
     const formData = new FormData(form);
     formData.append('_method', 'PUT');
+    const recaptchaToken = await getRecaptchaToken();
+    if (recaptchaToken) formData.append('recaptcha_token', recaptchaToken);
 
     const qrLoading = document.getElementById('qr-loading');
     const qrError = document.getElementById('qr-error');

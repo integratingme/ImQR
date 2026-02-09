@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\RecaptchaRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreQrCodeRequest extends FormRequest
@@ -39,6 +40,10 @@ class StoreQrCodeRequest extends FormRequest
             // Honeypot – must be empty (bots often fill these)
             'hp_url' => 'nullable|string|max:0',
             'hp_comment' => 'nullable|string|max:0',
+            // reCAPTCHA v3 token (validated when recaptcha is enabled)
+            'recaptcha_token' => config('services.recaptcha.enabled')
+                ? ['required', 'string', new RecaptchaRule()]
+                : ['nullable', 'string'],
         ];
 
         $typeSpecificRules = match($type) {
@@ -274,6 +279,7 @@ class StoreQrCodeRequest extends FormRequest
             'play_store_link.regex' => 'Google Play Store Link must start with https://play.google.com/store/apps/',
             'hp_url.max' => 'An error occurred while submitting the form. Please try again later.',
             'hp_comment.max' => 'An error occurred while submitting the form. Please try again later.',
+            'recaptcha_token.required' => 'Please complete the security check and try again.',
         ];
     }
 }
