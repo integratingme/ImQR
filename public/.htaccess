@@ -5,8 +5,16 @@
     php_value post_max_size 68M
 </IfModule>
 
+# Prevent access to hidden/sensitive dotfiles (.env, .git, etc.)
+<FilesMatch "^\.">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+</FilesMatch>
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
+        # Prevent directory listing
         Options -MultiViews -Indexes
     </IfModule>
 
@@ -30,3 +38,10 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
+
+# Redirect to HTTPS in production (uncomment when behind HTTPS)
+# <IfModule mod_rewrite.c>
+#     RewriteEngine On
+#     RewriteCond %{HTTPS} off
+#     RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+# </IfModule>
