@@ -19,6 +19,19 @@
                     </a>
                 </div>
                 <nav class="flex items-center space-x-4">
+                    {{-- Current user / plan indicator --}}
+                    <div class="flex items-center gap-2 text-sm">
+                        @auth
+                            <span class="text-dark-400">{{ auth()->user()->email }}</span>
+                            @if(auth()->user()->isPremium())
+                                <span class="px-2 py-0.5 rounded bg-primary-100 text-primary-700 font-medium">Premium</span>
+                            @else
+                                <span class="px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium">Free</span>
+                            @endif
+                        @else
+                            <span class="px-2 py-0.5 rounded bg-gray-100 text-gray-500 font-medium">Guest</span>
+                        @endauth
+                    </div>
                     <a href="{{ route('qr-codes.index') }}" class="text-dark-500 hover:text-primary-600 font-medium transition-colors">
                         Create QR
                     </a>

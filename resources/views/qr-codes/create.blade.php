@@ -1318,7 +1318,14 @@ function updateStep1Preview() {
         case 'url':
             if (overlay) overlay.style.backgroundColor = '#F9FAFB'; // gray-50
             const url = document.getElementById('url')?.value || '';
-            const urlDomain = url ? new URL(url).hostname.replace('www.', '') : 'example.com';
+            let urlDomain = 'example.com';
+            if (url) {
+                try {
+                    urlDomain = new URL(url).hostname.replace('www.', '') || urlDomain;
+                } catch (e) {
+                    // Incomplete or invalid URL while typing – keep default
+                }
+            }
             mockupHtml = `
                 <div class="w-full h-full rounded-lg overflow-hidden flex flex-col">
                     <!-- Browser Header -->

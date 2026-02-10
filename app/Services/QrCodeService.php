@@ -14,7 +14,7 @@ class QrCodeService
     /**
      * Generate QR code based on type and data
      */
-    public function generate(string $type, array $data, ?array $colors = null, ?array $customization = null): QrCode
+    public function generate(string $type, array $data, ?array $colors = null, ?array $customization = null, ?int $userId = null): QrCode
     {
         // Generate QR code content based on type
         $qrContent = $this->generateQrContent($type, $data);
@@ -31,6 +31,7 @@ class QrCodeService
             'data' => $data,
             'colors' => $colors ?? ['primary' => '#000000', 'secondary' => '#FFFFFF'],
             'customization' => $customization ?? $this->getDefaultCustomization(),
+            'user_id' => $userId,
         ]);
 
         // Generate and save QR code image

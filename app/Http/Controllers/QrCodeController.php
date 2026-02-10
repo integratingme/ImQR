@@ -24,6 +24,35 @@ class QrCodeController extends Controller
         return view('qr-codes.index');
     }
 
+    /**
+     * Track scan and check if scan limit reached for guest/free users.
+     * Returns view name if limit reached, null otherwise.
+     */
+    protected function trackScanAndCheckLimit(QrCode $qrCode): ?string
+    {
+        // Increment scan count
+        $qrCode->incrementScanCount();
+
+        // Check if limit reached (10 for guest/free, unlimited for premium)
+        if ($qrCode->scanLimitReached()) {
+            return 'qr-codes.scan-limit-reached';
+        }
+
+        return null;
+    }
+
+    /**
+     * Generate unique redirect slug for dynamic QR codes.
+     */
+    protected function generateRedirectSlug(): string
+    {
+        do {
+            $slug = \Str::random(8);
+        } while (QrCode::where('redirect_slug', $slug)->exists());
+
+        return $slug;
+    }
+
     public function create(string $type)
     {
         $validTypes = ['url', 'email', 'text', 'pdf', 'menu', 'coupon', 'event', 'app', 'location', 'wifi', 'phone', 'mp3', 'business_card', 'personal_vcard'];
@@ -98,12 +127,33 @@ class QrCodeController extends Controller
             ];
         }
 
+        // Handle logo for free vs premium users
+        $requestedLogo = $request->input('qr_logo_data_url', null);
+        $allowCustomLogo = false;
+        $user = $request->user();
+
+        if ($requestedLogo) {
+            if (!$user) {
+                // Guest: no custom logo, use app logo
+                $requestedLogo = asset('images/app-logo.png'); // Default app logo
+            } elseif ($user->isPremium()) {
+                // Premium: unlimited custom logos
+                $allowCustomLogo = true;
+            } elseif ($user->canAddCustomLogo()) {
+                // Free: can add custom logo to 1 QR code only
+                $allowCustomLogo = true;
+            } else {
+                // Free user already used their 1 custom logo
+                $requestedLogo = asset('images/app-logo.png'); // Replace with app logo
+            }
+        }
+
         $customization = [
             'pattern' => $request->input('pattern', 'square'),
             'corner_style' => $request->input('corner_style', 'square'),
             'corner_dot_style' => $request->input('corner_dot_style', 'square'),
             'frame' => $request->input('frame', 'none'),
-            'logo_url' => $request->input('qr_logo_data_url', null),
+            'logo_url' => $requestedLogo,
         ];
         
         // For review-us frame, save the custom configuration
@@ -152,7 +202,13 @@ class QrCodeController extends Controller
                 'data' => $validated,
                 'colors' => $colors,
                 'customization' => $customization,
+                'user_id' => $user?->id,
             ]);
+
+            // If free user added custom logo, increment count
+            if ($user && $user->isFree() && $allowCustomLogo && $requestedLogo) {
+                $user->increment('custom_logo_count');
+            }
 
             // Coupon presentation image is optional; PDF and MP3 always have a file
             $hasMainFile = ($type === 'coupon') ? $request->hasFile($fileField) : true;
@@ -211,7 +267,13 @@ class QrCodeController extends Controller
                 $dataForStorage = $this->stripFilesFromArray($dataForStorage);
             }
 
-            $qrCode = $this->qrCodeService->generate($type, $dataForStorage, $colors, $customization);
+            $qrCode = $this->qrCodeService->generate($type, $dataForStorage, $colors, $customization, $user?->id);
+
+            // If free user added custom logo, increment count
+            if ($user && $user->isFree() && $allowCustomLogo && $requestedLogo) {
+                $user->increment('custom_logo_count');
+            }
+
             $this->handleFileUploads($request, $qrCode, $type);
             
             // For text type, generate text page URL and regenerate QR code
@@ -309,6 +371,22 @@ class QrCodeController extends Controller
             $payload['menu_page_url'] = route('qr-codes.menu-page', $qrCode->id);
         }
         return response()->json($payload);
+    }
+
+    public function edit($id)
+    {
+        $qrCode = QrCode::with('files')->findOrFail($id);
+        
+        // Check if user owns this QR code and has permission to edit
+        if (!auth()->user()->isPremium() || $qrCode->user_id !== auth()->id()) {
+            abort(403, 'You do not have permission to edit this QR code.');
+        }
+
+        $type = $qrCode->type;
+        $reviewUsIcons = $this->getReviewUsPredefinedIcons();
+        $recaptchaSiteKey = config('services.recaptcha.enabled') ? config('services.recaptcha.site_key') : null;
+
+        return view('qr-codes.create', compact('type', 'reviewUsIcons', 'recaptchaSiteKey', 'qrCode'));
     }
 
     public function update(StoreQrCodeRequest $request, string $id)
@@ -634,6 +712,12 @@ class QrCodeController extends Controller
             abort(404);
         }
 
+        // Track scan and check limit
+        $limitView = $this->trackScanAndCheckLimit($qrCode);
+        if ($limitView) {
+            return view($limitView, compact('qrCode'));
+        }
+
         // Get PDF file
         $pdfFile = $qrCode->files()->where('file_type', 'pdf')->first();
         
@@ -682,6 +766,12 @@ class QrCodeController extends Controller
             abort(404);
         }
 
+        // Track scan and check limit
+        $limitView = $this->trackScanAndCheckLimit($qrCode);
+        if ($limitView) {
+            return view($limitView, compact('qrCode'));
+        }
+
         // Get customization data from QR code data
         $data = $qrCode->data ?? [];
         $textContent = $data['text'] ?? 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam efficitur turpis ut massa semper, et venenatis ipsum vulputate. Curabitur ac sem accumsan, accumsan tortor eu, consectetur purus. Proin dignissim eu dui in vehicula. Morbi rhoncus, leo et tristique condimentum, dolor libero porttitor mauris, id dapibus urna erat a purus. Donec porta, augue quis pellentesque mollis, lectus purus laoreet turpis, vel consectetur nisi nibh vitae dolor. Ut in metus ut nulla congue gravida ut a quam. Quisque a lacus non orci malesuada ornare. Curabitur eu tristique ex. Phasellus ultrices non justo vitae fringilla. In consequat mollis nulla, id ullamcorper eros sollicitudin porta. In laoreet ultrices facilisis. Cras auctor nulla eu est facilisis ullamcorper. Maecenas vehicula sem quis ipsum posuere, ut dictum diam dictum.';
@@ -705,6 +795,12 @@ class QrCodeController extends Controller
         // Only allow app type QR codes
         if ($qrCode->type !== 'app') {
             abort(404);
+        }
+
+        // Track scan and check limit
+        $limitView = $this->trackScanAndCheckLimit($qrCode);
+        if ($limitView) {
+            return view($limitView, compact('qrCode'));
         }
 
         // Get customization data from QR code data
@@ -757,6 +853,12 @@ class QrCodeController extends Controller
             abort(404);
         }
 
+        // Track scan and check limit
+        $limitView = $this->trackScanAndCheckLimit($qrCode);
+        if ($limitView) {
+            return view($limitView, compact('qrCode'));
+        }
+
         $data = $qrCode->data ?? [];
         $phoneNumber = $data['phone_number'] ?? '';
         $fullName = trim($data['full_name'] ?? '');
@@ -801,6 +903,12 @@ class QrCodeController extends Controller
             abort(404);
         }
 
+        // Track scan and check limit
+        $limitView = $this->trackScanAndCheckLimit($qrCode);
+        if ($limitView) {
+            return view($limitView, compact('qrCode'));
+        }
+
         $data = $qrCode->data ?? [];
         $card = (object) [
             'company_name' => $data['company_name'] ?? 'Company',
@@ -829,6 +937,12 @@ class QrCodeController extends Controller
 
         if ($qrCode->type !== 'personal_vcard') {
             abort(404);
+        }
+
+        // Track scan and check limit
+        $limitView = $this->trackScanAndCheckLimit($qrCode);
+        if ($limitView) {
+            return view($limitView, compact('qrCode'));
         }
 
         $data = $qrCode->data ?? [];
@@ -930,6 +1044,12 @@ class QrCodeController extends Controller
             abort(404);
         }
 
+        // Track scan and check limit
+        $limitView = $this->trackScanAndCheckLimit($qrCode);
+        if ($limitView) {
+            return view($limitView, compact('qrCode'));
+        }
+
         $data = $qrCode->data ?? [];
         $primaryColor = $data['coupon_primary_color'] ?? '#6594FF';
         $secondaryColor = $data['coupon_secondary_color'] ?? '#FFFFFF';
@@ -985,6 +1105,12 @@ class QrCodeController extends Controller
         // Only allow menu type QR codes
         if ($qrCode->type !== 'menu') {
             abort(404);
+        }
+
+        // Track scan and check limit
+        $limitView = $this->trackScanAndCheckLimit($qrCode);
+        if ($limitView) {
+            return view($limitView, compact('qrCode'));
         }
 
         $data = $qrCode->data ?? [];
@@ -1090,6 +1216,76 @@ class QrCodeController extends Controller
                     $fileType
                 );
             }
+        }
+    }
+
+    /**
+     * Dynamic QR redirect for premium users.
+     * Short URL /r/{slug} redirects to actual content based on QR code type.
+     */
+    public function dynamicRedirect($slug)
+    {
+        $qrCode = QrCode::where('redirect_slug', $slug)->firstOrFail();
+
+        // Track scan and check limit
+        $limitView = $this->trackScanAndCheckLimit($qrCode);
+        if ($limitView) {
+            return view($limitView, compact('qrCode'));
+        }
+
+        // Redirect to appropriate page based on type
+        $data = $qrCode->data ?? [];
+
+        switch ($qrCode->type) {
+            case 'url':
+                $url = $data['url'] ?? route('qr-codes.index');
+                return redirect($url);
+
+            case 'pdf':
+                return redirect()->route('qr-codes.pdf-page', $qrCode->id);
+
+            case 'text':
+                return redirect()->route('qr-codes.text-page', $qrCode->id);
+
+            case 'app':
+                return redirect()->route('qr-codes.app-page', $qrCode->id);
+
+            case 'coupon':
+                return redirect()->route('qr-codes.coupon-page', $qrCode->id);
+
+            case 'phone':
+                return redirect()->route('qr-codes.phone-page', $qrCode->id);
+
+            case 'menu':
+                return redirect()->route('qr-codes.menu-page', $qrCode->id);
+
+            case 'business_card':
+                return redirect()->route('qr-codes.business-card-page', $qrCode->id);
+
+            case 'personal_vcard':
+                return redirect()->route('qr-codes.personal-vcard-page', $qrCode->id);
+
+            case 'email':
+                $email = $data['email'] ?? '';
+                $subject = $data['subject'] ?? '';
+                $message = $data['message'] ?? '';
+                $mailtoUrl = "mailto:{$email}?subject=" . urlencode($subject) . "&body=" . urlencode($message);
+                return redirect($mailtoUrl);
+
+            case 'wifi':
+                // WiFi QR codes typically encode data directly in QR, not via redirect
+                // For now, redirect to home
+                return redirect()->route('qr-codes.index');
+
+            case 'location':
+                $locationUrl = $data['location_url'] ?? '';
+                if ($locationUrl) {
+                    return redirect($locationUrl);
+                }
+                return redirect()->route('qr-codes.index');
+
+            default:
+                return redirect()->route('qr-codes.index');
         }
     }
 }
