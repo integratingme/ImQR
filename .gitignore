@@ -93,3 +93,29 @@ public/uploads/*
 /docker-compose.override.yml
 /.env.local
 /.env.development.local
+
+# Tool caches
+/vendor-bin
+/rector-cache
+/psalm-cache
+/.phpstan-cache
+.php-cs-fixer.cache
+
+# Local databases (do not commit data)
+/*.db
+*.sqlite
+*.sqlite3
+database/*.db*
+database/dev.sqlite
+
+# Extra credentials & tokens
+.git-credentials
+.token*
+.apikey*
+
+# Additional user uploads / private storage
+/public/user-uploads/*
+/public/media/*
+/storage/uploads/*
+/storage/temp/*
+/storage/app/private/*
