@@ -99,7 +99,13 @@ class QrCodeController extends Controller
         try {
             return $this->performStore($request);
         } catch (\Throwable $e) {
-            \Log::error('QR code store failed', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            \Log::error('QR code store failed', [
+                'message' => $e->getMessage(),
+                'type' => $request->input('type'),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => config('app.debug') ? $e->getMessage() : 'Server error. Please check your input and try again.',
@@ -1057,22 +1063,34 @@ class QrCodeController extends Controller
     protected function normalizeBusinessCardData(array $validated): array
     {
         $buttons = [];
-        foreach ($validated['business_card_buttons'] ?? [] as $b) {
-            $label = trim((string) ($b['label'] ?? ''));
-            $url = trim((string) ($b['url'] ?? ''));
-            if ($label === '' && $url === '') {
-                continue;
+        $buttonsData = $validated['business_card_buttons'] ?? [];
+        if (is_array($buttonsData)) {
+            foreach ($buttonsData as $b) {
+                if (!is_array($b)) {
+                    continue;
+                }
+                $label = trim((string) ($b['label'] ?? ''));
+                $url = trim((string) ($b['url'] ?? ''));
+                if ($label === '' && $url === '') {
+                    continue;
+                }
+                $buttons[] = ['label' => $label ?: 'Link', 'url' => $url ?: '#'];
             }
-            $buttons[] = ['label' => $label ?: 'Link', 'url' => $url ?: '#'];
         }
 
         $socials = [];
-        foreach ($validated['business_card_socials'] ?? [] as $s) {
-            $url = trim((string) ($s['url'] ?? ''));
-            if ($url === '') {
-                continue;
+        $socialsData = $validated['business_card_socials'] ?? [];
+        if (is_array($socialsData)) {
+            foreach ($socialsData as $s) {
+                if (!is_array($s)) {
+                    continue;
+                }
+                $url = trim((string) ($s['url'] ?? ''));
+                if ($url === '') {
+                    continue;
+                }
+                $socials[] = ['platform' => $s['platform'] ?? 'website', 'url' => $url];
             }
-            $socials[] = ['platform' => $s['platform'] ?? 'website', 'url' => $url];
         }
 
         return [
@@ -1100,12 +1118,18 @@ class QrCodeController extends Controller
     protected function normalizePersonalVCardData(array $validated): array
     {
         $socials = [];
-        foreach ($validated['personal_vcard_socials'] ?? [] as $s) {
-            $url = trim((string) ($s['url'] ?? ''));
-            if ($url === '') {
-                continue;
+        $socialsData = $validated['personal_vcard_socials'] ?? [];
+        if (is_array($socialsData)) {
+            foreach ($socialsData as $s) {
+                if (!is_array($s)) {
+                    continue;
+                }
+                $url = trim((string) ($s['url'] ?? ''));
+                if ($url === '') {
+                    continue;
+                }
+                $socials[] = ['platform' => $s['platform'] ?? 'website', 'url' => $url];
             }
-            $socials[] = ['platform' => $s['platform'] ?? 'website', 'url' => $url];
         }
 
         return [

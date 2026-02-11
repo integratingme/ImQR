@@ -360,6 +360,66 @@ async function renderQRCode(container, QRCodeStylingClass) {
             }
             break;
         }
+        case 'email': {
+            const email = qrData.email || '';
+            if (!email) {
+                qrContent = '';
+                break;
+            }
+            let mailtoUrl = 'mailto:' + email;
+            const subject = qrData.subject || '';
+            const message = qrData.message || '';
+            if (subject || message) {
+                mailtoUrl += '?';
+                if (subject) {
+                    mailtoUrl += 'subject=' + encodeURIComponent(subject);
+                }
+                if (message) {
+                    if (subject) mailtoUrl += '&';
+                    mailtoUrl += 'body=' + encodeURIComponent(message);
+                }
+            }
+            qrContent = mailtoUrl;
+            break;
+        }
+        case 'wifi': {
+            const ssid = qrData.ssid || '';
+            if (!ssid) {
+                qrContent = '';
+                break;
+            }
+            const password = qrData.password || '';
+            const encryption = qrData.encryption || 'WPA2';
+            
+            // Escape special characters in SSID and password (semicolons, colons, backslashes, commas)
+            function escapeWifiString(str) {
+                return str.replace(/\\/g, '\\\\')
+                          .replace(/;/g, '\\;')
+                          .replace(/:/g, '\\:')
+                          .replace(/,/g, '\\,');
+            }
+            
+            let wifiString = 'WIFI:';
+            
+            // Only add encryption type if not "nopass"
+            if (encryption !== 'nopass') {
+                wifiString += 'T:' + encryption + ';';
+            }
+            
+            // SSID is always required
+            wifiString += 'S:' + escapeWifiString(ssid) + ';';
+            
+            // Only add password if encryption is not "nopass" and password is provided
+            if (encryption !== 'nopass' && password) {
+                wifiString += 'P:' + escapeWifiString(password) + ';';
+            }
+            
+            // End with semicolon
+            wifiString += ';';
+            
+            qrContent = wifiString;
+            break;
+        }
         default:
             qrContent = qrData.url || '';
     }
