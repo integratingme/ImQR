@@ -2,7 +2,47 @@
 
 use App\Http\Controllers\QrCodeController;
 use App\Http\Controllers\PageController;
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
+
+// Dev-only: simulate login as Free/Premium user (only when APP_ENV=local)
+if (app()->environment('local')) {
+    Route::get('/dev/login-as/{id}', function ($id) {
+        $plan = request()->query('plan'); // 'free' | 'premium' (optional)
+
+        if ($id === 'premium' || $id === 'free') {
+            $wantPlan = $id;
+            $user = User::where('plan', $wantPlan)->first();
+            if (!$user) {
+                $user = User::create([
+                    'name' => $wantPlan === 'premium' ? 'Premium Test User' : 'Free Test User',
+                    'email' => $wantPlan . '-test@imqr.test',
+                    'password' => bcrypt('password'),
+                    'plan' => $wantPlan,
+                    'plan_expires_at' => $wantPlan === 'premium' ? now()->addYear() : null,
+                ]);
+            }
+        } else {
+            $user = User::findOrFail((int) $id);
+            if ($plan && in_array($plan, ['free', 'premium'])) {
+                $user->plan = $plan;
+                $user->plan_expires_at = $plan === 'premium' ? now()->addYear() : null;
+                $user->save();
+            }
+        }
+
+        auth()->login($user);
+
+        return redirect()->route('qr-codes.index')->with('message', 'Logged in as ' . $user->email . ' (' . $user->plan . ')');
+    })->name('dev.login-as');
+
+    Route::get('/dev/logout', function () {
+        auth()->logout();
+        request()->session()->invalidate();
+        request()->session()->regenerateToken();
+        return redirect()->route('qr-codes.index')->with('message', 'Logged out.');
+    })->name('dev.logout');
+}
 
 // QR Code Routes
 Route::get('/', [QrCodeController::class, 'index'])->name('qr-codes.index');
@@ -21,6 +61,7 @@ Route::get('/qr-codes/{id}/edit', [QrCodeController::class, 'edit'])->middleware
 Route::put('/qr-codes/{id}', [QrCodeController::class, 'update'])->middleware(['auth', 'premium'])->name('qr-codes.update');
 Route::delete('/qr-codes/{id}', [QrCodeController::class, 'destroy'])->name('qr-codes.destroy');
 Route::post('/qr-codes/preview', [QrCodeController::class, 'preview'])->name('qr-codes.preview');
+Route::get('/qr-codes/check-logo-limit', [QrCodeController::class, 'checkLogoLimit'])->name('qr-codes.check-logo-limit');
 Route::get('/qr-codes/resolve-maps-link', [QrCodeController::class, 'resolveMapsLink'])->name('qr-codes.resolve-maps-link');
 Route::get('/qr-codes/{id}/download/{format}', [QrCodeController::class, 'download'])->name('qr-codes.download');
 Route::get('/qr-codes/history', [QrCodeController::class, 'history'])->name('qr-codes.history');

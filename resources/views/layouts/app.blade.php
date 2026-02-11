@@ -31,6 +31,14 @@
                         @else
                             <span class="px-2 py-0.5 rounded bg-gray-100 text-gray-500 font-medium">Guest</span>
                         @endauth
+                        @if(app()->environment('local'))
+                            <span class="text-gray-300">|</span>
+                            <a href="{{ url('/dev/login-as/free') }}" class="text-gray-500 hover:text-primary-600">As Free</a>
+                            <a href="{{ url('/dev/login-as/premium') }}" class="text-gray-500 hover:text-primary-600">As Premium</a>
+                            @auth
+                                <a href="{{ url('/dev/logout') }}" class="text-gray-500 hover:text-red-600">Logout</a>
+                            @endauth
+                        @endif
                     </div>
                     <a href="{{ route('qr-codes.index') }}" class="text-dark-500 hover:text-primary-600 font-medium transition-colors">
                         Create QR

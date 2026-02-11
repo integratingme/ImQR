@@ -32,6 +32,8 @@
 
         @php
             $typeNames = [
+                'url' => 'Website URL',
+                'email' => 'Email',
                 'text' => 'Text',
                 'coupon' => 'Coupon',
                 'pdf' => 'PDF',
@@ -39,6 +41,9 @@
                 'phone' => 'Phone',
                 'menu' => 'Menu',
                 'location' => 'Location',
+                'wifi' => 'WiFi',
+                'event' => 'Event',
+                'mp3' => 'MP3',
                 'business_card' => 'Business Card',
                 'personal_vcard' => 'Personal vCard',
             ];
@@ -118,6 +123,16 @@
                                 {{-- Placeholder so PNG/SVG row stays at same position when there is no View page --}}
                                 <div class="w-full py-2.5 rounded-xl invisible pointer-events-none select-none" aria-hidden="true">View page</div>
                             @endif
+                            @auth
+                                @if(auth()->user()->isPremium() && $qrCode->user_id == auth()->id())
+                                    <a href="{{ route('qr-codes.edit', $qrCode->id) }}" class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-medium text-primary-600 bg-primary-50 hover:bg-primary-100 border border-primary-200 transition-colors">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                        </svg>
+                                        Edit
+                                    </a>
+                                @endif
+                            @endauth
                             <div class="flex gap-2">
                                 <a href="{{ route('qr-codes.download', ['id' => $qrCode->id, 'format' => 'png']) }}" class="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-medium text-white bg-primary-500 hover:bg-primary-600 shadow-sm transition-colors">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

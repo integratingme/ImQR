@@ -111,6 +111,44 @@ class QrCodeController extends Controller
     {
         $type = $request->input('type');
         $validated = $request->validated();
+        $user = $request->user();
+        
+        // Clean up incomplete QR codes (without qr_image_path) older than 1 hour
+        // This prevents accumulation of incomplete QR codes if user doesn't finish creation
+        if ($user) {
+            $incompleteQrCodes = QrCode::where('user_id', $user->id)
+                ->whereNull('qr_image_path')
+                ->where('created_at', '<', now()->subHour())
+                ->get();
+            
+            foreach ($incompleteQrCodes as $incompleteQrCode) {
+                // Delete associated files
+                foreach ($incompleteQrCode->files as $file) {
+                    if ($file->file_path && Storage::disk('public')->exists($file->file_path)) {
+                        Storage::disk('public')->delete($file->file_path);
+                    }
+                }
+                $incompleteQrCode->files()->delete();
+                
+                // If free user had custom logo in incomplete QR code, decrement count
+                if ($user->isFree() && $incompleteQrCode->customization && isset($incompleteQrCode->customization['logo_url'])) {
+                    $logoUrl = $incompleteQrCode->customization['logo_url'];
+                    $appLogoUrl = asset('images/app-logo.png');
+                    if ($logoUrl && $logoUrl !== $appLogoUrl && strpos($logoUrl, 'images/app-logo.png') === false) {
+                        // This was a custom logo, decrement count
+                        if ($user->custom_logo_count > 0) {
+                            $user->decrement('custom_logo_count');
+                        }
+                    }
+                }
+                
+                $incompleteQrCode->delete();
+            }
+        }
+        
+        // Handle logo for free vs premium users
+        $requestedLogo = $request->input('qr_logo_data_url', null);
+        $allowCustomLogo = false;
 
         // For PDF and menu types, use Step 2 colors for QR code (Step 1 colors are stored in data for page background)
         if ($type === 'pdf' || $type === 'menu') {
@@ -139,12 +177,24 @@ class QrCodeController extends Controller
             } elseif ($user->isPremium()) {
                 // Premium: unlimited custom logos
                 $allowCustomLogo = true;
-            } elseif ($user->canAddCustomLogo()) {
-                // Free: can add custom logo to 1 QR code only
+            } elseif ($user->isFree()) {
+                // Free: check if user already has a QR code with custom logo
+                $hasLogoQrCode = QrCode::where('user_id', $user->id)
+                    ->whereNotNull('customization->logo_url')
+                    ->where('customization->logo_url', '!=', asset('images/app-logo.png'))
+                    ->where('customization->logo_url', 'not like', '%images/app-logo.png%')
+                    ->exists();
+                
+                if ($hasLogoQrCode) {
+                    // Free user already has a QR code with custom logo - reject this request
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'You have already created a QR code with a custom logo. Free plan allows only one QR code with a custom logo.',
+                    ], 422);
+                }
+                
+                // Free user can add custom logo (first time)
                 $allowCustomLogo = true;
-            } else {
-                // Free user already used their 1 custom logo
-                $requestedLogo = asset('images/app-logo.png'); // Replace with app logo
             }
         }
 
@@ -659,12 +709,49 @@ class QrCodeController extends Controller
         ]);
     }
 
+    /**
+     * Check if free user already has a QR code with custom logo.
+     */
+    public function checkLogoLimit(Request $request)
+    {
+        $user = $request->user();
+        
+        if (!$user || !$user->isFree()) {
+            return response()->json([
+                'has_logo' => false,
+                'can_add_logo' => true,
+            ]);
+        }
+        
+        // Check if user already has a QR code with custom logo
+        $hasLogoQrCode = QrCode::where('user_id', $user->id)
+            ->whereNotNull('customization->logo_url')
+            ->where('customization->logo_url', '!=', asset('images/app-logo.png'))
+            ->where('customization->logo_url', 'not like', '%images/app-logo.png%')
+            ->exists();
+        
+        return response()->json([
+            'has_logo' => $hasLogoQrCode,
+            'can_add_logo' => !$hasLogoQrCode,
+        ]);
+    }
+
     public function history(Request $request)
     {
-        $historyTypes = ['text', 'coupon', 'pdf', 'app', 'phone', 'menu', 'location', 'business_card', 'personal_vcard'];
+        $historyTypes = ['url', 'email', 'text', 'coupon', 'pdf', 'app', 'phone', 'menu', 'location', 'wifi', 'event', 'mp3', 'business_card', 'personal_vcard'];
         $typeFilter = $request->get('type');
 
-        $query = QrCode::whereIn('type', $historyTypes)->latest();
+        $query = QrCode::whereIn('type', $historyTypes);
+        
+        // Filter by user: if authenticated, show only their QR codes; if guest, show only guest QR codes
+        if (auth()->check()) {
+            $query->where('user_id', auth()->id());
+        } else {
+            $query->whereNull('user_id');
+        }
+        
+        $query->latest();
+        
         if ($typeFilter && in_array($typeFilter, $historyTypes)) {
             $query->where('type', $typeFilter);
         }

@@ -27,11 +27,39 @@ class AppServiceProvider extends ServiceProvider
         $this->registerFileSignatureValidators();
 
         RateLimiter::for('qr-create', function (Request $request) {
-            return Limit::perMinute(5)->by($request->ip());
+            // Skip rate limiting in local development environment
+            if (app()->environment('local')) {
+                return Limit::none();
+            }
+            
+            // Whitelist IP addresses that bypass rate limiting
+            $whitelistIps = ['127.0.0.1', '::1'];
+            $clientIp = $request->ip();
+            
+            // Skip rate limiting for whitelisted IPs
+            if (in_array($clientIp, $whitelistIps)) {
+                return Limit::none();
+            }
+            
+            return Limit::perMinute(5)->by($clientIp);
         });
 
         RateLimiter::for('qr-create-daily', function (Request $request) {
-            return Limit::perDay(30)->by($request->ip());
+            // Skip rate limiting in local development environment
+            if (app()->environment('local')) {
+                return Limit::none();
+            }
+            
+            // Whitelist IP addresses that bypass rate limiting
+            $whitelistIps = ['127.0.0.1', '::1'];
+            $clientIp = $request->ip();
+            
+            // Skip rate limiting for whitelisted IPs
+            if (in_array($clientIp, $whitelistIps)) {
+                return Limit::none();
+            }
+            
+            return Limit::perDay(30)->by($clientIp);
         });
     }
 
