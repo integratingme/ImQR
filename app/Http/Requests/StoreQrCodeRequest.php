@@ -118,6 +118,9 @@ class StoreQrCodeRequest extends FormRequest
                 'amenities.*' => 'string|max:100',
                 'dress_code_color' => 'nullable|string|max:50',
                 'contact' => 'nullable|string|max:255',
+                'event_primary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+                'event_secondary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+                'event_font_family' => 'nullable|string|max:100',
             ],
             'app' => [
                 'app_image' => 'nullable|image|mimes:jpeg,png,jpg|mimetypes:image/jpeg,image/png|image_signature|max:5120',

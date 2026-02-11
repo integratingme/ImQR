@@ -1527,32 +1527,154 @@ function updateStep1Preview() {
             break;
             
         case 'event':
-            if (overlay) overlay.style.backgroundColor = '#FFFFFF'; // white
+            const eventPrimaryColor = document.getElementById('event_primary_color_hex')?.value || document.getElementById('event_primary_color_picker')?.value || '#6594FF';
+            const eventSecondaryColor = document.getElementById('event_secondary_color_hex')?.value || document.getElementById('event_secondary_color_picker')?.value || '#FFFFFF';
+            const eventFontFamily = document.getElementById('event_font_family')?.value || 'Maven Pro';
+            
+            if (overlay) overlay.style.backgroundColor = eventSecondaryColor;
             const eventName = document.getElementById('event_name')?.value || '';
             const companyName = document.getElementById('company_name')?.value || '';
+            const description = document.getElementById('description')?.value || '';
             const eventDate = document.getElementById('date')?.value || '';
             const eventTime = document.getElementById('time')?.value || '';
             const eventLocation = document.getElementById('location')?.value || '';
+            const dressCodeColorPicker = document.getElementById('dress_code_color');
+            const dressCodeHexInput = document.getElementById('dress_code_color_hex');
+            const dressCodeColor = dressCodeColorPicker?.value || dressCodeHexInput?.value || '#000000';
+            const contact = document.getElementById('contact')?.value || '';
+            
+            // Get event image from preview
+            const eventImagePreview = document.getElementById('event-img-preview');
+            const eventImageSrc = eventImagePreview && !eventImagePreview.classList.contains('hidden') 
+                ? eventImagePreview.querySelector('img')?.src || '' 
+                : '';
+            
+            // Get selected amenities
+            const amenitiesCheckboxes = document.querySelectorAll('input[name="amenities[]"]:checked');
+            const amenities = Array.from(amenitiesCheckboxes).map(cb => cb.value);
+            
+            // Format date (dd.mm.yyyy)
+            let formattedDate = '';
+            if (eventDate) {
+                const date = new Date(eventDate + 'T00:00:00');
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = date.getFullYear();
+                formattedDate = `${day}.${month}.${year}`;
+            }
+            
+            // Format time (HH:mm)
+            let formattedTime = '';
+            if (eventTime) {
+                const [hours, minutes] = eventTime.split(':');
+                formattedTime = `${hours}:${minutes}h`;
+            }
+            
+            // Use dress code color (always hex from color picker)
+            const dressCodeHex = dressCodeColor.startsWith('#') ? dressCodeColor : '#000000';
+            
+            // Load Google Font if needed
+            if (eventFontFamily !== 'Maven Pro') {
+                const fontId = eventFontFamily.replace(/\s+/g, '+');
+                const linkId = 'google-font-event-' + fontId;
+                if (!document.getElementById(linkId)) {
+                    const link = document.createElement('link');
+                    link.id = linkId;
+                    link.rel = 'stylesheet';
+                    link.href = `https://fonts.googleapis.com/css2?family=${fontId}:wght@400;500;600;700&display=swap`;
+                    document.head.appendChild(link);
+                }
+            }
+            
             mockupHtml = `
-                <div class="w-full h-full rounded-lg overflow-hidden">
-                    <div class="p-4">
-                        ${companyName ? `<div class="text-xs text-gray-500 mb-1">${companyName}</div>` : ''}
-                        <div class="text-lg font-bold text-gray-900 mb-3">${eventName || 'Event Name'}</div>
-                        ${eventDate || eventTime ? `
-                            <div class="flex items-center gap-2 mb-2 text-sm text-gray-600">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                </svg>
-                                <span>${eventDate || ''} ${eventTime || ''}</span>
+                <div class="w-full h-full rounded-lg overflow-hidden flex flex-col shadow-lg" style="background-color: ${eventSecondaryColor}; font-family: '${eventFontFamily}', sans-serif;">
+                    <!-- Hero Image Section -->
+                    <div class="relative h-64 w-full shrink-0">
+                        ${eventImageSrc ? `
+                            <img src="${eventImageSrc}" 
+                                 class="w-full h-full object-cover" 
+                                 alt="${eventName || 'Event'}">
+                        ` : `
+                            <div class="w-full h-full" style="background: linear-gradient(to bottom right, ${eventPrimaryColor}, ${eventPrimaryColor}dd);"></div>
+                        `}
+                        
+                        <!-- Overlay -->
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                        
+                        <div class="absolute bottom-4 left-6">
+                            ${companyName ? `
+                                <span class="inline-block px-2 py-1 rounded text-[10px] font-bold text-white uppercase tracking-wider mb-2" style="background-color: ${eventPrimaryColor};">
+                                    ${companyName}
+                                </span>
+                            ` : ''}
+                            <h1 class="text-2xl font-bold text-white leading-tight" style="font-family: '${eventFontFamily}', sans-serif;">
+                                ${eventName || 'Event Name'}
+                            </h1>
+                        </div>
+                    </div>
+
+                    <!-- Quick Info Bar (Date/Time/DressCode) -->
+                    <div class="flex border-b border-gray-100 text-center" style="background-color: ${eventSecondaryColor};">
+                        <div class="flex-1 p-4 border-r border-gray-100">
+                            <p class="text-[10px] text-gray-400 uppercase font-bold" style="font-family: '${eventFontFamily}', sans-serif;">Date</p>
+                            <p class="text-sm font-bold text-gray-800" style="font-family: '${eventFontFamily}', sans-serif;">${formattedDate || '-'}</p>
+                        </div>
+                        <div class="flex-1 p-4 border-r border-gray-100">
+                            <p class="text-[10px] text-gray-400 uppercase font-bold" style="font-family: '${eventFontFamily}', sans-serif;">Time</p>
+                            <p class="text-sm font-bold text-gray-800" style="font-family: '${eventFontFamily}', sans-serif;">${formattedTime || '-'}</p>
+                        </div>
+                        <div class="flex-1 p-4 flex flex-col items-center justify-center">
+                            <div class="w-4 h-4 rounded-full border border-gray-200 mb-1 shadow-sm"
+                                 style="background-color: ${dressCodeHex}"></div>
+                            <p class="text-[9px] text-gray-400 uppercase font-bold" style="font-family: '${eventFontFamily}', sans-serif;">Dress Code</p>
+                        </div>
+                    </div>
+
+                    <!-- Details Section -->
+                    <div class="p-6 space-y-6 flex-grow overflow-y-auto" style="background-color: ${eventSecondaryColor};">
+                        ${eventLocation ? `
+                            <!-- Location -->
+                            <div class="flex gap-3">
+                                <div style="color: ${eventPrimaryColor};">📍</div>
+                                <div>
+                                    <h4 class="text-sm font-bold text-gray-800" style="font-family: '${eventFontFamily}', sans-serif;">Location</h4>
+                                    <p class="text-xs text-gray-500" style="font-family: '${eventFontFamily}', sans-serif;">${eventLocation}</p>
+                                </div>
                             </div>
                         ` : ''}
-                        ${eventLocation ? `
-                            <div class="flex items-center gap-2 text-sm text-gray-600">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                </svg>
-                                <span>${eventLocation}</span>
+
+                        ${description ? `
+                            <!-- Description -->
+                            <div class="space-y-2">
+                                <h4 class="text-sm font-bold text-gray-800" style="font-family: '${eventFontFamily}', sans-serif;">About the Event</h4>
+                                <p class="text-xs text-gray-600 leading-relaxed italic" style="font-family: '${eventFontFamily}', sans-serif;">
+                                    ${description}
+                                </p>
+                            </div>
+                        ` : ''}
+
+                        ${amenities.length > 0 ? `
+                            <!-- Amenities -->
+                            <div class="space-y-3">
+                                <h4 class="text-sm font-bold text-gray-800" style="font-family: '${eventFontFamily}', sans-serif;">Amenities</h4>
+                                <div class="grid grid-cols-2 gap-2">
+                                    ${amenities.map(amenity => `
+                                        <div class="flex items-center gap-2 p-2 bg-gray-50 rounded-lg border border-gray-100">
+                                            <span class="text-xs uppercase font-bold" style="color: ${eventPrimaryColor}; font-family: '${eventFontFamily}', sans-serif;">${amenity}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        ${contact ? `
+                            <!-- Contact -->
+                            <div class="rounded-2xl p-4 text-white flex items-center justify-between" style="background-color: #1e293b;">
+                                <div>
+                                    <p class="text-[9px] text-slate-400 uppercase font-bold" style="font-family: '${eventFontFamily}', sans-serif;">Contact Info</p>
+                                    <p class="text-sm font-bold" style="font-family: '${eventFontFamily}', sans-serif;">${contact}</p>
+                                </div>
+                                <a href="tel:${contact}" class="p-2 rounded-lg" style="background-color: ${eventPrimaryColor};">📞</a>
                             </div>
                         ` : ''}
                     </div>
@@ -2205,6 +2327,9 @@ function buildQrContentFromForm() {
             return '/coupon/preview';
         case 'event': {
             const amenities = []; 
+            const checkedAmenities = document.querySelectorAll('input[name="amenities[]"]:checked');
+            checkedAmenities.forEach(cb => amenities.push(cb.value));
+            
             return JSON.stringify({
                 type: 'event',
                 event_name: getValue('event_name'),
@@ -2216,6 +2341,9 @@ function buildQrContentFromForm() {
                 amenities,
                 dress_code_color: getValue('dress_code_color'),
                 contact: getValue('contact'),
+                event_primary_color: getValue('event_primary_color') || getValue('event_primary_color_hex') || '#6594FF',
+                event_secondary_color: getValue('event_secondary_color') || getValue('event_secondary_color_hex') || '#FFFFFF',
+                event_font_family: getValue('event_font_family') || 'Maven Pro',
             });
         }
         case 'app':
@@ -2864,7 +2992,14 @@ function populateStep1Fields(type, data, files) {
             }
             if (data.dress_code_color) {
                 const dressCodeInput = document.getElementById('dress_code_color');
-                if (dressCodeInput) dressCodeInput.value = data.dress_code_color;
+                const dressCodeHexInput = document.getElementById('dress_code_color_hex');
+                const dressCodeValue = data.dress_code_color.startsWith('#') ? data.dress_code_color : '#000000';
+                if (dressCodeInput) {
+                    dressCodeInput.value = dressCodeValue;
+                }
+                if (dressCodeHexInput) {
+                    dressCodeHexInput.value = dressCodeValue.toUpperCase();
+                }
             }
             if (data.contact) {
                 const contactInput = document.getElementById('contact');
@@ -2875,6 +3010,23 @@ function populateStep1Fields(type, data, files) {
                     const checkbox = document.querySelector(`input[name="amenities[]"][value="${amenity}"]`);
                     if (checkbox) checkbox.checked = true;
                 });
+            }
+            // Handle event design colors
+            if (data.event_primary_color) {
+                const primaryHex = document.getElementById('event_primary_color_hex');
+                const primaryPicker = document.getElementById('event_primary_color_picker');
+                if (primaryHex) primaryHex.value = data.event_primary_color;
+                if (primaryPicker) primaryPicker.value = data.event_primary_color;
+            }
+            if (data.event_secondary_color) {
+                const secondaryHex = document.getElementById('event_secondary_color_hex');
+                const secondaryPicker = document.getElementById('event_secondary_color_picker');
+                if (secondaryHex) secondaryHex.value = data.event_secondary_color;
+                if (secondaryPicker) secondaryPicker.value = data.event_secondary_color;
+            }
+            if (data.event_font_family) {
+                const fontFamilySelect = document.getElementById('event_font_family');
+                if (fontFamilySelect) fontFamilySelect.value = data.event_font_family;
             }
             // Handle event image
             const eventImageFile = files.find(f => f.file_type === 'image');
@@ -3498,7 +3650,8 @@ document.addEventListener('DOMContentLoaded', function() {
         'app_text_font_size', 'app_icon_size',
         'app_store_button_color_hex', 'app_store_button_text_color_hex',
         'ssid', 'encryption', 'password', 'address',
-        'event_name', 'company_name', 'date', 'time', 'location', 'description',
+        'event_name', 'company_name', 'date', 'time', 'location', 'description', 'contact', 'dress_code_color', 'dress_code_color_hex',
+        'event_primary_color', 'event_primary_color_hex', 'event_secondary_color', 'event_secondary_color_hex', 'event_font_family',
         'pdf_primary_color_hex', 'pdf_secondary_color_hex', 'pdf_title', 'pdf_website', 
         'company_name', 'file_description', 'pdf_button_text', 'pdf_button_color_hex', 'pdf_font_family',
         'menu_primary_color_hex', 'menu_secondary_color_hex', 'menu_font_family',
@@ -3538,6 +3691,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (container) {
             container.addEventListener('input', () => { if (currentStep === 1) updateStep1Preview(); });
             container.addEventListener('change', () => { if (currentStep === 1) updateStep1Preview(); });
+        }
+    });
+    
+    // Event amenities checkboxes - use event delegation for dynamic checkboxes
+    document.addEventListener('change', function(e) {
+        if (e.target && e.target.name === 'amenities[]' && currentStep === 1) {
+            updateStep1Preview();
         }
     });
     
