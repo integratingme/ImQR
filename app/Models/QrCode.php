@@ -105,7 +105,6 @@ class QrCode extends Model
             'location' => 'Location',
             'wifi' => 'WiFi',
             'phone' => 'Phone',
-            'mp3' => 'MP3',
             'business_card' => 'Business Card',
             'personal_vcard' => 'Personal vCard',
             default => ucfirst($this->type),

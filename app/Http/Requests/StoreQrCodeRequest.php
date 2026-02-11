@@ -25,7 +25,7 @@ class StoreQrCodeRequest extends FormRequest
         $type = $this->input('type');
 
         $baseRules = [
-            'type' => 'required|in:url,email,text,pdf,menu,coupon,event,app,location,wifi,phone,mp3,business_card,personal_vcard',
+            'type' => 'required|in:url,email,text,pdf,menu,coupon,event,app,location,wifi,phone,business_card,personal_vcard',
             'name' => 'required|string|max:255',
             'primary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
             'secondary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
@@ -153,11 +153,6 @@ class StoreQrCodeRequest extends FormRequest
                 'phone_number' => 'required|string|max:50',
                 'phone_background_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
                 'phone_font_family' => 'nullable|string|max:100',
-            ],
-            'mp3' => [
-                'mp3_file' => 'required|file|mimes:mp3,m4a,audio/mpeg,audio/mp3,audio/m4a,audio/x-m4a|audio_signature|max:20480', // 20MB
-                'song_name' => 'required|string|max:255',
-                'artist_name' => 'required|string|max:255',
             ],
             'business_card' => [
                 'business_card_company_name' => 'required|string|max:255',
@@ -305,12 +300,6 @@ class StoreQrCodeRequest extends FormRequest
             'password.required_unless' => 'Password is required for encrypted networks.',
             'address.required' => 'Please enter an address.',
             'phone_number.required' => 'Please enter a phone number.',
-            'mp3_file.required' => 'Please upload an audio file.',
-            'mp3_file.mimes' => 'Only audio files are allowed (MP3, M4A formats).',
-            'mp3_file.audio_signature' => 'The file is not a valid audio file (invalid file signature). Only MP3 and M4A are allowed.',
-            'mp3_file.max' => 'Audio file cannot exceed 20MB.',
-            'song_name.required' => 'Please enter a song name.',
-            'artist_name.required' => 'Please enter an artist name.',
             'menu_content.required' => 'Please add at least one menu section, or upload a PDF, or enter a menu URL.',
             'menu_url.regex' => 'Menu URL must start with https://',
             'website_url.regex' => 'Website URL must start with https://',

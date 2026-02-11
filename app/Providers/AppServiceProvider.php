@@ -82,25 +82,5 @@ class AppServiceProvider extends ServiceProvider
             return FileSignatureChecker::hasValidPdfSignature($value);
         });
 
-        Validator::extend('mp3_signature', function (string $attribute, $value, array $parameters, $validator): bool {
-            if (!$value instanceof \Illuminate\Http\UploadedFile) {
-                return false;
-            }
-            return FileSignatureChecker::hasValidMp3Signature($value);
-        });
-
-        Validator::extend('m4a_signature', function (string $attribute, $value, array $parameters, $validator): bool {
-            if (!$value instanceof \Illuminate\Http\UploadedFile) {
-                return false;
-            }
-            return FileSignatureChecker::hasValidM4aSignature($value);
-        });
-
-        Validator::extend('audio_signature', function (string $attribute, $value, array $parameters, $validator): bool {
-            if (!$value instanceof \Illuminate\Http\UploadedFile) {
-                return false;
-            }
-            return FileSignatureChecker::hasValidAudioSignature($value);
-        });
     }
 }

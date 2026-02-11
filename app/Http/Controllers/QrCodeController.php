@@ -55,7 +55,7 @@ class QrCodeController extends Controller
 
     public function create(string $type)
     {
-        $validTypes = ['url', 'email', 'text', 'pdf', 'menu', 'coupon', 'event', 'app', 'location', 'wifi', 'phone', 'mp3', 'business_card', 'personal_vcard'];
+        $validTypes = ['url', 'email', 'text', 'pdf', 'menu', 'coupon', 'event', 'app', 'location', 'wifi', 'phone', 'business_card', 'personal_vcard'];
         
         if (!in_array($type, $validTypes)) {
             abort(404);
@@ -243,12 +243,6 @@ class QrCodeController extends Controller
                 $fileType = 'image';
                 $urlField = 'coupon_image_url';
                 break;
-            case 'mp3':
-                $hasFileUpload = true;
-                $fileField = 'mp3_file';
-                $fileType = 'audio';
-                $urlField = 'mp3_url';
-                break;
         }
         
         if ($hasFileUpload) {
@@ -266,7 +260,7 @@ class QrCodeController extends Controller
                 $user->increment('custom_logo_count');
             }
 
-            // Coupon presentation image is optional; PDF and MP3 always have a file
+            // Coupon presentation image is optional; PDF always has a file
             $hasMainFile = ($type === 'coupon') ? $request->hasFile($fileField) : true;
             if ($hasMainFile) {
                 $file = $this->qrCodeService->handleFileUpload(
@@ -506,11 +500,6 @@ class QrCodeController extends Controller
                 $fileType = 'image';
                 $urlField = 'coupon_image_url';
                 break;
-            case 'mp3':
-                $fileField = 'mp3_file';
-                $fileType = 'audio';
-                $urlField = 'mp3_url';
-                break;
         }
 
         $existingData = $qrCode->data ?? [];
@@ -744,7 +733,7 @@ class QrCodeController extends Controller
 
     public function history(Request $request)
     {
-        $historyTypes = ['url', 'email', 'text', 'coupon', 'pdf', 'app', 'phone', 'menu', 'location', 'wifi', 'event', 'mp3', 'business_card', 'personal_vcard'];
+        $historyTypes = ['url', 'email', 'text', 'coupon', 'pdf', 'app', 'phone', 'menu', 'location', 'wifi', 'event', 'business_card', 'personal_vcard'];
         $typeFilter = $request->get('type');
 
         $query = QrCode::whereIn('type', $historyTypes);

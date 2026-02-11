@@ -792,7 +792,6 @@ function setupRealTimeValidation() {
         'location': ['address', 'latitude', 'longitude', 'location_url'],
         'wifi': ['ssid', 'encryption', 'password'],
         'phone': ['full_name', 'phone_number', 'phone_background_color_hex', 'phone_font_family'],
-        'mp3': ['song_name', 'artist_name'],
         'menu': ['menu_file', 'menu_url']
     };
     
@@ -2264,8 +2263,6 @@ function buildQrContentFromForm() {
             const phone = getValue('phone_number').replace(/[^\d+]/g, '');
             return 'tel:' + phone;
         }
-        case 'mp3':
-            return '/mp3/preview';
         case 'business_card':
             return (typeof window !== 'undefined' && window.location && window.location.origin ? window.location.origin + '/business-card/preview' : '/business-card/preview');
         case 'personal_vcard':
@@ -2950,22 +2947,6 @@ function populateStep1Fields(type, data, files) {
             }
             break;
             
-        case 'mp3':
-            if (data.song_name) {
-                const songNameInput = document.getElementById('song_name');
-                if (songNameInput) songNameInput.value = data.song_name;
-            }
-            if (data.artist_name) {
-                const artistNameInput = document.getElementById('artist_name');
-                if (artistNameInput) artistNameInput.value = data.artist_name;
-            }
-            // Handle MP3 file
-            const mp3File = files.find(f => f.file_type === 'audio');
-            if (mp3File && mp3File.file_path) {
-                const mp3UrlInput = document.getElementById('mp3_url');
-                if (mp3UrlInput) mp3UrlInput.value = mp3File.file_path;
-            }
-            break;
             
         case 'app':
             if (data.app_name) {
@@ -4130,32 +4111,6 @@ function validateStep1() {
             }
             break;
             
-        case 'mp3':
-            const mp3File = document.getElementById('mp3_file');
-            const songName = document.getElementById('song_name');
-            const artistName = document.getElementById('artist_name');
-            
-            if (!mp3File || !mp3File.files || mp3File.files.length === 0) {
-                errors.push('MP3 file is required');
-                if (mp3File) mp3File.closest('.border-dashed')?.classList.add('border-red-500');
-            } else if (mp3File) {
-                mp3File.closest('.border-dashed')?.classList.remove('border-red-500');
-            }
-            
-            if (!songName || !songName.value.trim()) {
-                errors.push('Song name is required');
-                if (songName) songName.classList.add('border-red-500');
-            } else if (songName) {
-                songName.classList.remove('border-red-500');
-            }
-            
-            if (!artistName || !artistName.value.trim()) {
-                errors.push('Artist name is required');
-                if (artistName) artistName.classList.add('border-red-500');
-            } else if (artistName) {
-                artistName.classList.remove('border-red-500');
-            }
-            break;
             
         case 'app':
             // Validate URL fields if provided

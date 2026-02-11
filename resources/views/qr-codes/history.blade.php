@@ -43,7 +43,6 @@
                 'location' => 'Location',
                 'wifi' => 'WiFi',
                 'event' => 'Event',
-                'mp3' => 'MP3',
                 'business_card' => 'Business Card',
                 'personal_vcard' => 'Personal vCard',
             ];

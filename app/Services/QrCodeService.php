@@ -71,7 +71,6 @@ class QrCodeService
             'phone' => $this->generatePhoneContent($data),
             'business_card' => $this->generateBusinessCardContent($data),
             'personal_vcard' => $this->generatePersonalVCardContent($data),
-            'mp3' => $data['mp3_url'] ?? '',
             default => '',
         };
     }
@@ -338,7 +337,6 @@ class QrCodeService
     private const EXTENSION_WHITELIST = [
         'pdf' => ['pdf'],
         'image' => ['jpg', 'jpeg', 'png'],
-        'audio' => ['mp3', 'm4a'],
     ];
 
     /**
@@ -374,8 +372,6 @@ class QrCodeService
             $allowed = self::EXTENSION_WHITELIST['image'];
         } elseif ($fileType === 'pdf' || $fileType === 'menu') {
             $allowed = self::EXTENSION_WHITELIST['pdf'];
-        } elseif ($fileType === 'audio' || $fileType === 'mp3_file') {
-            $allowed = self::EXTENSION_WHITELIST['audio'];
         } else {
             $allowed = self::EXTENSION_WHITELIST['image'];
         }
