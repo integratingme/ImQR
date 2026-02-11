@@ -195,7 +195,8 @@
     </style>
 </head>
 <body>
-    <div class="coupon-page-wrap">
+    <div class="max-w-md mx-auto shadow-2xl overflow-hidden">
+        <div class="coupon-page-wrap">
         <div class="coupon-page-company">
             @if($logoUrl)
                 <img src="{{ $logoUrl }}" alt="Logo" class="coupon-page-company-logo">
@@ -241,6 +242,7 @@
                 @endif
             </div>
         </div>
+    </div>
     </div>
 </body>
 </html>
