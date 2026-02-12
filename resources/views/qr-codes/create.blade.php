@@ -4540,6 +4540,71 @@ function getRecaptchaToken() {
     });
 }
 
+// Helper function: Calculate FormData size and validate
+function calculateAndValidateFormDataSize(formData) {
+    let totalSize = 0;
+    let fileCount = 0;
+    let dataUrlSize = 0;
+    
+    for (const [key, value] of formData.entries()) {
+        if (value instanceof File) {
+            totalSize += value.size;
+            fileCount++;
+            console.log(`File: ${key} = ${value.name}, Size: ${(value.size / 1024 / 1024).toFixed(2)}MB`);
+        } else if (typeof value === 'string') {
+            const stringSize = new Blob([value]).size;
+            totalSize += stringSize;
+            
+            if (value.startsWith('data:')) {
+                dataUrlSize += stringSize;
+                console.log(`Data URL: ${key}, Size: ${(stringSize / 1024 / 1024).toFixed(2)}MB`);
+            }
+        }
+    }
+    
+    const estimatedRequestSize = totalSize * 1.35; // 35% overhead for multipart encoding
+    const totalSizeMB = (totalSize / 1024 / 1024).toFixed(2);
+    const estimatedSizeMB = (estimatedRequestSize / 1024 / 1024).toFixed(2);
+    
+    console.log(`Raw data size: ${totalSizeMB}MB (${fileCount} file(s) + ${dataUrlSize > 0 ? 'data URLs' : 'no data URLs'})`);
+    console.log(`Estimated request size (with encoding overhead): ${estimatedSizeMB}MB`);
+    
+    return {
+        totalSize,
+        totalSizeMB,
+        estimatedRequestSize,
+        estimatedSizeMB,
+        fileCount,
+        isValid: estimatedRequestSize <= 60 * 1024 * 1024 // 60MB threshold
+    };
+}
+
+// Helper function: Fix HTTP/HTTPS URL mismatch
+function fixUrlProtocol(url) {
+    const currentProtocol = window.location.protocol;
+    if (url.startsWith('http://') && currentProtocol === 'https:') {
+        return url.replace('http://', 'https://').replace('localhost', window.location.hostname);
+    }
+    return url;
+}
+
+// Helper function: Handle 413 Payload Too Large error
+function handle413Error(totalSizeMB, estimatedSizeMB, url, currentStep) {
+    const errMsg = `Server rejected the request (${totalSizeMB}MB raw, ${estimatedSizeMB}MB estimated). This might be due to a server configuration limit (Nginx, PHP, or proxy). Please check server logs or contact administrator.`;
+    console.error('413 Error Details:', {
+        rawSize: totalSizeMB + 'MB',
+        estimatedSize: estimatedSizeMB + 'MB',
+        url: url,
+        status: 413
+    });
+    
+    if (currentStep === 2) {
+        showErrorInStep2(errMsg);
+    } else {
+        showError(errMsg);
+    }
+}
+
 async function generateQRCode() {
     // Sync Step 2 color hex fields into named inputs so primary_color/secondary_color are always valid #rrggbb
     const primaryColorInput = document.getElementById('primary_color');
@@ -4556,6 +4621,18 @@ async function generateQRCode() {
     const recaptchaToken = await getRecaptchaToken();
     if (recaptchaToken) formData.append('recaptcha_token', recaptchaToken);
 
+    // Calculate and validate FormData size
+    const sizeInfo = calculateAndValidateFormDataSize(formData);
+    if (!sizeInfo.isValid) {
+        const errMsg = `Request is too large (estimated ${sizeInfo.estimatedSizeMB}MB). Maximum allowed is 68MB. Please reduce file sizes or remove some product images.`;
+        if (currentStep === 2) {
+            showErrorInStep2(errMsg);
+        } else {
+            showError(errMsg);
+        }
+        return false;
+    }
+
     // Show loading state in Step 3
     document.getElementById('qr-loading').classList.remove('hidden');
     document.getElementById('qr-error').classList.add('hidden');
@@ -4565,7 +4642,12 @@ async function generateQRCode() {
     document.getElementById('download-svg-btn').disabled = true;
     
     try {
-        const response = await fetch('{{ route("qr-codes.store") }}', {
+        // Fix HTTP/HTTPS URL mismatch
+        const storeUrl = '{{ route("qr-codes.store") }}';
+        const fixedUrl = fixUrlProtocol(storeUrl);
+        console.log('Fetch URL:', fixedUrl);
+        
+        const response = await fetch(fixedUrl, {
             method: 'POST',
             body: formData,
             headers: {
@@ -4573,20 +4655,43 @@ async function generateQRCode() {
             }
         });
         
+        // Handle 413 Payload Too Large error
+        if (response.status === 413) {
+            handle413Error(sizeInfo.totalSizeMB, sizeInfo.estimatedSizeMB, fixedUrl, currentStep);
+            document.getElementById('qr-loading').classList.add('hidden');
+            document.getElementById('download-png-btn').disabled = false;
+            document.getElementById('download-svg-btn').disabled = false;
+            return false;
+        }
+        
         const text = await response.text();
         let data;
         try {
             data = JSON.parse(text);
         } catch (e) {
-            // Server returned non-JSON (e.g. 500 HTML error page)
-            const errMsg = currentStep === 2
-                ? 'Server error. Please check your input and try again.'
-                : 'Server error. Please try again.';
-            if (currentStep === 2) {
-                showErrorInStep2(errMsg);
+            // Server returned non-JSON (e.g. 500 HTML error page or 413 HTML error)
+            if (response.status === 413) {
+                console.error('413 Error Details:', {
+                    rawSize: sizeInfo.totalSizeMB + 'MB',
+                    estimatedSize: sizeInfo.estimatedSizeMB + 'MB',
+                    url: fixedUrl,
+                    status: response.status,
+                    responseText: text.substring(0, 500)
+                });
+                handle413Error(sizeInfo.totalSizeMB, sizeInfo.estimatedSizeMB, fixedUrl, currentStep);
             } else {
-                showError(errMsg);
+                const errMsg = currentStep === 2
+                    ? 'Server error. Please check your input and try again.'
+                    : 'Server error. Please try again.';
+                if (currentStep === 2) {
+                    showErrorInStep2(errMsg);
+                } else {
+                    showError(errMsg);
+                }
             }
+            document.getElementById('qr-loading').classList.add('hidden');
+            document.getElementById('download-png-btn').disabled = false;
+            document.getElementById('download-svg-btn').disabled = false;
             return false;
         }
         
@@ -4643,6 +4748,13 @@ async function updateQRCode(id) {
     const recaptchaToken = await getRecaptchaToken();
     if (recaptchaToken) formData.append('recaptcha_token', recaptchaToken);
 
+    // Calculate and validate FormData size
+    const sizeInfo = calculateAndValidateFormDataSize(formData);
+    if (!sizeInfo.isValid) {
+        showErrorInStep2(`Request is too large (estimated ${sizeInfo.estimatedSizeMB}MB). Maximum allowed is 68MB. Please reduce file sizes or remove some product images.`);
+        return false;
+    }
+
     const qrLoading = document.getElementById('qr-loading');
     const qrError = document.getElementById('qr-error');
     const downloadPngBtn = document.getElementById('download-png-btn');
@@ -4653,8 +4765,11 @@ async function updateQRCode(id) {
     if (downloadSvgBtn) downloadSvgBtn.disabled = true;
 
     try {
-        // Use the creation-update route which is accessible to all tiers (guest/free/premium)
-        const url = `{{ url("/qr-codes") }}/${id}/creation-update`;
+        // Fix HTTP/HTTPS URL mismatch
+        let url = `{{ url("/qr-codes") }}/${id}/creation-update`;
+        url = fixUrlProtocol(url);
+        console.log('Update URL:', url);
+        
         const response = await fetch(url, {
             method: 'POST',
             body: formData,
@@ -4662,12 +4777,30 @@ async function updateQRCode(id) {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
             }
         });
+        
+        // Handle 413 Payload Too Large error
+        if (response.status === 413) {
+            handle413Error(sizeInfo.totalSizeMB, sizeInfo.estimatedSizeMB, url, 2);
+            if (qrLoading) qrLoading.classList.add('hidden');
+            if (downloadPngBtn) downloadPngBtn.disabled = false;
+            if (downloadSvgBtn) downloadSvgBtn.disabled = false;
+            return false;
+        }
+        
         const text = await response.text();
         let data;
         try {
             data = JSON.parse(text);
         } catch (e) {
-            showErrorInStep2('Server error. Please try again.');
+            // Server returned non-JSON (e.g. 500 HTML error page or 413 HTML error)
+            if (response.status === 413) {
+                handle413Error(sizeInfo.totalSizeMB, sizeInfo.estimatedSizeMB, url, 2);
+            } else {
+                showErrorInStep2('Server error. Please try again.');
+            }
+            if (qrLoading) qrLoading.classList.add('hidden');
+            if (downloadPngBtn) downloadPngBtn.disabled = false;
+            if (downloadSvgBtn) downloadSvgBtn.disabled = false;
             return false;
         }
         if (data.success) {
