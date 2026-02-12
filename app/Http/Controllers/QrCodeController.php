@@ -551,6 +551,51 @@ class QrCodeController extends Controller
     {
         $type = $qrCode->type;
         $validated = $request->validated();
+        $user = $request->user();
+        $defaultLogoUrl = asset('logo-integrating-me.webp');
+
+        // Handle logo for free vs premium users (tier-aware enforcement)
+        $requestedLogo = $request->input('qr_logo_data_url', null);
+        $existingLogo = $qrCode->customization['logo_url'] ?? null;
+
+        if (!$user) {
+            // Guest: always use default logo, ignore any upload attempt
+            $requestedLogo = $defaultLogoUrl;
+        } elseif ($requestedLogo) {
+            if ($user->isPremium()) {
+                // Premium: unlimited custom logos - use requested logo as-is
+                // No restrictions
+            } elseif ($user->isFree()) {
+                // Free: check if logo is changing and if limit is reached
+                if ($requestedLogo !== $existingLogo && $requestedLogo !== $defaultLogoUrl) {
+                    // Logo is changing to a new custom logo - check limit
+                    $customLogoCount = QrCode::where('user_id', $user->id)
+                        ->where('id', '!=', $qrCode->id)
+                        ->whereNotNull('customization')
+                        ->get()
+                        ->filter(function ($qr) use ($defaultLogoUrl) {
+                            $logo = $qr->customization['logo_url'] ?? null;
+                            return $logo && $logo !== $defaultLogoUrl && !str_contains($logo, 'logo-integrating-me');
+                        })
+                        ->count();
+
+                    if ($customLogoCount >= 1) {
+                        // Free user already has another QR with custom logo - keep existing logo
+                        $requestedLogo = $existingLogo ?? $defaultLogoUrl;
+                    }
+                    // If within limit, allow the new custom logo
+                }
+                // If logo is same as existing or default, allow it
+            }
+        } else {
+            // No logo provided - use default for guests, keep existing for authenticated users
+            if (!$user) {
+                $requestedLogo = $defaultLogoUrl;
+            } else {
+                // Keep existing logo if no new one provided
+                $requestedLogo = $existingLogo ?? null;
+            }
+        }
 
         $colors = [
             'primary' => $validated['primary_color'] ?? $qrCode->colors['primary'] ?? '#000000',
@@ -561,7 +606,7 @@ class QrCodeController extends Controller
             'corner_style' => $request->input('corner_style', $qrCode->customization['corner_style'] ?? 'square'),
             'corner_dot_style' => $request->input('corner_dot_style', $qrCode->customization['corner_dot_style'] ?? 'square'),
             'frame' => $request->input('frame', $qrCode->customization['frame'] ?? 'none'),
-            'logo_url' => $request->input('qr_logo_data_url', $qrCode->customization['logo_url'] ?? null),
+            'logo_url' => $requestedLogo,
         ];
         
         // For review-us frame, save the custom configuration
