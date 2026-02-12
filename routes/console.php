@@ -106,3 +106,35 @@ Artisan::command('qr-codes:delete-mp3', function () {
         $this->info("Deleted {$count} MP3 QR code(s) and their files.");
     }
 })->purpose('Delete all MP3 QR codes and their storage files');
+
+Artisan::command('qr-codes:delete-all', function () {
+    $qrCodes = QrCode::with('files')->get();
+    $count = 0;
+
+    foreach ($qrCodes as $qrCode) {
+        // Delete QR code image file
+        if ($qrCode->qr_image_path && Storage::disk('public')->exists($qrCode->qr_image_path)) {
+            Storage::disk('public')->delete($qrCode->qr_image_path);
+        }
+        
+        // Delete associated files
+        foreach ($qrCode->files as $file) {
+            if ($file->file_path && Storage::disk('public')->exists($file->file_path)) {
+                Storage::disk('public')->delete($file->file_path);
+            }
+        }
+        
+        // Delete file records from database
+        $qrCode->files()->delete();
+        
+        // Delete QR code record
+        $qrCode->delete();
+        $count++;
+    }
+
+    // Reset custom_logo_count for all users
+    \App\Models\User::query()->update(['custom_logo_count' => 0]);
+
+    $this->info("Deleted {$count} QR code(s) and their files.");
+    $this->info("Reset custom_logo_count for all users to 0.");
+})->purpose('Delete all QR codes (guest, free, premium) and reset custom_logo_count');
