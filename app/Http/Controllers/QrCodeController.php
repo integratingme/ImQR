@@ -139,8 +139,8 @@ class QrCodeController extends Controller
                 // If free user had custom logo in incomplete QR code, decrement count
                 if ($user->isFree() && $incompleteQrCode->customization && isset($incompleteQrCode->customization['logo_url'])) {
                     $logoUrl = $incompleteQrCode->customization['logo_url'];
-                    $appLogoUrl = asset('images/app-logo.png');
-                    if ($logoUrl && $logoUrl !== $appLogoUrl && strpos($logoUrl, 'images/app-logo.png') === false) {
+                    $defaultLogoUrl = asset('logo-integrating-me.webp');
+                    if ($logoUrl && $logoUrl !== $defaultLogoUrl && strpos($logoUrl, 'logo-integrating-me.webp') === false) {
                         // This was a custom logo, decrement count
                         if ($user->custom_logo_count > 0) {
                             $user->decrement('custom_logo_count');
@@ -175,20 +175,21 @@ class QrCodeController extends Controller
         $requestedLogo = $request->input('qr_logo_data_url', null);
         $allowCustomLogo = false;
         $user = $request->user();
+        $defaultLogoUrl = asset('logo-integrating-me.webp'); // Default IntegratingMe logo
 
-        if ($requestedLogo) {
-            if (!$user) {
-                // Guest: no custom logo, use app logo
-                $requestedLogo = asset('images/app-logo.png'); // Default app logo
-            } elseif ($user->isPremium()) {
+        if (!$user) {
+            // Guest: always use default logo, ignore any upload attempt
+            $requestedLogo = $defaultLogoUrl;
+        } elseif ($requestedLogo) {
+            if ($user->isPremium()) {
                 // Premium: unlimited custom logos
                 $allowCustomLogo = true;
             } elseif ($user->isFree()) {
                 // Free: check if user already has a QR code with custom logo
                 $hasLogoQrCode = QrCode::where('user_id', $user->id)
                     ->whereNotNull('customization->logo_url')
-                    ->where('customization->logo_url', '!=', asset('images/app-logo.png'))
-                    ->where('customization->logo_url', 'not like', '%images/app-logo.png%')
+                    ->where('customization->logo_url', '!=', $defaultLogoUrl)
+                    ->where('customization->logo_url', 'not like', '%logo-integrating-me.webp%')
                     ->exists();
                 
                 if ($hasLogoQrCode) {
@@ -201,6 +202,11 @@ class QrCodeController extends Controller
                 
                 // Free user can add custom logo (first time)
                 $allowCustomLogo = true;
+            }
+        } else {
+            // No logo provided - use default for guests, null for authenticated users (they can choose)
+            if (!$user) {
+                $requestedLogo = $defaultLogoUrl;
             }
         }
 
@@ -439,9 +445,94 @@ class QrCodeController extends Controller
         return view('qr-codes.create', compact('type', 'reviewUsIcons', 'recaptchaSiteKey', 'qrCode'));
     }
 
+    /**
+     * Handle QR code update during the multi-step creation wizard.
+     * Unlike update(), this is accessible to ALL tiers (guest, free, premium).
+     * Ownership is validated inside the method instead of via middleware.
+     */
+    public function creationUpdate(StoreQrCodeRequest $request, string $id)
+    {
+        $qrCode = QrCode::findOrFail($id);
+        $user = auth()->user();
+
+        // Ownership check: authenticated user must own the QR, guest must have null user_id
+        $isOwner = $user
+            ? ($qrCode->user_id === $user->id)
+            : ($qrCode->user_id === null);
+
+        if (!$isOwner) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to update this QR code.',
+            ], 403);
+        }
+
+        // Type cannot change during update
+        if ($qrCode->type !== $request->input('type')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'QR code type cannot be changed.',
+            ], 422);
+        }
+
+        // Enforce tier-specific logo restrictions before delegating to performUpdate
+        if ($user && !$user->isPremium()) {
+            $requestedLogo = $request->input('qr_logo_data_url');
+            $existingLogo = $qrCode->customization['logo_url'] ?? null;
+            $defaultLogoUrl = asset('logo-integrating-me.webp');
+
+            // If the logo is changing (not the same as existing), check the limit
+            if ($requestedLogo && $requestedLogo !== $existingLogo && $requestedLogo !== $defaultLogoUrl) {
+                $customLogoCount = QrCode::where('user_id', $user->id)
+                    ->where('id', '!=', $qrCode->id)
+                    ->whereNotNull('customization')
+                    ->get()
+                    ->filter(function ($qr) use ($defaultLogoUrl) {
+                        $logo = $qr->customization['logo_url'] ?? null;
+                        return $logo && $logo !== $defaultLogoUrl && !str_contains($logo, 'logo-integrating-me');
+                    })
+                    ->count();
+
+                if ($customLogoCount >= 1) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Free plan allows only one QR code with a custom logo. Please upgrade to Premium.',
+                    ], 403);
+                }
+            }
+        } elseif (!$user) {
+            // Guest: force default logo, ignore any uploaded logo
+            $request->merge(['qr_logo_data_url' => asset('logo-integrating-me.webp')]);
+        }
+
+        try {
+            return $this->performUpdate($request, $qrCode);
+        } catch (\Throwable $e) {
+            \Log::error('QR code creation-update failed', [
+                'id' => $id,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => config('app.debug') ? $e->getMessage() : 'Server error. Please try again.',
+            ], 500);
+        }
+    }
+
     public function update(StoreQrCodeRequest $request, string $id)
     {
         $qrCode = QrCode::findOrFail($id);
+        $user = auth()->user();
+        
+        // Ownership check: user must own the QR code
+        if ($qrCode->user_id !== $user->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to update this QR code.',
+            ], 403);
+        }
+        
         if ($qrCode->type !== $request->input('type')) {
             return response()->json(['success' => false, 'message' => 'QR code type cannot be changed.'], 422);
         }
@@ -719,10 +810,11 @@ class QrCodeController extends Controller
         }
         
         // Check if user already has a QR code with custom logo
+        $defaultLogoUrl = asset('logo-integrating-me.webp');
         $hasLogoQrCode = QrCode::where('user_id', $user->id)
             ->whereNotNull('customization->logo_url')
-            ->where('customization->logo_url', '!=', asset('images/app-logo.png'))
-            ->where('customization->logo_url', 'not like', '%images/app-logo.png%')
+            ->where('customization->logo_url', '!=', $defaultLogoUrl)
+            ->where('customization->logo_url', 'not like', '%logo-integrating-me.webp%')
             ->exists();
         
         return response()->json([

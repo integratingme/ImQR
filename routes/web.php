@@ -52,6 +52,11 @@ Route::get('/r/{slug}', [QrCodeController::class, 'dynamicRedirect'])->name('qr-
 Route::middleware(['throttle:qr-create', 'throttle:qr-create-daily'])->group(function () {
     Route::post('/qr-codes', [QrCodeController::class, 'store'])->name('qr-codes.store');
 
+    // Creation-flow update: allows ALL tiers (guest/free/premium) to update
+    // their QR code during the multi-step creation wizard.
+    // This is separate from the premium-only edit route below.
+    Route::put('/qr-codes/{id}/creation-update', [QrCodeController::class, 'creationUpdate'])->name('qr-codes.creation-update');
+
     Route::options('/qr-codes', function () {
         return response()->noContent(204);
     });

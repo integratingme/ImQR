@@ -346,6 +346,14 @@ window.recaptchaSiteKey = @json($recaptchaSiteKey);
                             <p class="text-sm text-dark-300 mb-3">
                                 Add a logo or image in the center of the QR code. This affects only the visual preview for now.
                             </p>
+                            @guest
+                            <div class="mb-3 flex items-center gap-2 px-4 py-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-800">
+                                <svg class="w-5 h-5 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <p class="text-sm font-medium">Guest users will use the default IntegratingMe logo. Sign up to upload your own logo.</p>
+                            </div>
+                            @endguest
                             <div id="logo-limit-warning" class="mb-3 hidden flex items-center gap-2 px-4 py-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800">
                                 <svg class="w-5 h-5 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
@@ -356,7 +364,7 @@ window.recaptchaSiteKey = @json($recaptchaSiteKey);
                                 <div class="flex-1">
                                     <label for="qr_logo" class="sr-only">Upload logo</label>
                                     <div class="flex items-center justify-center w-full">
-                                        <label for="qr_logo" class="w-full flex flex-col items-center justify-center px-4 py-3 border-2 border-dashed border-dark-200 rounded-lg cursor-pointer bg-white hover:border-primary-400 transition-colors">
+                                        <label for="qr_logo" class="w-full flex flex-col items-center justify-center px-4 py-3 border-2 border-dashed border-dark-200 rounded-lg {{ auth()->check() ? 'cursor-pointer bg-white hover:border-primary-400' : 'cursor-not-allowed bg-gray-50 opacity-60' }} transition-colors" @guest style="pointer-events: none;" @endguest>
                                             <div class="flex items-center space-x-3">
                                                 <svg class="w-6 h-6 text-dark-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V8a2 2 0 00-2-2h-3.172a2 2 0 01-1.414-.586l-1.828-1.828A2 2 0 0010.172 3H6a2 2 0 00-2 2v13a2 2 0 002 2z"></path>
@@ -366,18 +374,18 @@ window.recaptchaSiteKey = @json($recaptchaSiteKey);
                                                     <p class="text-xs text-dark-300">PNG, JPEG or SVG, max ~2 MB</p>
                                                 </div>
                                             </div>
-                                            <input id="qr_logo" name="qr_logo" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" class="hidden">
+                                            <input id="qr_logo" name="qr_logo" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" class="hidden" @guest disabled @endguest>
                                         </label>
                                     </div>
                                 </div>
                                 <div class="flex flex-col items-start gap-2">
-                                    <button type="button" id="qr_logo_remove_btn" class="btn btn-secondary btn-xs" style="display:none;">
+                                    <button type="button" id="qr_logo_remove_btn" class="btn btn-secondary btn-xs" style="display:none;" @guest disabled @endguest>
                                         Remove logo
                                     </button>
                                     <div id="qr_logo_filename" class="text-xs text-dark-300 line-clamp-2 max-w-[180px]"></div>
                                 </div>
                             </div>
-                            <input type="hidden" id="qr_logo_data_url" name="qr_logo_data_url" value="">
+                            <input type="hidden" id="qr_logo_data_url" name="qr_logo_data_url" value="@guest{{ asset('logo-integrating-me.webp') }}@endguest">
                         </div>
 
                         <!-- Pattern Selection -->
@@ -3707,10 +3715,37 @@ document.addEventListener('DOMContentLoaded', function() {
     const logoFilename = document.getElementById('qr_logo_filename');
     const logoRemoveBtn = document.getElementById('qr_logo_remove_btn');
     const logoLimitWarning = document.getElementById('logo-limit-warning');
+    const isGuest = {{ auth()->check() ? 'false' : 'true' }};
+    const defaultLogoUrl = '{{ asset('logo-integrating-me.webp') }}';
     let canAddLogo = true; // Will be checked on page load
 
-    // Check logo limit on page load
+    // Set default logo for guests on page load
+    if (isGuest && logoHidden) {
+        // Convert default logo URL to data URL for guests
+        fetch(defaultLogoUrl)
+            .then(res => res.blob())
+            .then(blob => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    logoHidden.value = reader.result;
+                    updateStep2QRPreview();
+                };
+                reader.readAsDataURL(blob);
+            })
+            .catch(() => {
+                // Fallback: use URL directly if fetch fails
+                logoHidden.value = defaultLogoUrl;
+                updateStep2QRPreview();
+            });
+    }
+
+    // Check logo limit on page load (skip for guests)
     async function checkLogoLimit() {
+        if (isGuest) {
+            canAddLogo = false; // Guests cannot upload logos
+            return;
+        }
+        
         try {
             const response = await fetch('{{ route("qr-codes.check-logo-limit") }}', {
                 method: 'GET',
@@ -3738,6 +3773,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (logoInput && logoHidden) {
         logoInput.addEventListener('change', async () => {
+            // Prevent logo upload for guests
+            if (isGuest) {
+                logoInput.value = '';
+                alert('Guest users cannot upload custom logos. Please sign up to upload your own logo.');
+                return;
+            }
+
             const file = logoInput.files && logoInput.files[0] ? logoInput.files[0] : null;
             if (!file) {
                 logoHidden.value = '';
@@ -3774,6 +3816,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (logoRemoveBtn && logoInput && logoHidden) {
         logoRemoveBtn.addEventListener('click', () => {
+            // For guests, restore default logo instead of removing
+            if (isGuest) {
+                fetch(defaultLogoUrl)
+                    .then(res => res.blob())
+                    .then(blob => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                            logoHidden.value = reader.result;
+                            updateStep2QRPreview();
+                        };
+                        reader.readAsDataURL(blob);
+                    })
+                    .catch(() => {
+                        logoHidden.value = defaultLogoUrl;
+                        updateStep2QRPreview();
+                    });
+                return;
+            }
+            
             logoInput.value = '';
             logoHidden.value = '';
             if (logoFilename) logoFilename.textContent = '';
@@ -4592,7 +4653,8 @@ async function updateQRCode(id) {
     if (downloadSvgBtn) downloadSvgBtn.disabled = true;
 
     try {
-        const url = `{{ url("/qr-codes") }}/${id}`;
+        // Use the creation-update route which is accessible to all tiers (guest/free/premium)
+        const url = `{{ url("/qr-codes") }}/${id}/creation-update`;
         const response = await fetch(url, {
             method: 'POST',
             body: formData,

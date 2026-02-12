@@ -59,7 +59,11 @@ class StoreQrCodeRequest extends FormRequest
                 'text' => 'required|string|max:500',
             ],
             'pdf' => [
-                'pdf_file' => 'required|file|mimes:pdf|mimetypes:application/pdf|pdf_signature|max:5120', // 5MB, PDF only
+                // PDF is required on initial creation (POST), but optional on update (PUT)
+                // because the file was already uploaded in the first pass
+                'pdf_file' => $this->isMethod('PUT')
+                    ? 'nullable|file|mimes:pdf|mimetypes:application/pdf|pdf_signature|max:5120'
+                    : 'required|file|mimes:pdf|mimetypes:application/pdf|pdf_signature|max:5120', // 5MB, PDF only
             ],
             'menu' => [
                 'menu_file' => 'nullable|file|mimes:pdf|mimetypes:application/pdf|pdf_signature|max:5120', // 5MB, PDF only
