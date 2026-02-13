@@ -187,6 +187,7 @@
                                         'menu' => ['route' => 'qr-codes.menu-page', 'label' => 'View page'],
                                         'business_card' => ['route' => 'qr-codes.business-card-page', 'label' => 'View page'],
                                         'personal_vcard' => ['route' => 'qr-codes.personal-vcard-page', 'label' => 'View page'],
+                                        'event' => ['route' => 'qr-codes.event-page', 'label' => 'View page'],
                                     ];
                                     $page = $pageRoutes[$qrCode->type];
                                 @endphp
@@ -415,6 +416,9 @@ async function renderQRCode(container, QRCodeStylingClass) {
             break;
         case 'personal_vcard':
             qrContent = qrData.personal_vcard_page_url || '';
+            break;
+        case 'event':
+            qrContent = qrData.event_page_url || '';
             break;
         case 'location': {
             qrContent = qrData.location_url || '';

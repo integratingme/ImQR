@@ -2382,27 +2382,8 @@ function buildQrContentFromForm() {
             return (typeof window !== 'undefined' && window.location && window.location.origin ? window.location.origin + '/menu/preview' : '/menu/preview');
         case 'coupon':
             return '/coupon/preview';
-        case 'event': {
-            const amenities = []; 
-            const checkedAmenities = document.querySelectorAll('input[name="amenities[]"]:checked');
-            checkedAmenities.forEach(cb => amenities.push(cb.value));
-            
-            return JSON.stringify({
-                type: 'event',
-                event_name: getValue('event_name'),
-                company_name: getValue('company_name'),
-                description: getValue('description'),
-                date: getValue('date'),
-                time: getValue('time'),
-                location: getValue('location'),
-                amenities,
-                dress_code_color: getValue('dress_code_color'),
-                contact: getValue('contact'),
-                event_primary_color: getValue('event_primary_color') || getValue('event_primary_color_hex') || '#6594FF',
-                event_secondary_color: getValue('event_secondary_color') || getValue('event_secondary_color_hex') || '#FFFFFF',
-                event_font_family: getValue('event_font_family') || 'Maven Pro',
-            });
-        }
+        case 'event':
+            return (typeof window !== 'undefined' && window.location && window.location.origin ? window.location.origin + '/event/preview' : '/event/preview');
         case 'app':
             // For app type, use app page URL (similar to PDF and text)
             return '/app/preview';

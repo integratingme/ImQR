@@ -379,6 +379,17 @@ class QrCodeController extends Controller
                 $this->qrCodeService->regenerateQrCode($qrCode, $colors, $customization);
             }
 
+            // For event type: set event_page_url and handle event_image
+            if ($type === 'event') {
+                $validated['event_page_url'] = route('qr-codes.event-page', $qrCode->id);
+                $eventImageFile = $qrCode->fresh()->files()->where('file_type', 'image')->orderByDesc('id')->first();
+                if ($eventImageFile) {
+                    $validated['event_image'] = asset('storage/' . $eventImageFile->file_path);
+                }
+                $qrCode->update(['data' => $validated]);
+                $this->qrCodeService->regenerateQrCode($qrCode, $colors, $customization);
+            }
+
             // For menu type, process menu_sections product images and store URLs in data
             if ($type === 'menu' && !empty($validated['menu_sections'])) {
                 foreach ($validated['menu_sections'] as $si => &$section) {
@@ -700,6 +711,9 @@ class QrCodeController extends Controller
             $dataToStore = array_merge($existingData, $this->normalizePersonalVCardData($validated));
             $dataToStore['personal_vcard_page_url'] = route('qr-codes.personal-vcard-page', $qrCode->id);
         }
+        if ($type === 'event') {
+            $dataToStore['event_page_url'] = route('qr-codes.event-page', $qrCode->id);
+        }
 
         $this->handleFileUploads($request, $qrCode, $type);
 
@@ -715,6 +729,13 @@ class QrCodeController extends Controller
             $profileFile = $qrCode->fresh()->files()->where('file_type', 'personal_vcard_profile')->orderByDesc('id')->first();
             if ($profileFile) {
                 $dataToStore['profile_image'] = asset('storage/' . $profileFile->file_path);
+            }
+        }
+        // For event type, update event_image after file uploads
+        if ($type === 'event') {
+            $eventImageFile = $qrCode->fresh()->files()->where('file_type', 'image')->orderByDesc('id')->first();
+            if ($eventImageFile) {
+                $dataToStore['event_image'] = asset('storage/' . $eventImageFile->file_path);
             }
         }
 
@@ -1188,6 +1209,60 @@ class QrCodeController extends Controller
         return view('qr-codes.personal-vcard-page', compact('card'));
     }
 
+    public function showEventPage($id)
+    {
+        // Handle preview case
+        if ($id === 'preview') {
+            $event = (object) [
+                'event_name' => 'Event Name',
+                'company_name' => '',
+                'description' => '',
+                'date' => '',
+                'time' => '',
+                'location' => '',
+                'amenities' => [],
+                'dress_code_color' => '#000000',
+                'contact' => '',
+                'event_image' => null,
+                'primary_color' => '#6594FF',
+                'secondary_color' => '#FFFFFF',
+                'font_family' => 'Maven Pro',
+            ];
+            return view('qr-codes.event-page', compact('event'));
+        }
+
+        $qrCode = QrCode::findOrFail($id);
+
+        if ($qrCode->type !== 'event') {
+            abort(404);
+        }
+
+        // Track scan and check limit
+        $limitView = $this->trackScanAndCheckLimit($qrCode);
+        if ($limitView) {
+            return view($limitView, compact('qrCode'));
+        }
+
+        $data = $qrCode->data ?? [];
+        $event = (object) [
+            'event_name' => $data['event_name'] ?? 'Event Name',
+            'company_name' => $data['company_name'] ?? '',
+            'description' => $data['description'] ?? '',
+            'date' => $data['date'] ?? '',
+            'time' => $data['time'] ?? '',
+            'location' => $data['location'] ?? '',
+            'amenities' => $data['amenities'] ?? [],
+            'dress_code_color' => $data['dress_code_color'] ?? '#000000',
+            'contact' => $data['contact'] ?? '',
+            'event_image' => $data['event_image'] ?? null,
+            'primary_color' => $data['event_primary_color'] ?? '#6594FF',
+            'secondary_color' => $data['event_secondary_color'] ?? '#FFFFFF',
+            'font_family' => $data['event_font_family'] ?? 'Maven Pro',
+        ];
+
+        return view('qr-codes.event-page', compact('event'));
+    }
+
     /**
      * Normalize business card form data to stored card keys (for data and show page).
      */
@@ -1506,6 +1581,9 @@ class QrCodeController extends Controller
 
             case 'personal_vcard':
                 return redirect()->route('qr-codes.personal-vcard-page', $qrCode->id);
+
+            case 'event':
+                return redirect()->route('qr-codes.event-page', $qrCode->id);
 
             case 'email':
                 $email = $data['email'] ?? '';
