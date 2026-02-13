@@ -176,7 +176,7 @@
 
                         {{-- Actions --}}
                         <div class="px-6 pb-6 pt-0 space-y-2">
-                            @if(in_array($qrCode->type, ['text', 'coupon', 'pdf', 'app', 'phone', 'menu', 'business_card', 'personal_vcard']))
+                            @if(in_array($qrCode->type, ['text', 'coupon', 'pdf', 'app', 'phone', 'menu', 'business_card', 'personal_vcard', 'event']))
                                 @php
                                     $pageRoutes = [
                                         'text' => ['route' => 'qr-codes.text-page', 'label' => 'View page'],
@@ -383,8 +383,13 @@ async function renderQRCode(container, QRCodeStylingClass) {
     const colors = JSON.parse(container.dataset.qrColors || '{}');
     const customization = JSON.parse(container.dataset.qrCustomization || '{}');
 
-    const primaryColor = normalizeHexColor(colors.primary || '#000000');
-    const secondaryColor = normalizeHexColor(colors.secondary || '#FFFFFF');
+    let primaryColor = normalizeHexColor(colors.primary || '#000000');
+    let secondaryColor = normalizeHexColor(colors.secondary || '#FFFFFF');
+    // Ensure contrast: if pattern and background are same (e.g. both black), QR would be invisible
+    if (primaryColor === secondaryColor || primaryColor.toLowerCase() === secondaryColor.toLowerCase()) {
+        secondaryColor = '#FFFFFF';
+        primaryColor = primaryColor === '#FFFFFF' ? '#000000' : primaryColor;
+    }
     const pattern = customization.pattern || 'square';
     const cornerStyle = customization.corner_style || 'square';
     const cornerDotStyle = customization.corner_dot_style || 'square';
