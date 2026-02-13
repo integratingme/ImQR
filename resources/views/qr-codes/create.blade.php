@@ -715,6 +715,18 @@ window.recaptchaSiteKey = @json($recaptchaSiteKey);
                     </button>
                 </div>
 
+                @guest
+                <div class="mb-6 flex items-center gap-2 px-4 py-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-800">
+                    <svg class="w-5 h-5 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <p class="text-sm font-medium">
+                        <a href="{{ route('register') }}" class="text-primary-600 hover:text-primary-700 underline">Create a free account</a>
+                        to save your QR codes and access them anytime.
+                    </p>
+                </div>
+                @endguest
+
                 <div class="flex justify-between">
                     <button type="button" onclick="prevStep(2)" class="btn btn-secondary">
                         ← Back
@@ -728,6 +740,43 @@ window.recaptchaSiteKey = @json($recaptchaSiteKey);
         </div>
     </form>
 </div>
+
+<!-- Auth Gate Modal (for guests) -->
+@guest
+<div id="auth-gate-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4" style="background: rgba(0,0,0,0.5);">
+    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 relative">
+        <button type="button" onclick="closeAuthGateModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+        </button>
+
+        <div class="text-center mb-6">
+            <div class="w-16 h-16 bg-primary-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                </svg>
+            </div>
+            <h3 class="text-xl font-bold text-dark-500">Save your QR code</h3>
+            <p class="text-dark-300 mt-2">Create a free account to save your QR codes, access them anytime, and track scans.</p>
+        </div>
+
+        <div class="space-y-3">
+            <a href="{{ route('register') }}" class="block w-full py-2.5 px-4 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors text-center">
+                Create Free Account
+            </a>
+            <a href="{{ route('login') }}" class="block w-full py-2.5 px-4 border border-gray-300 text-dark-500 font-medium rounded-lg hover:bg-gray-50 transition-colors text-center">
+                I Already Have an Account
+            </a>
+            <button type="button" onclick="proceedAsGuest()" class="block w-full py-2 text-sm text-dark-400 hover:text-dark-500 transition-colors text-center">
+                Continue as Guest
+            </button>
+        </div>
+
+        <p class="text-xs text-dark-300 text-center mt-4">Free plan includes unlimited QR codes, 10 scans per code.</p>
+    </div>
+</div>
+@endguest
 
 @push('scripts')
 <script>
@@ -5003,9 +5052,44 @@ function retryGeneration() {
 }
 
 
+let pendingDownloadFormat = null;
+let guestDownloadApproved = false;
+
+function showAuthGateModal(format) {
+    pendingDownloadFormat = format;
+    const modal = document.getElementById('auth-gate-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        // Store current page URL for redirect after auth
+        try {
+            localStorage.setItem('imqr_redirect_after_auth', window.location.href);
+        } catch(e) {}
+    }
+}
+
+function closeAuthGateModal() {
+    const modal = document.getElementById('auth-gate-modal');
+    if (modal) modal.classList.add('hidden');
+    pendingDownloadFormat = null;
+}
+
+function proceedAsGuest() {
+    closeAuthGateModal();
+    guestDownloadApproved = true;
+    if (pendingDownloadFormat) {
+        downloadQR(pendingDownloadFormat);
+    }
+}
+
 async function downloadQR(format) {
     if (!qrCodeId) {
         alert('Please generate a QR code first.');
+        return;
+    }
+
+    // Show auth gate modal for guest users (first download only)
+    if (isGuest && !guestDownloadApproved) {
+        showAuthGateModal(format);
         return;
     }
 

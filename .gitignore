@@ -21,6 +21,8 @@ Icon?
 .env.backup
 .env.production
 .env.testing
+docs/firebase.env
+COMMIT_MESSAGE.txt
 
 # Editor / IDE files & temp
 *~

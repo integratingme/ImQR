@@ -418,6 +418,11 @@ class QrCodeController extends Controller
             }
         }
 
+        // Track guest QR code IDs in session for migration on login/register
+        if (!$user) {
+            session()->push('guest_qr_ids', $qrCode->id);
+        }
+
         $payload = [
             'success' => true,
             'qr_code_id' => $qrCode->id,
