@@ -53,13 +53,6 @@
                                     <p class="text-xs text-dark-300 truncate">{{ auth()->user()->email ?? auth()->user()->phone }}</p>
                                 </div>
                                 <a href="{{ route('dashboard') }}" class="block px-4 py-2 text-sm text-dark-500 hover:bg-gray-50 transition-colors">Dashboard</a>
-                                @if(app()->environment('local'))
-                                    <div class="border-t border-gray-100 mt-1 pt-1">
-                                        <span class="block px-4 py-1 text-xs text-gray-400 font-medium">Dev Tools</span>
-                                        <a href="{{ url('/dev/login-as/free') }}" class="block px-4 py-1.5 text-xs text-gray-500 hover:text-primary-600 hover:bg-gray-50">Switch to Free</a>
-                                        <a href="{{ url('/dev/login-as/premium') }}" class="block px-4 py-1.5 text-xs text-gray-500 hover:text-primary-600 hover:bg-gray-50">Switch to Premium</a>
-                                    </div>
-                                @endif
                                 <div class="border-t border-gray-100 mt-1 pt-1">
                                     <button onclick="handleLogout()" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
                                         Sign Out
@@ -81,13 +74,6 @@
                                 Register
                             </a>
                         </div>
-                        @if(app()->environment('local'))
-                            <div class="flex items-center gap-1 ml-2">
-                                <span class="text-gray-300">|</span>
-                                <a href="{{ url('/dev/login-as/free') }}" class="text-xs text-gray-500 hover:text-primary-600">Dev:Free</a>
-                                <a href="{{ url('/dev/login-as/premium') }}" class="text-xs text-gray-500 hover:text-primary-600">Dev:Premium</a>
-                            </div>
-                        @endif
                     @endauth
                 </nav>
 

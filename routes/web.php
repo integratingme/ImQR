@@ -2,47 +2,7 @@
 
 use App\Http\Controllers\QrCodeController;
 use App\Http\Controllers\PageController;
-use App\Models\User;
 use Illuminate\Support\Facades\Route;
-
-// Dev-only: simulate login as Free/Premium user (only when APP_ENV=local)
-if (app()->environment('local')) {
-    Route::get('/dev/login-as/{id}', function ($id) {
-        $plan = request()->query('plan'); // 'free' | 'premium' (optional)
-
-        if ($id === 'premium' || $id === 'free') {
-            $wantPlan = $id;
-            $user = User::where('plan', $wantPlan)->first();
-            if (!$user) {
-                $user = User::create([
-                    'name' => $wantPlan === 'premium' ? 'Premium Test User' : 'Free Test User',
-                    'email' => $wantPlan . '-test@imqr.test',
-                    'password' => bcrypt('password'),
-                    'plan' => $wantPlan,
-                    'plan_expires_at' => $wantPlan === 'premium' ? now()->addYear() : null,
-                ]);
-            }
-        } else {
-            $user = User::findOrFail((int) $id);
-            if ($plan && in_array($plan, ['free', 'premium'])) {
-                $user->plan = $plan;
-                $user->plan_expires_at = $plan === 'premium' ? now()->addYear() : null;
-                $user->save();
-            }
-        }
-
-        auth()->login($user);
-
-        return redirect()->route('qr-codes.index')->with('message', 'Logged in as ' . $user->email . ' (' . $user->plan . ')');
-    })->name('dev.login-as');
-
-    Route::get('/dev/logout', function () {
-        auth()->logout();
-        request()->session()->invalidate();
-        request()->session()->regenerateToken();
-        return redirect()->route('qr-codes.index')->with('message', 'Logged out.');
-    })->name('dev.logout');
-}
 
 // QR Code Routes
 Route::get('/', [QrCodeController::class, 'index'])->name('qr-codes.index');
@@ -78,6 +38,11 @@ Route::get('/phone/{id}', [QrCodeController::class, 'showPhonePage'])->name('qr-
 Route::get('/menu/{id}', [QrCodeController::class, 'showMenuPage'])->name('qr-codes.menu-page');
 Route::get('/business-card/{id}', [QrCodeController::class, 'showBusinessCardPage'])->name('qr-codes.business-card-page');
 Route::get('/vcard/{id}', [QrCodeController::class, 'showPersonalVCardPage'])->name('qr-codes.personal-vcard-page');
+
+// Dashboard Routes
+Route::middleware(['auth'])->group(function () {
+    Route::post('/dashboard/update-plan', [\App\Http\Controllers\DashboardController::class, 'updatePlan'])->name('dashboard.update-plan');
+});
 
 // Static Pages
 Route::get('/terms-and-conditions', [PageController::class, 'termsAndConditions'])->name('pages.terms-and-conditions');
