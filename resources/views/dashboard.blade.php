@@ -15,16 +15,33 @@
                 </div>
                 <div class="flex items-center gap-3">
                     @if($user->isPremium())
-                        <span class="px-3 py-1.5 rounded-full bg-primary-100 text-primary-700 font-medium text-sm">
-                            Premium Plan
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary-100 text-primary-700 font-medium text-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3l3.057-3L12 3l3.943-3L19 3l2 7-4 4v7l-5-2-5 2v-7l-4-4 2-7z"/>
+                            </svg>
+                            Premium
                         </span>
+                        <form action="{{ route('dashboard.update-plan') }}" method="POST" class="inline">
+                            @csrf
+                            <input type="hidden" name="plan" value="free">
+                            <button type="submit" class="px-3 py-1.5 rounded-full bg-gray-100 text-gray-500 font-medium text-sm hover:bg-gray-200 transition-colors">
+                                Downgrade to Free
+                            </button>
+                        </form>
                     @else
                         <span class="px-3 py-1.5 rounded-full bg-gray-100 text-gray-600 font-medium text-sm">
                             Free Plan
                         </span>
-                        <a href="#" class="px-3 py-1.5 rounded-full bg-primary-600 text-white font-medium text-sm hover:bg-primary-700 transition-colors">
-                            Upgrade to Premium
-                        </a>
+                        <form action="{{ route('dashboard.update-plan') }}" method="POST" class="inline">
+                            @csrf
+                            <input type="hidden" name="plan" value="premium">
+                            <button type="submit" class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-gradient-to-r from-primary-600 to-primary-500 text-white font-medium text-sm hover:from-primary-700 hover:to-primary-600 shadow-sm hover:shadow transition-all">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3l3.057-3L12 3l3.943-3L19 3l2 7-4 4v7l-5-2-5 2v-7l-4-4 2-7z"/>
+                                </svg>
+                                Upgrade to Premium
+                            </button>
+                        </form>
                     @endif
                 </div>
             </div>

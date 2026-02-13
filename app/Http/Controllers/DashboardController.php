@@ -59,5 +59,28 @@ class DashboardController extends Controller
             'frameConfig' => $frameConfig,
         ]);
     }
+
+    /**
+     * Switch the current user's plan.
+     */
+    public function updatePlan(Request $request)
+    {
+        $request->validate([
+            'plan' => 'required|in:free,premium',
+        ]);
+
+        $user = $request->user();
+        $plan = $request->input('plan');
+
+        $user->plan = $plan;
+        $user->plan_expires_at = $plan === 'premium' ? now()->addYear() : null;
+        $user->save();
+
+        $message = $plan === 'premium'
+            ? 'Congratulations! You have been upgraded to Premium.'
+            : 'You have been downgraded to the Free plan.';
+
+        return redirect()->route('dashboard')->with('success', $message);
+    }
 }
 
