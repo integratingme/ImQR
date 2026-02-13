@@ -24,7 +24,7 @@
     </style>
 </head>
 <body>
-    <div class="min-h-screen flex flex-col relative">
+    <div class="max-w-md mx-auto min-h-screen shadow-2xl flex flex-col relative overflow-hidden">
         <!-- Top half - Primary color -->
         <div class="absolute top-0 left-0 right-0 h-1/2" style="background-color: {{ $primaryColor }};"></div>
         <!-- Bottom half - Secondary color -->

@@ -26,7 +26,7 @@
 <body>
     {{-- Phone landing page: 3 rows, 2 columns each (icon | tap for ... call) --}}
     <div
-        class="min-h-screen flex flex-col items-center justify-center p-6"
+        class="max-w-md mx-auto min-h-screen shadow-2xl flex flex-col items-center justify-center p-6 overflow-hidden"
         style="background-color: {{ $backgroundColor ?? '#2d3748' }}; font-family: '{{ $fontFamily }}', sans-serif;"
     >
         {{-- Person icon (circle) above name --}}

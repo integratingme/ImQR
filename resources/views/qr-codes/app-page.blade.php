@@ -36,7 +36,7 @@
     </style>
 </head>
 <body>
-    <div class="min-h-screen flex flex-col" style="font-family: '{{ $fontFamily }}', sans-serif;">
+    <div class="max-w-md mx-auto min-h-screen shadow-2xl flex flex-col overflow-hidden" style="font-family: '{{ $fontFamily }}', sans-serif;">
         <!-- Top section: primary color, icon at bottom with -5% margin (overlaps onto secondary) -->
         <div class="flex-shrink-0 flex flex-col justify-end items-center" style="height: 25vh; background-color: {{ $primaryColor }};">
             @if($appImageUrl)

@@ -11,6 +11,13 @@ export default defineConfig({
         tailwindcss(),
     ],
     server: {
+        host: 'imqr.test',
+        port: 5173,
+        hmr: {
+            host: 'imqr.test',
+            protocol: 'wss',
+            port: 5173,
+        },
         watch: {
             ignored: ['**/storage/framework/views/**'],
         },

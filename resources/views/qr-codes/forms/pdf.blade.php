@@ -31,10 +31,10 @@
                             <div class="w-8 h-8 rounded border border-gray-200" style="background-color: #FFFFFF;"></div>
                         </div>
                     </button>
-                    <button type="button" class="pdf-color-preset border-2 border-dark-200 rounded-lg p-2 hover:border-primary-400 transition-colors" data-primary="#E5E7EB" data-secondary="#000000">
+                    <button type="button" class="pdf-color-preset border-2 border-dark-200 rounded-lg p-2 hover:border-primary-400 transition-colors" data-primary="#E5E7EB" data-secondary="#FFDAD8">
                         <div class="flex gap-1">
                             <div class="w-8 h-8 rounded" style="background-color: #E5E7EB;"></div>
-                            <div class="w-8 h-8 rounded" style="background-color: #000000;"></div>
+                            <div class="w-8 h-8 rounded" style="background-color: #FFDAD8;"></div>
                         </div>
                     </button>
                     <button type="button" class="pdf-color-preset border-2 border-dark-200 rounded-lg p-2 hover:border-primary-400 transition-colors" data-primary="#E9D5FF" data-secondary="#FFFFFF">

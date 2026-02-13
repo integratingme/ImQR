@@ -262,7 +262,7 @@ window.recaptchaSiteKey = @json($recaptchaSiteKey);
                 <!-- QR Name -->
                 <div class="mb-6">
                     <label for="name" class="label">QR Code Name *</label>
-                    <input type="text" id="name" name="name" class="input" placeholder="My {{ ucfirst($type) }} QR Code" required>
+                    <input type="text" id="name" name="name" class="input" placeholder="My {{ ucfirst($type) }} QR Code" value="{{ isset($qrCode) ? old('name', $qrCode->name) : old('name') }}" required>
                 </div>
                 
                 @include('qr-codes.forms.' . $type)
@@ -304,15 +304,15 @@ window.recaptchaSiteKey = @json($recaptchaSiteKey);
                                 <div>
                                     <label for="primary_color" class="text-sm text-dark-300 mb-2 block">Primary Color (QR Code)</label>
                                     <div class="flex items-center space-x-3">
-                                        <input type="color" id="primary_color" name="primary_color" value="#000000" class="w-16 h-12 rounded border-2 border-dark-200 cursor-pointer">
-                                        <input type="text" id="primary_color_hex" value="#000000" class="input flex-1" placeholder="#000000">
+                                        <input type="color" id="primary_color" name="primary_color" value="{{ isset($qrCode) ? ($qrCode->colors['primary'] ?? '#000000') : '#000000' }}" class="w-16 h-12 rounded border-2 border-dark-200 cursor-pointer">
+                                        <input type="text" id="primary_color_hex" value="{{ isset($qrCode) ? ($qrCode->colors['primary'] ?? '#000000') : '#000000' }}" class="input flex-1" placeholder="#000000">
                                     </div>
                                 </div>
                                 <div>
                                     <label for="secondary_color" class="text-sm text-dark-300 mb-2 block">Background Color</label>
                                     <div class="flex items-center space-x-3">
-                                        <input type="color" id="secondary_color" name="secondary_color" value="#FFFFFF" class="w-16 h-12 rounded border-2 border-dark-200 cursor-pointer">
-                                        <input type="text" id="secondary_color_hex" value="#FFFFFF" class="input flex-1" placeholder="#FFFFFF">
+                                        <input type="color" id="secondary_color" name="secondary_color" value="{{ isset($qrCode) ? ($qrCode->colors['secondary'] ?? '#FFFFFF') : '#FFFFFF' }}" class="w-16 h-12 rounded border-2 border-dark-200 cursor-pointer">
+                                        <input type="text" id="secondary_color_hex" value="{{ isset($qrCode) ? ($qrCode->colors['secondary'] ?? '#FFFFFF') : '#FFFFFF' }}" class="input flex-1" placeholder="#FFFFFF">
                                     </div>
                                 </div>
                             </div>
@@ -346,11 +346,25 @@ window.recaptchaSiteKey = @json($recaptchaSiteKey);
                             <p class="text-sm text-dark-300 mb-3">
                                 Add a logo or image in the center of the QR code. This affects only the visual preview for now.
                             </p>
+                            @guest
+                            <div class="mb-3 flex items-center gap-2 px-4 py-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-800">
+                                <svg class="w-5 h-5 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <p class="text-sm font-medium">Guest users will use the default IntegratingMe logo. Sign up to upload your own logo.</p>
+                            </div>
+                            @endguest
+                            <div id="logo-limit-warning" class="mb-3 hidden flex items-center gap-2 px-4 py-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800">
+                                <svg class="w-5 h-5 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                </svg>
+                                <p class="text-sm font-medium">You have already created a QR code with a custom logo. Free plan allows only one QR code with a custom logo.</p>
+                            </div>
                             <div class="flex flex-col sm:flex-row sm:items-center gap-4">
                                 <div class="flex-1">
                                     <label for="qr_logo" class="sr-only">Upload logo</label>
                                     <div class="flex items-center justify-center w-full">
-                                        <label for="qr_logo" class="w-full flex flex-col items-center justify-center px-4 py-3 border-2 border-dashed border-dark-200 rounded-lg cursor-pointer bg-white hover:border-primary-400 transition-colors">
+                                        <label for="qr_logo" class="w-full flex flex-col items-center justify-center px-4 py-3 border-2 border-dashed border-dark-200 rounded-lg {{ auth()->check() ? 'cursor-pointer bg-white hover:border-primary-400' : 'cursor-not-allowed bg-gray-50 opacity-60' }} transition-colors" @guest style="pointer-events: none;" @endguest>
                                             <div class="flex items-center space-x-3">
                                                 <svg class="w-6 h-6 text-dark-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V8a2 2 0 00-2-2h-3.172a2 2 0 01-1.414-.586l-1.828-1.828A2 2 0 0010.172 3H6a2 2 0 00-2 2v13a2 2 0 002 2z"></path>
@@ -360,18 +374,18 @@ window.recaptchaSiteKey = @json($recaptchaSiteKey);
                                                     <p class="text-xs text-dark-300">PNG, JPEG or SVG, max ~2 MB</p>
                                                 </div>
                                             </div>
-                                            <input id="qr_logo" name="qr_logo" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" class="hidden">
+                                            <input id="qr_logo" name="qr_logo" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" class="hidden" @guest disabled @endguest>
                                         </label>
                                     </div>
                                 </div>
                                 <div class="flex flex-col items-start gap-2">
-                                    <button type="button" id="qr_logo_remove_btn" class="btn btn-secondary btn-xs" style="display:none;">
+                                    <button type="button" id="qr_logo_remove_btn" class="btn btn-secondary btn-xs" style="display:none;" @guest disabled @endguest>
                                         Remove logo
                                     </button>
                                     <div id="qr_logo_filename" class="text-xs text-dark-300 line-clamp-2 max-w-[180px]"></div>
                                 </div>
                             </div>
-                            <input type="hidden" id="qr_logo_data_url" name="qr_logo_data_url" value="">
+                            <input type="hidden" id="qr_logo_data_url" name="qr_logo_data_url" value="@guest{{ asset('logo-integrating-me.webp') }}@endguest">
                         </div>
 
                         <!-- Pattern Selection -->
@@ -419,7 +433,7 @@ window.recaptchaSiteKey = @json($recaptchaSiteKey);
                                     <p class="text-xs text-center mt-2 text-dark-400">Rounded</p>
                                 </button>
                             </div>
-                            <input type="hidden" id="selected_pattern" name="pattern" value="square">
+                            <input type="hidden" id="selected_pattern" name="pattern" value="{{ isset($qrCode) ? ($qrCode->customization['pattern'] ?? 'square') : 'square' }}">
                         </div>
 
                         <!-- Corner Style -->
@@ -458,7 +472,7 @@ window.recaptchaSiteKey = @json($recaptchaSiteKey);
                                     <p class="text-xs text-center mt-2 text-dark-400">Extra Rounded</p>
                                 </button>
                             </div>
-                            <input type="hidden" id="selected_corner" name="corner_style" value="square">
+                            <input type="hidden" id="selected_corner" name="corner_style" value="{{ isset($qrCode) ? ($qrCode->customization['corner_style'] ?? 'square') : 'square' }}">
                         </div>
 
                         <!-- Corner Dot Style -->
@@ -497,7 +511,7 @@ window.recaptchaSiteKey = @json($recaptchaSiteKey);
                                     <p class="text-xs text-center mt-2 text-dark-400">Rounded</p>
                                 </button>
                             </div>
-                            <input type="hidden" id="selected_corner_dot" name="corner_dot_style" value="square">
+                            <input type="hidden" id="selected_corner_dot" name="corner_dot_style" value="{{ isset($qrCode) ? ($qrCode->customization['corner_dot_style'] ?? 'square') : 'square' }}">
                         </div>
 
                         <!-- Frame (around QR) -->
@@ -542,7 +556,7 @@ window.recaptchaSiteKey = @json($recaptchaSiteKey);
                                     <p class="text-xs text-center mt-2 text-dark-400">Review us</p>
                                 </button>
                             </div>
-                            <input type="hidden" id="selected_frame" name="frame" value="none">
+                            <input type="hidden" id="selected_frame" name="frame" value="{{ isset($qrCode) ? ($qrCode->customization['frame'] ?? 'none') : 'none' }}">
 
                             <!-- Review-us frame options (visible only when this frame is selected) -->
                             <div id="review-us-frame-options" class="hidden mt-4 p-4 border border-dark-200 rounded-xl bg-dark-50 space-y-4">
@@ -551,30 +565,30 @@ window.recaptchaSiteKey = @json($recaptchaSiteKey);
                                     <div>
                                         <label for="review_frame_color" class="block text-xs font-medium text-dark-500 mb-1">Frame color</label>
                                         <div class="flex items-center gap-2">
-                                            <input type="color" id="review_frame_color" name="review_frame_color" value="#84BD00" class="h-10 w-14 cursor-pointer rounded border border-dark-200 bg-white p-0.5">
-                                            <input type="text" id="review_frame_color_hex" maxlength="7" value="#84BD00" class="w-24 rounded-lg border border-dark-200 px-2 py-1.5 text-sm font-mono" placeholder="#84BD00">
+                                            <input type="color" id="review_frame_color" name="review_frame_color" value="{{ isset($qrCode) && isset($qrCode->customization['review_us_config']['color']) ? $qrCode->customization['review_us_config']['color'] : '#84BD00' }}" class="h-10 w-14 cursor-pointer rounded border border-dark-200 bg-white p-0.5">
+                                            <input type="text" id="review_frame_color_hex" maxlength="7" value="{{ isset($qrCode) && isset($qrCode->customization['review_us_config']['color']) ? $qrCode->customization['review_us_config']['color'] : '#84BD00' }}" class="w-24 rounded-lg border border-dark-200 px-2 py-1.5 text-sm font-mono" placeholder="#84BD00">
                                         </div>
                                     </div>
                                     <div>
                                         <label for="review_frame_text_color" class="block text-xs font-medium text-dark-500 mb-1">Text color</label>
                                         <div class="flex items-center gap-2">
-                                            <input type="color" id="review_frame_text_color" name="review_frame_text_color" value="#000000" class="h-10 w-14 cursor-pointer rounded border border-dark-200 bg-white p-0.5">
-                                            <input type="text" id="review_frame_text_color_hex" maxlength="7" value="#000000" class="w-24 rounded-lg border border-dark-200 px-2 py-1.5 text-sm font-mono" placeholder="#000000">
+                                            <input type="color" id="review_frame_text_color" name="review_frame_text_color" value="{{ isset($qrCode) && isset($qrCode->customization['review_us_config']['text_color']) ? $qrCode->customization['review_us_config']['text_color'] : '#000000' }}" class="h-10 w-14 cursor-pointer rounded border border-dark-200 bg-white p-0.5">
+                                            <input type="text" id="review_frame_text_color_hex" maxlength="7" value="{{ isset($qrCode) && isset($qrCode->customization['review_us_config']['text_color']) ? $qrCode->customization['review_us_config']['text_color'] : '#000000' }}" class="w-24 rounded-lg border border-dark-200 px-2 py-1.5 text-sm font-mono" placeholder="#000000">
                                         </div>
                                     </div>
                                 </div>
                                 <div class="grid grid-cols-1 gap-3">
                                     <div>
                                         <label for="review_frame_line1" class="block text-xs font-medium text-dark-500 mb-1">Line 1</label>
-                                        <input type="text" id="review_frame_line1" name="review_frame_line1" value="your" maxlength="100" class="w-full rounded-lg border border-dark-200 px-3 py-2 text-sm" placeholder="your">
+                                        <input type="text" id="review_frame_line1" name="review_frame_line1" value="{{ isset($qrCode) && isset($qrCode->customization['review_us_config']['line1']) ? $qrCode->customization['review_us_config']['line1'] : 'your' }}" maxlength="100" class="w-full rounded-lg border border-dark-200 px-3 py-2 text-sm" placeholder="your">
                                     </div>
                                     <div>
                                         <label for="review_frame_line2" class="block text-xs font-medium text-dark-500 mb-1">Line 2</label>
-                                        <input type="text" id="review_frame_line2" name="review_frame_line2" value="text" maxlength="100" class="w-full rounded-lg border border-dark-200 px-3 py-2 text-sm" placeholder="text">
+                                        <input type="text" id="review_frame_line2" name="review_frame_line2" value="{{ isset($qrCode) && isset($qrCode->customization['review_us_config']['line2']) ? $qrCode->customization['review_us_config']['line2'] : 'text' }}" maxlength="100" class="w-full rounded-lg border border-dark-200 px-3 py-2 text-sm" placeholder="text">
                                     </div>
                                     <div>
                                         <label for="review_frame_line3" class="block text-xs font-medium text-dark-500 mb-1">Line 3</label>
-                                        <input type="text" id="review_frame_line3" name="review_frame_line3" value="here" maxlength="100" class="w-full rounded-lg border border-dark-200 px-3 py-2 text-sm" placeholder="here">
+                                        <input type="text" id="review_frame_line3" name="review_frame_line3" value="{{ isset($qrCode) && isset($qrCode->customization['review_us_config']['line3']) ? $qrCode->customization['review_us_config']['line3'] : 'here' }}" maxlength="100" class="w-full rounded-lg border border-dark-200 px-3 py-2 text-sm" placeholder="here">
                                     </div>
                                 </div>
                                 <div>
@@ -701,6 +715,18 @@ window.recaptchaSiteKey = @json($recaptchaSiteKey);
                     </button>
                 </div>
 
+                @guest
+                <div class="mb-6 flex items-center gap-2 px-4 py-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-800">
+                    <svg class="w-5 h-5 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <p class="text-sm font-medium">
+                        <a href="{{ route('register') }}" class="text-primary-600 hover:text-primary-700 underline">Create a free account</a>
+                        to save your QR codes and access them anytime.
+                    </p>
+                </div>
+                @endguest
+
                 <div class="flex justify-between">
                     <button type="button" onclick="prevStep(2)" class="btn btn-secondary">
                         ← Back
@@ -715,12 +741,67 @@ window.recaptchaSiteKey = @json($recaptchaSiteKey);
     </form>
 </div>
 
+<!-- Auth Gate Modal (for guests) -->
+@guest
+<div id="auth-gate-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4" style="background: rgba(0,0,0,0.5);">
+    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 relative">
+        <button type="button" onclick="closeAuthGateModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+        </button>
+
+        <div class="text-center mb-6">
+            <div class="w-16 h-16 bg-primary-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                </svg>
+            </div>
+            <h3 class="text-xl font-bold text-dark-500">Save your QR code</h3>
+            <p class="text-dark-300 mt-2">Create a free account to save your QR codes, access them anytime, and track scans.</p>
+        </div>
+
+        <div class="space-y-3">
+            <a href="{{ route('register') }}" class="block w-full py-2.5 px-4 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors text-center">
+                Create Free Account
+            </a>
+            <a href="{{ route('login') }}" class="block w-full py-2.5 px-4 border border-gray-300 text-dark-500 font-medium rounded-lg hover:bg-gray-50 transition-colors text-center">
+                I Already Have an Account
+            </a>
+            <button type="button" onclick="proceedAsGuest()" class="block w-full py-2 text-sm text-dark-400 hover:text-dark-500 transition-colors text-center">
+                Continue as Guest
+            </button>
+        </div>
+
+        <p class="text-xs text-dark-300 text-center mt-4">Free plan includes unlimited QR codes, 10 scans per code.</p>
+    </div>
+</div>
+@endguest
+
 @push('scripts')
 <script>
 let currentStep = 1;
-let qrCodeId = null;
+let qrCodeId = @json(isset($qrCode) ? $qrCode->id : null);
 let lastSubmittedFormFingerprint = null;
 let qrStylingInstance = null;
+
+// QR code data for editing
+@if(isset($qrCode))
+const qrCodeData = @json($qrCode->data ?? []);
+const qrCodeColors = @json($qrCode->colors ?? []);
+const qrCodeCustomization = @json($qrCode->customization ?? []);
+const qrCodeFiles = @json($qrCode->files->map(function($file) {
+    return [
+        'file_type' => $file->file_type,
+        'file_path' => asset('storage/' . $file->file_path),
+    ];
+})->toArray() ?? []);
+@else
+const qrCodeData = {};
+const qrCodeColors = {};
+const qrCodeCustomization = {};
+const qrCodeFiles = [];
+@endif
 
 function getFormFingerprint() {
     const form = document.getElementById('qr-form');
@@ -768,7 +849,6 @@ function setupRealTimeValidation() {
         'location': ['address', 'latitude', 'longitude', 'location_url'],
         'wifi': ['ssid', 'encryption', 'password'],
         'phone': ['full_name', 'phone_number', 'phone_background_color_hex', 'phone_font_family'],
-        'mp3': ['song_name', 'artist_name'],
         'menu': ['menu_file', 'menu_url']
     };
     
@@ -1318,7 +1398,14 @@ function updateStep1Preview() {
         case 'url':
             if (overlay) overlay.style.backgroundColor = '#F9FAFB'; // gray-50
             const url = document.getElementById('url')?.value || '';
-            const urlDomain = url ? new URL(url).hostname.replace('www.', '') : 'example.com';
+            let urlDomain = 'example.com';
+            if (url) {
+                try {
+                    urlDomain = new URL(url).hostname.replace('www.', '') || urlDomain;
+                } catch (e) {
+                    // Incomplete or invalid URL while typing – keep default
+                }
+            }
             mockupHtml = `
                 <div class="w-full h-full rounded-lg overflow-hidden flex flex-col">
                     <!-- Browser Header -->
@@ -1497,32 +1584,154 @@ function updateStep1Preview() {
             break;
             
         case 'event':
-            if (overlay) overlay.style.backgroundColor = '#FFFFFF'; // white
+            const eventPrimaryColor = document.getElementById('event_primary_color_hex')?.value || document.getElementById('event_primary_color_picker')?.value || '#6594FF';
+            const eventSecondaryColor = document.getElementById('event_secondary_color_hex')?.value || document.getElementById('event_secondary_color_picker')?.value || '#FFFFFF';
+            const eventFontFamily = document.getElementById('event_font_family')?.value || 'Maven Pro';
+            
+            if (overlay) overlay.style.backgroundColor = eventSecondaryColor;
             const eventName = document.getElementById('event_name')?.value || '';
             const companyName = document.getElementById('company_name')?.value || '';
+            const description = document.getElementById('description')?.value || '';
             const eventDate = document.getElementById('date')?.value || '';
             const eventTime = document.getElementById('time')?.value || '';
             const eventLocation = document.getElementById('location')?.value || '';
+            const dressCodeColorPicker = document.getElementById('dress_code_color');
+            const dressCodeHexInput = document.getElementById('dress_code_color_hex');
+            const dressCodeColor = dressCodeColorPicker?.value || dressCodeHexInput?.value || '#000000';
+            const contact = document.getElementById('contact')?.value || '';
+            
+            // Get event image from preview
+            const eventImagePreview = document.getElementById('event-img-preview');
+            const eventImageSrc = eventImagePreview && !eventImagePreview.classList.contains('hidden') 
+                ? eventImagePreview.querySelector('img')?.src || '' 
+                : '';
+            
+            // Get selected amenities
+            const amenitiesCheckboxes = document.querySelectorAll('input[name="amenities[]"]:checked');
+            const amenities = Array.from(amenitiesCheckboxes).map(cb => cb.value);
+            
+            // Format date (dd.mm.yyyy)
+            let formattedDate = '';
+            if (eventDate) {
+                const date = new Date(eventDate + 'T00:00:00');
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = date.getFullYear();
+                formattedDate = `${day}.${month}.${year}`;
+            }
+            
+            // Format time (HH:mm)
+            let formattedTime = '';
+            if (eventTime) {
+                const [hours, minutes] = eventTime.split(':');
+                formattedTime = `${hours}:${minutes}h`;
+            }
+            
+            // Use dress code color (always hex from color picker)
+            const dressCodeHex = dressCodeColor.startsWith('#') ? dressCodeColor : '#000000';
+            
+            // Load Google Font if needed
+            if (eventFontFamily !== 'Maven Pro') {
+                const fontId = eventFontFamily.replace(/\s+/g, '+');
+                const linkId = 'google-font-event-' + fontId;
+                if (!document.getElementById(linkId)) {
+                    const link = document.createElement('link');
+                    link.id = linkId;
+                    link.rel = 'stylesheet';
+                    link.href = `https://fonts.googleapis.com/css2?family=${fontId}:wght@400;500;600;700&display=swap`;
+                    document.head.appendChild(link);
+                }
+            }
+            
             mockupHtml = `
-                <div class="w-full h-full rounded-lg overflow-hidden">
-                    <div class="p-4">
-                        ${companyName ? `<div class="text-xs text-gray-500 mb-1">${companyName}</div>` : ''}
-                        <div class="text-lg font-bold text-gray-900 mb-3">${eventName || 'Event Name'}</div>
-                        ${eventDate || eventTime ? `
-                            <div class="flex items-center gap-2 mb-2 text-sm text-gray-600">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                </svg>
-                                <span>${eventDate || ''} ${eventTime || ''}</span>
+                <div class="w-full h-full rounded-lg overflow-hidden flex flex-col shadow-lg" style="background-color: ${eventSecondaryColor}; font-family: '${eventFontFamily}', sans-serif;">
+                    <!-- Hero Image Section -->
+                    <div class="relative h-64 w-full shrink-0">
+                        ${eventImageSrc ? `
+                            <img src="${eventImageSrc}" 
+                                 class="w-full h-full object-cover" 
+                                 alt="${eventName || 'Event'}">
+                        ` : `
+                            <div class="w-full h-full" style="background: linear-gradient(to bottom right, ${eventPrimaryColor}, ${eventPrimaryColor}dd);"></div>
+                        `}
+                        
+                        <!-- Overlay -->
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                        
+                        <div class="absolute bottom-4 left-6">
+                            ${companyName ? `
+                                <span class="inline-block px-2 py-1 rounded text-[10px] font-bold text-white uppercase tracking-wider mb-2" style="background-color: ${eventPrimaryColor};">
+                                    ${companyName}
+                                </span>
+                            ` : ''}
+                            <h1 class="text-2xl font-bold text-white leading-tight" style="font-family: '${eventFontFamily}', sans-serif;">
+                                ${eventName || 'Event Name'}
+                            </h1>
+                        </div>
+                    </div>
+
+                    <!-- Quick Info Bar (Date/Time/DressCode) -->
+                    <div class="flex border-b border-gray-100 text-center" style="background-color: ${eventSecondaryColor};">
+                        <div class="flex-1 p-4 border-r border-gray-100">
+                            <p class="text-[10px] text-gray-400 uppercase font-bold" style="font-family: '${eventFontFamily}', sans-serif;">Date</p>
+                            <p class="text-sm font-bold text-gray-800" style="font-family: '${eventFontFamily}', sans-serif;">${formattedDate || '-'}</p>
+                        </div>
+                        <div class="flex-1 p-4 border-r border-gray-100">
+                            <p class="text-[10px] text-gray-400 uppercase font-bold" style="font-family: '${eventFontFamily}', sans-serif;">Time</p>
+                            <p class="text-sm font-bold text-gray-800" style="font-family: '${eventFontFamily}', sans-serif;">${formattedTime || '-'}</p>
+                        </div>
+                        <div class="flex-1 p-4 flex flex-col items-center justify-center">
+                            <div class="w-4 h-4 rounded-full border border-gray-200 mb-1 shadow-sm"
+                                 style="background-color: ${dressCodeHex}"></div>
+                            <p class="text-[9px] text-gray-400 uppercase font-bold" style="font-family: '${eventFontFamily}', sans-serif;">Dress Code</p>
+                        </div>
+                    </div>
+
+                    <!-- Details Section -->
+                    <div class="p-6 space-y-6 flex-grow overflow-y-auto" style="background-color: ${eventSecondaryColor};">
+                        ${eventLocation ? `
+                            <!-- Location -->
+                            <div class="flex gap-3">
+                                <div style="color: ${eventPrimaryColor};">📍</div>
+                                <div>
+                                    <h4 class="text-sm font-bold text-gray-800" style="font-family: '${eventFontFamily}', sans-serif;">Location</h4>
+                                    <p class="text-xs text-gray-500" style="font-family: '${eventFontFamily}', sans-serif;">${eventLocation}</p>
+                                </div>
                             </div>
                         ` : ''}
-                        ${eventLocation ? `
-                            <div class="flex items-center gap-2 text-sm text-gray-600">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                </svg>
-                                <span>${eventLocation}</span>
+
+                        ${description ? `
+                            <!-- Description -->
+                            <div class="space-y-2">
+                                <h4 class="text-sm font-bold text-gray-800" style="font-family: '${eventFontFamily}', sans-serif;">About the Event</h4>
+                                <p class="text-xs text-gray-600 leading-relaxed italic" style="font-family: '${eventFontFamily}', sans-serif;">
+                                    ${description}
+                                </p>
+                            </div>
+                        ` : ''}
+
+                        ${amenities.length > 0 ? `
+                            <!-- Amenities -->
+                            <div class="space-y-3">
+                                <h4 class="text-sm font-bold text-gray-800" style="font-family: '${eventFontFamily}', sans-serif;">Amenities</h4>
+                                <div class="grid grid-cols-2 gap-2">
+                                    ${amenities.map(amenity => `
+                                        <div class="flex items-center gap-2 p-2 bg-gray-50 rounded-lg border border-gray-100">
+                                            <span class="text-xs uppercase font-bold" style="color: ${eventPrimaryColor}; font-family: '${eventFontFamily}', sans-serif;">${amenity}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        ${contact ? `
+                            <!-- Contact -->
+                            <div class="rounded-2xl p-4 text-white flex items-center justify-between" style="background-color: #1e293b;">
+                                <div>
+                                    <p class="text-[9px] text-slate-400 uppercase font-bold" style="font-family: '${eventFontFamily}', sans-serif;">Contact Info</p>
+                                    <p class="text-sm font-bold" style="font-family: '${eventFontFamily}', sans-serif;">${contact}</p>
+                                </div>
+                                <a href="tel:${contact}" class="p-2 rounded-lg" style="background-color: ${eventPrimaryColor};">📞</a>
                             </div>
                         ` : ''}
                     </div>
@@ -2105,7 +2314,7 @@ function updateStep1Preview() {
                     <div class="relative pt-16 pb-16 text-center flex-shrink-0" style="background-color: ${vcPrimary}">
                         <div class="relative z-10 mb-4 flex justify-center">
                             <div class="w-24 h-24 rounded-full border-[4px] border-white shadow-xl overflow-hidden bg-white" style="width: 6rem; height: 6rem;">
-                                <img src="${profileSrc || 'https://via.placeholder.com/200'}" alt="" class="w-full h-full object-cover">
+                                <img src="${profileSrc || 'https://placehold.co/200'}" alt="" class="w-full h-full object-cover">
                             </div>
                         </div>
                         <h1 class="text-xl font-bold text-white mb-1">${escapeHtml(vcName)}</h1>
@@ -2175,6 +2384,9 @@ function buildQrContentFromForm() {
             return '/coupon/preview';
         case 'event': {
             const amenities = []; 
+            const checkedAmenities = document.querySelectorAll('input[name="amenities[]"]:checked');
+            checkedAmenities.forEach(cb => amenities.push(cb.value));
+            
             return JSON.stringify({
                 type: 'event',
                 event_name: getValue('event_name'),
@@ -2186,6 +2398,9 @@ function buildQrContentFromForm() {
                 amenities,
                 dress_code_color: getValue('dress_code_color'),
                 contact: getValue('contact'),
+                event_primary_color: getValue('event_primary_color') || getValue('event_primary_color_hex') || '#6594FF',
+                event_secondary_color: getValue('event_secondary_color') || getValue('event_secondary_color_hex') || '#FFFFFF',
+                event_font_family: getValue('event_font_family') || 'Maven Pro',
             });
         }
         case 'app':
@@ -2233,8 +2448,6 @@ function buildQrContentFromForm() {
             const phone = getValue('phone_number').replace(/[^\d+]/g, '');
             return 'tel:' + phone;
         }
-        case 'mp3':
-            return '/mp3/preview';
         case 'business_card':
             return (typeof window !== 'undefined' && window.location && window.location.origin ? window.location.origin + '/business-card/preview' : '/business-card/preview');
         case 'personal_vcard':
@@ -2590,9 +2803,824 @@ if (secondaryColorInput && secondaryColorHex) {
     });
 }
 
+// Populate form fields with existing QR code data when editing
+function populateFormFields() {
+    if (!qrCodeId || Object.keys(qrCodeData).length === 0) {
+        return;
+    }
+    
+    const type = document.querySelector('input[name="type"]')?.value;
+    if (!type) return;
+    
+    // Populate Step 2 fields (colors, pattern, corner, frame, logo)
+    if (qrCodeColors.primary) {
+        const primaryColorInput = document.getElementById('primary_color');
+        const primaryColorHex = document.getElementById('primary_color_hex');
+        if (primaryColorInput) primaryColorInput.value = qrCodeColors.primary;
+        if (primaryColorHex) primaryColorHex.value = qrCodeColors.primary;
+    }
+    
+    if (qrCodeColors.secondary) {
+        const secondaryColorInput = document.getElementById('secondary_color');
+        const secondaryColorHex = document.getElementById('secondary_color_hex');
+        if (secondaryColorInput) secondaryColorInput.value = qrCodeColors.secondary;
+        if (secondaryColorHex) secondaryColorHex.value = qrCodeColors.secondary;
+    }
+    
+    // Populate pattern
+    if (qrCodeCustomization.pattern) {
+        const patternInput = document.getElementById('selected_pattern');
+        if (patternInput) {
+            patternInput.value = qrCodeCustomization.pattern;
+            // Update visual selection
+            const patternButton = document.querySelector(`[data-pattern="${qrCodeCustomization.pattern}"]`);
+            if (patternButton) {
+                selectPattern(patternButton, qrCodeCustomization.pattern);
+            }
+        }
+    }
+    
+    // Populate corner style
+    if (qrCodeCustomization.corner_style) {
+        const cornerInput = document.getElementById('selected_corner');
+        if (cornerInput) {
+            cornerInput.value = qrCodeCustomization.corner_style;
+            // Update visual selection
+            const cornerButton = document.querySelector(`[data-corner="${qrCodeCustomization.corner_style}"]`);
+            if (cornerButton) {
+                selectCorner(cornerButton, qrCodeCustomization.corner_style);
+            }
+        }
+    }
+    
+    // Populate corner dot style
+    if (qrCodeCustomization.corner_dot_style) {
+        const cornerDotInput = document.getElementById('selected_corner_dot');
+        if (cornerDotInput) {
+            cornerDotInput.value = qrCodeCustomization.corner_dot_style;
+            // Update visual selection
+            const cornerDotButton = document.querySelector(`[data-corner-dot="${qrCodeCustomization.corner_dot_style}"]`);
+            if (cornerDotButton) {
+                selectCornerDot(cornerDotButton, qrCodeCustomization.corner_dot_style);
+            }
+        }
+    }
+    
+    // Populate frame
+    if (qrCodeCustomization.frame) {
+        const frameInput = document.getElementById('selected_frame');
+        if (frameInput) {
+            frameInput.value = qrCodeCustomization.frame;
+            // Update visual selection
+            const frameButton = document.querySelector(`[data-frame="${qrCodeCustomization.frame}"]`);
+            if (frameButton) {
+                selectFrame(frameButton, qrCodeCustomization.frame);
+            }
+        }
+    }
+    
+    // Populate logo
+    if (qrCodeCustomization.logo_url) {
+        const logoDataUrlInput = document.getElementById('qr_logo_data_url');
+        const logoRemoveBtn = document.getElementById('qr_logo_remove_btn');
+        const logoFilename = document.getElementById('qr_logo_filename');
+        
+        if (logoDataUrlInput && qrCodeCustomization.logo_url) {
+            // Check if it's a data URL or a regular URL
+            if (qrCodeCustomization.logo_url.startsWith('data:')) {
+                logoDataUrlInput.value = qrCodeCustomization.logo_url;
+            } else {
+                // Convert image URL to data URL
+                fetch(qrCodeCustomization.logo_url)
+                    .then(res => res.blob())
+                    .then(blob => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                            logoDataUrlInput.value = reader.result;
+                            if (logoRemoveBtn) logoRemoveBtn.style.display = 'inline-flex';
+                            if (logoFilename) logoFilename.textContent = 'Logo';
+                        };
+                        reader.readAsDataURL(blob);
+                    })
+                    .catch(() => {
+                        // If fetch fails, try to use URL directly
+                        logoDataUrlInput.value = qrCodeCustomization.logo_url;
+                    });
+            }
+            if (logoRemoveBtn) logoRemoveBtn.style.display = 'inline-flex';
+            if (logoFilename) logoFilename.textContent = 'Logo';
+        }
+    }
+    
+    // Populate review-us frame options if frame is review-us
+    if (qrCodeCustomization.frame === 'review-us' && qrCodeCustomization.review_us_config) {
+        const config = qrCodeCustomization.review_us_config;
+        
+        if (config.color) {
+            const colorInput = document.getElementById('review_frame_color');
+            const colorHexInput = document.getElementById('review_frame_color_hex');
+            if (colorInput) colorInput.value = config.color;
+            if (colorHexInput) colorHexInput.value = config.color;
+        }
+        
+        if (config.text_color) {
+            const textColorInput = document.getElementById('review_frame_text_color');
+            const textColorHexInput = document.getElementById('review_frame_text_color_hex');
+            if (textColorInput) textColorInput.value = config.text_color;
+            if (textColorHexInput) textColorHexInput.value = config.text_color;
+        }
+        
+        if (config.line1) {
+            const line1Input = document.getElementById('review_frame_line1');
+            if (line1Input) line1Input.value = config.line1;
+        }
+        
+        if (config.line2) {
+            const line2Input = document.getElementById('review_frame_line2');
+            if (line2Input) line2Input.value = config.line2;
+        }
+        
+        if (config.line3) {
+            const line3Input = document.getElementById('review_frame_line3');
+            if (line3Input) line3Input.value = config.line3;
+        }
+        
+        if (config.icon) {
+            const iconInput = document.getElementById('review_frame_icon');
+            if (iconInput) iconInput.value = config.icon;
+            // Update visual selection
+            const iconButton = document.querySelector(`[data-icon-value="${config.icon}"]`);
+            if (iconButton) {
+                selectReviewFrameIcon(iconButton, config.icon, config.line3 || 'here');
+            }
+        }
+        
+        if (config.logo_url) {
+            const reviewFrameLogoDataUrl = document.getElementById('review_frame_logo_data_url');
+            const reviewFrameLogoPreview = document.getElementById('review_frame_logo_preview');
+            const reviewFrameLogoPreviewImg = document.getElementById('review_frame_logo_preview_img');
+            const reviewFrameLogoRemove = document.getElementById('review_frame_logo_remove');
+            
+            if (reviewFrameLogoDataUrl && config.logo_url) {
+                if (config.logo_url.startsWith('data:')) {
+                    reviewFrameLogoDataUrl.value = config.logo_url;
+                } else {
+                    fetch(config.logo_url)
+                        .then(res => res.blob())
+                        .then(blob => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                                reviewFrameLogoDataUrl.value = reader.result;
+                                if (reviewFrameLogoPreview) reviewFrameLogoPreview.classList.remove('hidden');
+                                if (reviewFrameLogoPreviewImg) reviewFrameLogoPreviewImg.src = reader.result;
+                                if (reviewFrameLogoRemove) reviewFrameLogoRemove.classList.remove('hidden');
+                            };
+                            reader.readAsDataURL(blob);
+                        })
+                        .catch(() => {
+                            reviewFrameLogoDataUrl.value = config.logo_url;
+                        });
+                }
+            }
+        }
+    }
+    
+    // Populate Step 1 fields based on QR code type
+    // This will be handled by type-specific form includes
+    populateStep1Fields(type, qrCodeData, qrCodeFiles);
+}
+
+// Populate Step 1 fields based on type
+function populateStep1Fields(type, data, files) {
+    switch(type) {
+        case 'url':
+            if (data.url) {
+                const urlInput = document.getElementById('url');
+                if (urlInput) urlInput.value = data.url;
+            }
+            break;
+            
+        case 'email':
+            if (data.email) {
+                const emailInput = document.getElementById('email');
+                if (emailInput) emailInput.value = data.email;
+            }
+            if (data.subject) {
+                const subjectInput = document.getElementById('subject');
+                if (subjectInput) subjectInput.value = data.subject;
+            }
+            if (data.message) {
+                const messageInput = document.getElementById('message');
+                if (messageInput) messageInput.value = data.message;
+            }
+            break;
+            
+        case 'text':
+            if (data.text) {
+                const textInput = document.getElementById('text');
+                if (textInput) textInput.value = data.text;
+            }
+            break;
+            
+        case 'event':
+            if (data.event_name) {
+                const eventNameInput = document.getElementById('event_name');
+                if (eventNameInput) eventNameInput.value = data.event_name;
+            }
+            if (data.company_name) {
+                const companyNameInput = document.getElementById('company_name');
+                if (companyNameInput) companyNameInput.value = data.company_name;
+            }
+            if (data.description) {
+                const descriptionInput = document.getElementById('description');
+                if (descriptionInput) descriptionInput.value = data.description;
+            }
+            if (data.date) {
+                const dateInput = document.getElementById('date');
+                if (dateInput) dateInput.value = data.date;
+            }
+            if (data.time) {
+                const timeInput = document.getElementById('time');
+                if (timeInput) timeInput.value = data.time;
+            }
+            if (data.location) {
+                const locationInput = document.getElementById('location');
+                if (locationInput) locationInput.value = data.location;
+            }
+            if (data.dress_code_color) {
+                const dressCodeInput = document.getElementById('dress_code_color');
+                const dressCodeHexInput = document.getElementById('dress_code_color_hex');
+                const dressCodeValue = data.dress_code_color.startsWith('#') ? data.dress_code_color : '#000000';
+                if (dressCodeInput) {
+                    dressCodeInput.value = dressCodeValue;
+                }
+                if (dressCodeHexInput) {
+                    dressCodeHexInput.value = dressCodeValue.toUpperCase();
+                }
+            }
+            if (data.contact) {
+                const contactInput = document.getElementById('contact');
+                if (contactInput) contactInput.value = data.contact;
+            }
+            if (data.amenities && Array.isArray(data.amenities)) {
+                data.amenities.forEach(amenity => {
+                    const checkbox = document.querySelector(`input[name="amenities[]"][value="${amenity}"]`);
+                    if (checkbox) checkbox.checked = true;
+                });
+            }
+            // Handle event design colors
+            if (data.event_primary_color) {
+                const primaryHex = document.getElementById('event_primary_color_hex');
+                const primaryPicker = document.getElementById('event_primary_color_picker');
+                if (primaryHex) primaryHex.value = data.event_primary_color;
+                if (primaryPicker) primaryPicker.value = data.event_primary_color;
+            }
+            if (data.event_secondary_color) {
+                const secondaryHex = document.getElementById('event_secondary_color_hex');
+                const secondaryPicker = document.getElementById('event_secondary_color_picker');
+                if (secondaryHex) secondaryHex.value = data.event_secondary_color;
+                if (secondaryPicker) secondaryPicker.value = data.event_secondary_color;
+            }
+            if (data.event_font_family) {
+                const fontFamilySelect = document.getElementById('event_font_family');
+                if (fontFamilySelect) fontFamilySelect.value = data.event_font_family;
+            }
+            // Handle event image
+            const eventImageFile = files.find(f => f.file_type === 'image');
+            if (eventImageFile && eventImageFile.file_path) {
+                const eventImagePreview = document.getElementById('event-img-preview');
+                const eventImagePreviewImg = eventImagePreview?.querySelector('img');
+                const eventUploadArea = document.getElementById('event-upload-area');
+                if (eventImagePreviewImg && eventImagePreview) {
+                    eventImagePreviewImg.src = eventImageFile.file_path;
+                    eventImagePreview.classList.remove('hidden');
+                    if (eventUploadArea) eventUploadArea.classList.add('hidden');
+                }
+            }
+            break;
+            
+        case 'location':
+            if (data.address) {
+                const addressInput = document.getElementById('address');
+                if (addressInput) addressInput.value = data.address;
+            }
+            if (data.latitude) {
+                const latInput = document.getElementById('latitude');
+                if (latInput) latInput.value = data.latitude;
+            }
+            if (data.longitude) {
+                const lngInput = document.getElementById('longitude');
+                if (lngInput) lngInput.value = data.longitude;
+            }
+            if (data.location_url) {
+                const locationUrlInput = document.getElementById('location_url');
+                if (locationUrlInput) locationUrlInput.value = data.location_url;
+            }
+            break;
+            
+        case 'wifi':
+            if (data.ssid) {
+                const ssidInput = document.getElementById('ssid');
+                if (ssidInput) ssidInput.value = data.ssid;
+            }
+            if (data.encryption) {
+                const encryptionSelect = document.getElementById('encryption');
+                if (encryptionSelect) encryptionSelect.value = data.encryption;
+            }
+            if (data.password) {
+                const passwordInput = document.getElementById('password');
+                if (passwordInput) passwordInput.value = data.password;
+            }
+            if (data.hidden !== undefined) {
+                const hiddenCheckbox = document.getElementById('hidden');
+                if (hiddenCheckbox) hiddenCheckbox.checked = data.hidden;
+            }
+            break;
+            
+        case 'phone':
+            if (data.full_name) {
+                const fullNameInput = document.getElementById('full_name');
+                if (fullNameInput) fullNameInput.value = data.full_name;
+            }
+            if (data.phone_number) {
+                const phoneNumberInput = document.getElementById('phone_number');
+                if (phoneNumberInput) phoneNumberInput.value = data.phone_number;
+            }
+            if (data.phone_background_color_hex) {
+                const phoneBgColorInput = document.getElementById('phone_background_color_hex');
+                if (phoneBgColorInput) phoneBgColorInput.value = data.phone_background_color_hex;
+            }
+            if (data.phone_font_family) {
+                const phoneFontInput = document.getElementById('phone_font_family');
+                if (phoneFontInput) phoneFontInput.value = data.phone_font_family;
+            }
+            break;
+            
+            
+        case 'app':
+            if (data.app_name) {
+                const appNameInput = document.getElementById('app_name');
+                if (appNameInput) appNameInput.value = data.app_name;
+            }
+            if (data.app_description) {
+                const appDescriptionInput = document.getElementById('app_description');
+                if (appDescriptionInput) appDescriptionInput.value = data.app_description;
+            }
+            if (data.app_store_link) {
+                const appStoreInput = document.getElementById('app_store_link');
+                if (appStoreInput) appStoreInput.value = data.app_store_link;
+            }
+            if (data.play_store_link) {
+                const playStoreInput = document.getElementById('play_store_link');
+                if (playStoreInput) playStoreInput.value = data.play_store_link;
+            }
+            if (data.app_font_family) {
+                const appFontInput = document.getElementById('app_font_family');
+                if (appFontInput) appFontInput.value = data.app_font_family;
+            }
+            if (data.app_text_color) {
+                const appTextColorInput = document.getElementById('app_text_color');
+                if (appTextColorInput) appTextColorInput.value = data.app_text_color;
+            }
+            if (data.app_text_font_size) {
+                const appTextFontSizeInput = document.getElementById('app_text_font_size');
+                if (appTextFontSizeInput) appTextFontSizeInput.value = data.app_text_font_size;
+            }
+            if (data.app_icon_size) {
+                const appIconSizeInput = document.getElementById('app_icon_size');
+                if (appIconSizeInput) appIconSizeInput.value = data.app_icon_size;
+            }
+            if (data.app_store_button_color) {
+                const appStoreButtonColorInput = document.getElementById('app_store_button_color');
+                if (appStoreButtonColorInput) appStoreButtonColorInput.value = data.app_store_button_color;
+            }
+            if (data.app_store_button_text_color) {
+                const appStoreButtonTextColorInput = document.getElementById('app_store_button_text_color');
+                if (appStoreButtonTextColorInput) appStoreButtonTextColorInput.value = data.app_store_button_text_color;
+            }
+            // Handle app image
+            const appImageFile = files.find(f => f.file_type === 'image');
+            if (appImageFile && appImageFile.file_path) {
+                const appImagePreview = document.getElementById('app-img-preview');
+                const appImagePreviewImg = appImagePreview?.querySelector('img');
+                const appUploadArea = document.getElementById('app-upload-area');
+                if (appImagePreviewImg && appImagePreview) {
+                    appImagePreviewImg.src = appImageFile.file_path;
+                    appImagePreview.classList.remove('hidden');
+                    if (appUploadArea) appUploadArea.classList.add('hidden');
+                }
+            }
+            break;
+            
+        case 'business_card':
+            if (data.company_name) {
+                const companyNameInput = document.getElementById('business_card_company_name');
+                if (companyNameInput) companyNameInput.value = data.company_name;
+            }
+            if (data.subtitle) {
+                const subtitleInput = document.getElementById('business_card_subtitle');
+                if (subtitleInput) subtitleInput.value = data.subtitle;
+            }
+            if (data.about) {
+                const aboutInput = document.getElementById('business_card_about');
+                if (aboutInput) aboutInput.value = data.about;
+            }
+            if (data.contact_name) {
+                const contactNameInput = document.getElementById('business_card_contact_name');
+                if (contactNameInput) contactNameInput.value = data.contact_name;
+            }
+            if (data.phone) {
+                const phoneInput = document.getElementById('business_card_phone');
+                if (phoneInput) phoneInput.value = data.phone;
+            }
+            if (data.email) {
+                const emailInput = document.getElementById('business_card_email');
+                if (emailInput) emailInput.value = data.email;
+            }
+            if (data.address) {
+                const addressInput = document.getElementById('business_card_address');
+                if (addressInput) addressInput.value = data.address;
+            }
+            if (data.maps_link) {
+                const mapsLinkInput = document.getElementById('business_card_maps_link');
+                if (mapsLinkInput) mapsLinkInput.value = data.maps_link;
+            }
+            if (data.working_hours) {
+                const workingHoursInput = document.getElementById('business_card_working_hours');
+                if (workingHoursInput) workingHoursInput.value = data.working_hours;
+            }
+            if (data.primary_color) {
+                const primaryColorInput = document.getElementById('business_card_primary_color_hex');
+                if (primaryColorInput) primaryColorInput.value = data.primary_color;
+            }
+            if (data.secondary_color) {
+                const secondaryColorInput = document.getElementById('business_card_secondary_color_hex');
+                if (secondaryColorInput) secondaryColorInput.value = data.secondary_color;
+            }
+            if (data.font_family) {
+                const fontFamilyInput = document.getElementById('business_card_font_family');
+                if (fontFamilyInput) fontFamilyInput.value = data.font_family;
+            }
+            // Handle buttons
+            if (data.buttons && Array.isArray(data.buttons)) {
+                const buttonsContainer = document.getElementById('business-card-buttons-container');
+                if (buttonsContainer) {
+                    buttonsContainer.innerHTML = '';
+                    data.buttons.forEach((button, index) => {
+                        const n = buttonsContainer.querySelectorAll('.business-card-button-row').length;
+                        const row = document.createElement('div');
+                        row.className = 'business-card-button-row flex gap-2 items-start';
+                        row.innerHTML = '<input type="text" name="business_card_buttons[' + n + '][label]" class="input flex-1" placeholder="Label" value="' + (button.label || '').replace(/"/g, '&quot;') + '">' +
+                            '<input type="url" name="business_card_buttons[' + n + '][url]" class="input flex-1" placeholder="https://..." value="' + (button.url || '').replace(/"/g, '&quot;') + '">' +
+                            '<button type="button" class="btn btn-secondary btn-xs remove-business-card-button" aria-label="Remove">✕</button>';
+                        buttonsContainer.appendChild(row);
+                        row.querySelector('.remove-business-card-button').addEventListener('click', function() { 
+                            row.remove(); 
+                            if (typeof updateStep1Preview === 'function') updateStep1Preview(); 
+                        });
+                    });
+                    // Show remove buttons if more than one row
+                    const removeButtons = buttonsContainer.querySelectorAll('.remove-business-card-button');
+                    removeButtons.forEach(btn => btn.classList.toggle('hidden', removeButtons.length <= 1));
+                }
+            }
+            // Handle socials
+            if (data.socials && Array.isArray(data.socials)) {
+                const socialsContainer = document.getElementById('business-card-socials-container');
+                if (socialsContainer) {
+                    socialsContainer.innerHTML = '';
+                    data.socials.forEach((social, index) => {
+                        const n = socialsContainer.querySelectorAll('.business-card-social-row').length;
+                        const row = document.createElement('div');
+                        row.className = 'business-card-social-row flex gap-2 items-center';
+                        row.innerHTML = '<select name="business_card_socials[' + n + '][platform]" class="input flex-1 max-w-[140px] h-10">' +
+                            '<option value="facebook"' + (social.platform === 'facebook' ? ' selected' : '') + '>Facebook</option>' +
+                            '<option value="instagram"' + (social.platform === 'instagram' ? ' selected' : '') + '>Instagram</option>' +
+                            '<option value="twitter"' + (social.platform === 'twitter' ? ' selected' : '') + '>Twitter/X</option>' +
+                            '<option value="linkedin"' + (social.platform === 'linkedin' ? ' selected' : '') + '>LinkedIn</option>' +
+                            '<option value="whatsapp"' + (social.platform === 'whatsapp' ? ' selected' : '') + '>WhatsApp</option>' +
+                            '</select>' +
+                            '<input type="url" name="business_card_socials[' + n + '][url]" class="input flex-1 h-10" placeholder="https://..." value="' + (social.url || '').replace(/"/g, '&quot;') + '">' +
+                            '<button type="button" class="btn btn-secondary btn-xs remove-business-card-social" aria-label="Remove">✕</button>';
+                        socialsContainer.appendChild(row);
+                        row.querySelector('.remove-business-card-social').addEventListener('click', function() { 
+                            row.remove(); 
+                            if (typeof updateStep1Preview === 'function') updateStep1Preview(); 
+                        });
+                    });
+                    // Show remove buttons if more than one row
+                    const removeButtons = socialsContainer.querySelectorAll('.remove-business-card-social');
+                    removeButtons.forEach(btn => btn.classList.toggle('hidden', removeButtons.length <= 1));
+                }
+            }
+            // Handle logo
+            const businessCardLogoFile = files.find(f => f.file_type === 'business_card_logo');
+            if (businessCardLogoFile && businessCardLogoFile.file_path) {
+                const businessCardLogoPreview = document.getElementById('business-card-logo-preview-img');
+                const businessCardLogoPlaceholder = document.getElementById('business-card-logo-placeholder');
+                if (businessCardLogoPreview) {
+                    businessCardLogoPreview.src = businessCardLogoFile.file_path;
+                    businessCardLogoPreview.classList.remove('hidden');
+                    if (businessCardLogoPlaceholder) businessCardLogoPlaceholder.classList.add('hidden');
+                }
+            }
+            break;
+            
+        case 'personal_vcard':
+            if (data.name) {
+                const nameInput = document.getElementById('personal_vcard_name');
+                if (nameInput) nameInput.value = data.name;
+            }
+            if (data.title) {
+                const titleInput = document.getElementById('personal_vcard_title');
+                if (titleInput) titleInput.value = data.title;
+            }
+            if (data.about) {
+                const aboutInput = document.getElementById('personal_vcard_about');
+                if (aboutInput) aboutInput.value = data.about;
+            }
+            if (data.phone) {
+                const phoneInput = document.getElementById('personal_vcard_phone');
+                if (phoneInput) phoneInput.value = data.phone;
+            }
+            if (data.email) {
+                const emailInput = document.getElementById('personal_vcard_email');
+                if (emailInput) emailInput.value = data.email;
+            }
+            if (data.address) {
+                const addressInput = document.getElementById('personal_vcard_address');
+                if (addressInput) addressInput.value = data.address;
+            }
+            if (data.maps_link) {
+                const mapsLinkInput = document.getElementById('personal_vcard_maps_link');
+                if (mapsLinkInput) mapsLinkInput.value = data.maps_link;
+            }
+            if (data.primary_color) {
+                const primaryColorInput = document.getElementById('personal_vcard_primary_color_hex');
+                if (primaryColorInput) primaryColorInput.value = data.primary_color;
+            }
+            if (data.secondary_color) {
+                const secondaryColorInput = document.getElementById('personal_vcard_secondary_color_hex');
+                if (secondaryColorInput) secondaryColorInput.value = data.secondary_color;
+            }
+            if (data.font_family) {
+                const fontFamilyInput = document.getElementById('personal_vcard_font_family');
+                if (fontFamilyInput) fontFamilyInput.value = data.font_family;
+            }
+            // Handle socials
+            if (data.socials && Array.isArray(data.socials)) {
+                const socialsContainer = document.getElementById('personal-vcard-socials-container');
+                if (socialsContainer) {
+                    socialsContainer.innerHTML = '';
+                    data.socials.forEach((social, index) => {
+                        const n = socialsContainer.querySelectorAll('.personal-vcard-social-row').length;
+                        const row = document.createElement('div');
+                        row.className = 'personal-vcard-social-row flex gap-2 items-center';
+                        row.innerHTML = '<select name="personal_vcard_socials[' + n + '][platform]" class="input flex-1 max-w-[140px] h-10">' +
+                            '<option value="facebook"' + (social.platform === 'facebook' ? ' selected' : '') + '>Facebook</option>' +
+                            '<option value="instagram"' + (social.platform === 'instagram' ? ' selected' : '') + '>Instagram</option>' +
+                            '<option value="twitter"' + (social.platform === 'twitter' ? ' selected' : '') + '>Twitter/X</option>' +
+                            '<option value="linkedin"' + (social.platform === 'linkedin' ? ' selected' : '') + '>LinkedIn</option>' +
+                            '<option value="whatsapp"' + (social.platform === 'whatsapp' ? ' selected' : '') + '>WhatsApp</option>' +
+                            '</select>' +
+                            '<input type="url" name="personal_vcard_socials[' + n + '][url]" class="input flex-1 h-10" placeholder="https://..." value="' + (social.url || '').replace(/"/g, '&quot;') + '">' +
+                            '<button type="button" class="btn btn-secondary btn-xs remove-personal-vcard-social" aria-label="Remove">✕</button>';
+                        socialsContainer.appendChild(row);
+                        row.querySelector('.remove-personal-vcard-social').addEventListener('click', function() { 
+                            row.remove(); 
+                            if (typeof updateStep1Preview === 'function') updateStep1Preview(); 
+                        });
+                    });
+                    // Show remove buttons if more than one row
+                    const removeButtons = socialsContainer.querySelectorAll('.remove-personal-vcard-social');
+                    removeButtons.forEach(btn => btn.classList.toggle('hidden', removeButtons.length <= 1));
+                }
+            }
+            // Handle profile image
+            const personalVCardProfileFile = files.find(f => f.file_type === 'personal_vcard_profile');
+            if (personalVCardProfileFile && personalVCardProfileFile.file_path) {
+                const personalVCardProfilePreview = document.getElementById('personal-vcard-profile-preview-img');
+                const personalVCardProfilePlaceholder = document.getElementById('personal-vcard-profile-placeholder');
+                if (personalVCardProfilePreview) {
+                    personalVCardProfilePreview.src = personalVCardProfileFile.file_path;
+                    personalVCardProfilePreview.classList.remove('hidden');
+                    if (personalVCardProfilePlaceholder) personalVCardProfilePlaceholder.classList.add('hidden');
+                }
+            }
+            break;
+            
+        case 'coupon':
+            if (data.coupon_company) {
+                const companyInput = document.getElementById('coupon_company');
+                if (companyInput) companyInput.value = data.coupon_company;
+            }
+            if (data.coupon_title) {
+                const titleInput = document.getElementById('coupon_title');
+                if (titleInput) titleInput.value = data.coupon_title;
+            }
+            if (data.coupon_description) {
+                const descriptionInput = document.getElementById('coupon_description');
+                if (descriptionInput) descriptionInput.value = data.coupon_description;
+            }
+            if (data.coupon_sales_badge) {
+                const salesBadgeInput = document.getElementById('coupon_sales_badge');
+                if (salesBadgeInput) salesBadgeInput.value = data.coupon_sales_badge;
+            }
+            if (data.coupon_sales_badge_color) {
+                const salesBadgeColorInput = document.getElementById('coupon_sales_badge_color');
+                if (salesBadgeColorInput) salesBadgeColorInput.value = data.coupon_sales_badge_color;
+            }
+            if (data.coupon_sales_badge_text_color) {
+                const salesBadgeTextColorInput = document.getElementById('coupon_sales_badge_text_color');
+                if (salesBadgeTextColorInput) salesBadgeTextColorInput.value = data.coupon_sales_badge_text_color;
+            }
+            if (data.coupon_code_button_text) {
+                const codeButtonTextInput = document.getElementById('coupon_code_button_text');
+                if (codeButtonTextInput) codeButtonTextInput.value = data.coupon_code_button_text;
+            }
+            if (data.coupon_button_color) {
+                const buttonColorInput = document.getElementById('coupon_button_color');
+                if (buttonColorInput) buttonColorInput.value = data.coupon_button_color;
+            }
+            if (data.coupon_button_text_color) {
+                const buttonTextColorInput = document.getElementById('coupon_button_text_color');
+                if (buttonTextColorInput) buttonTextColorInput.value = data.coupon_button_text_color;
+            }
+            if (data.coupon_valid_until) {
+                const validUntilInput = document.getElementById('coupon_valid_until');
+                if (validUntilInput) validUntilInput.value = data.coupon_valid_until;
+            }
+            if (data.coupon_view_more_text) {
+                const viewMoreTextInput = document.getElementById('coupon_view_more_text');
+                if (viewMoreTextInput) viewMoreTextInput.value = data.coupon_view_more_text;
+            }
+            if (data.coupon_view_more_website) {
+                const viewMoreWebsiteInput = document.getElementById('coupon_view_more_website');
+                if (viewMoreWebsiteInput) viewMoreWebsiteInput.value = data.coupon_view_more_website;
+            }
+            if (data.coupon_font_family) {
+                const fontFamilyInput = document.getElementById('coupon_font_family');
+                if (fontFamilyInput) fontFamilyInput.value = data.coupon_font_family;
+            }
+            if (data.coupon_primary_color) {
+                const primaryColorInput = document.getElementById('coupon_primary_color_hex');
+                if (primaryColorInput) primaryColorInput.value = data.coupon_primary_color;
+            }
+            if (data.coupon_secondary_color) {
+                const secondaryColorInput = document.getElementById('coupon_secondary_color_hex');
+                if (secondaryColorInput) secondaryColorInput.value = data.coupon_secondary_color;
+            }
+            if (data.coupon_use_barcode !== undefined) {
+                const useBarcodeCheckbox = document.getElementById('coupon_use_barcode');
+                if (useBarcodeCheckbox) useBarcodeCheckbox.checked = data.coupon_use_barcode;
+            }
+            // Handle coupon image
+            const couponImageFile = files.find(f => f.file_type === 'image');
+            if (couponImageFile && couponImageFile.file_path) {
+                const couponImagePreview = document.getElementById('logo-img-preview');
+                const couponImagePreviewImg = couponImagePreview?.querySelector('img');
+                const couponUploadArea = document.getElementById('logo-upload-area');
+                if (couponImagePreviewImg && couponImagePreview) {
+                    couponImagePreviewImg.src = couponImageFile.file_path;
+                    couponImagePreview.classList.remove('hidden');
+                    if (couponUploadArea) couponUploadArea.classList.add('hidden');
+                }
+            }
+            // Handle coupon logo
+            const couponLogoFile = files.find(f => f.file_type === 'logo');
+            if (couponLogoFile && couponLogoFile.file_path) {
+                // Similar handling for logo
+            }
+            // Handle coupon barcode
+            const couponBarcodeFile = files.find(f => f.file_type === 'barcode');
+            if (couponBarcodeFile && couponBarcodeFile.file_path) {
+                // Similar handling for barcode
+            }
+            break;
+            
+        case 'pdf':
+            if (data.pdf_title) {
+                const pdfTitleInput = document.getElementById('pdf_title');
+                if (pdfTitleInput) pdfTitleInput.value = data.pdf_title;
+            }
+            if (data.pdf_website) {
+                const pdfWebsiteInput = document.getElementById('pdf_website');
+                if (pdfWebsiteInput) pdfWebsiteInput.value = data.pdf_website;
+            }
+            if (data.company_name) {
+                const companyNameInput = document.getElementById('company_name');
+                if (companyNameInput) companyNameInput.value = data.company_name;
+            }
+            if (data.file_description) {
+                const fileDescriptionInput = document.getElementById('file_description');
+                if (fileDescriptionInput) fileDescriptionInput.value = data.file_description;
+            }
+            if (data.pdf_primary_color) {
+                const pdfPrimaryColorInput = document.getElementById('pdf_primary_color_hex');
+                if (pdfPrimaryColorInput) pdfPrimaryColorInput.value = data.pdf_primary_color;
+            }
+            if (data.pdf_secondary_color) {
+                const pdfSecondaryColorInput = document.getElementById('pdf_secondary_color_hex');
+                if (pdfSecondaryColorInput) pdfSecondaryColorInput.value = data.pdf_secondary_color;
+            }
+            if (data.pdf_button_text) {
+                const pdfButtonTextInput = document.getElementById('pdf_button_text');
+                if (pdfButtonTextInput) pdfButtonTextInput.value = data.pdf_button_text;
+            }
+            if (data.pdf_button_color) {
+                const pdfButtonColorInput = document.getElementById('pdf_button_color');
+                if (pdfButtonColorInput) pdfButtonColorInput.value = data.pdf_button_color;
+            }
+            if (data.pdf_font_family) {
+                const pdfFontFamilyInput = document.getElementById('pdf_font_family');
+                if (pdfFontFamilyInput) pdfFontFamilyInput.value = data.pdf_font_family;
+            }
+            break;
+            
+        case 'menu':
+            // Menu is complex - handle menu_sections if present
+            if (data.menu_sections && Array.isArray(data.menu_sections)) {
+                // This would require more complex handling
+                // For now, just log that sections exist
+                console.log('Menu sections found:', data.menu_sections.length);
+            }
+            if (data.menu_url) {
+                const menuUrlInput = document.getElementById('menu_url');
+                if (menuUrlInput) menuUrlInput.value = data.menu_url;
+            }
+            // Handle menu file
+            const menuFile = files.find(f => f.file_type === 'menu');
+            if (menuFile && menuFile.file_path) {
+                // Handle menu file display
+            }
+            // Handle restaurant image
+            const restaurantImageFile = files.find(f => f.file_type === 'restaurant_image');
+            if (restaurantImageFile && restaurantImageFile.file_path) {
+                // Handle restaurant image display
+            }
+            break;
+    }
+}
+
 // Setup real-time validation and preview updates when page loads
 document.addEventListener('DOMContentLoaded', function() {
     setupRealTimeValidation();
+    
+    // Populate form fields if editing existing QR code
+    if (qrCodeId) {
+        populateFormFields();
+        
+        // Update Step 2 visual selections after populating
+        setTimeout(() => {
+            // Update pattern visual selection
+            const patternValue = document.getElementById('selected_pattern')?.value;
+            if (patternValue) {
+                const patternButton = document.querySelector(`[data-pattern="${patternValue}"]`);
+                if (patternButton) {
+                    patternButton.classList.add('border-primary-500', 'border-primary-600');
+                    patternButton.classList.remove('border-dark-200');
+                }
+            }
+            
+            // Update corner visual selection
+            const cornerValue = document.getElementById('selected_corner')?.value;
+            if (cornerValue) {
+                const cornerButton = document.querySelector(`[data-corner="${cornerValue}"]`);
+                if (cornerButton) {
+                    cornerButton.classList.add('border-primary-500', 'border-primary-600');
+                    cornerButton.classList.remove('border-dark-200');
+                }
+            }
+            
+            // Update corner dot visual selection
+            const cornerDotValue = document.getElementById('selected_corner_dot')?.value;
+            if (cornerDotValue) {
+                const cornerDotButton = document.querySelector(`[data-corner-dot="${cornerDotValue}"]`);
+                if (cornerDotButton) {
+                    cornerDotButton.classList.add('border-primary-500', 'border-primary-600');
+                    cornerDotButton.classList.remove('border-dark-200');
+                }
+            }
+            
+            // Update frame visual selection and show review-us options if needed
+            const frameValue = document.getElementById('selected_frame')?.value;
+            if (frameValue) {
+                const frameButton = document.querySelector(`[data-frame="${frameValue}"]`);
+                if (frameButton) {
+                    frameButton.classList.add('border-primary-500', 'border-primary-600');
+                    frameButton.classList.remove('border-dark-200');
+                }
+                
+                // Show review-us frame options if frame is review-us
+                if (frameValue === 'review-us') {
+                    const reviewUsOpts = document.getElementById('review-us-frame-options');
+                    if (reviewUsOpts) {
+                        reviewUsOpts.classList.remove('hidden');
+                    }
+                }
+            }
+        }, 100);
+    }
     
     // Setup phone mockup overlay for Step 1
     const phoneMockupContainerStep1 = document.getElementById('phone-mockup-container-step1');
@@ -2679,7 +3707,8 @@ document.addEventListener('DOMContentLoaded', function() {
         'app_text_font_size', 'app_icon_size',
         'app_store_button_color_hex', 'app_store_button_text_color_hex',
         'ssid', 'encryption', 'password', 'address',
-        'event_name', 'company_name', 'date', 'time', 'location', 'description',
+        'event_name', 'company_name', 'date', 'time', 'location', 'description', 'contact', 'dress_code_color', 'dress_code_color_hex',
+        'event_primary_color', 'event_primary_color_hex', 'event_secondary_color', 'event_secondary_color_hex', 'event_font_family',
         'pdf_primary_color_hex', 'pdf_secondary_color_hex', 'pdf_title', 'pdf_website', 
         'company_name', 'file_description', 'pdf_button_text', 'pdf_button_color_hex', 'pdf_font_family',
         'menu_primary_color_hex', 'menu_secondary_color_hex', 'menu_font_family',
@@ -2722,14 +3751,84 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
+    // Event amenities checkboxes - use event delegation for dynamic checkboxes
+    document.addEventListener('change', function(e) {
+        if (e.target && e.target.name === 'amenities[]' && currentStep === 1) {
+            updateStep1Preview();
+        }
+    });
+    
     // Logo upload handling for Step 2
     const logoInput = document.getElementById('qr_logo');
     const logoHidden = document.getElementById('qr_logo_data_url');
     const logoFilename = document.getElementById('qr_logo_filename');
     const logoRemoveBtn = document.getElementById('qr_logo_remove_btn');
+    const logoLimitWarning = document.getElementById('logo-limit-warning');
+    const isGuest = {{ auth()->check() ? 'false' : 'true' }};
+    const defaultLogoUrl = '{{ asset('logo-integrating-me.webp') }}';
+    let canAddLogo = true; // Will be checked on page load
+
+    // Set default logo for guests on page load
+    if (isGuest && logoHidden) {
+        // Convert default logo URL to data URL for guests
+        fetch(defaultLogoUrl)
+            .then(res => res.blob())
+            .then(blob => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    logoHidden.value = reader.result;
+                    updateStep2QRPreview();
+                };
+                reader.readAsDataURL(blob);
+            })
+            .catch(() => {
+                // Fallback: use URL directly if fetch fails
+                logoHidden.value = defaultLogoUrl;
+                updateStep2QRPreview();
+            });
+    }
+
+    // Check logo limit on page load (skip for guests)
+    async function checkLogoLimit() {
+        if (isGuest) {
+            canAddLogo = false; // Guests cannot upload logos
+            return;
+        }
+        
+        try {
+            const response = await fetch('{{ route("qr-codes.check-logo-limit") }}', {
+                method: 'GET',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                }
+            });
+            const data = await response.json();
+            canAddLogo = data.can_add_logo || false;
+            
+            if (!canAddLogo && logoLimitWarning) {
+                logoLimitWarning.classList.remove('hidden');
+            } else if (logoLimitWarning) {
+                logoLimitWarning.classList.add('hidden');
+            }
+        } catch (error) {
+            console.error('Error checking logo limit:', error);
+            // On error, allow logo upload (fail open)
+            canAddLogo = true;
+        }
+    }
+
+    // Check logo limit when page loads
+    checkLogoLimit();
 
     if (logoInput && logoHidden) {
-        logoInput.addEventListener('change', () => {
+        logoInput.addEventListener('change', async () => {
+            // Prevent logo upload for guests
+            if (isGuest) {
+                logoInput.value = '';
+                alert('Guest users cannot upload custom logos. Please sign up to upload your own logo.');
+                return;
+            }
+
             const file = logoInput.files && logoInput.files[0] ? logoInput.files[0] : null;
             if (!file) {
                 logoHidden.value = '';
@@ -2739,11 +3838,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
+            // Check logo limit before processing
+            if (!canAddLogo) {
+                // Reset input
+                logoInput.value = '';
+                // Show warning
+                if (logoLimitWarning) {
+                    logoLimitWarning.classList.remove('hidden');
+                }
+                // Show error message
+                alert('You have already created a QR code with a custom logo. Free plan allows only one QR code with a custom logo.');
+                return;
+            }
+
             const reader = new FileReader();
             reader.onload = (e) => {
                 logoHidden.value = e.target.result;
                 if (logoFilename) logoFilename.textContent = file.name;
                 if (logoRemoveBtn) logoRemoveBtn.style.display = 'inline-flex';
+                if (logoLimitWarning) logoLimitWarning.classList.add('hidden');
                 updateStep2QRPreview();
             };
             reader.readAsDataURL(file);
@@ -2752,6 +3865,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (logoRemoveBtn && logoInput && logoHidden) {
         logoRemoveBtn.addEventListener('click', () => {
+            // For guests, restore default logo instead of removing
+            if (isGuest) {
+                fetch(defaultLogoUrl)
+                    .then(res => res.blob())
+                    .then(blob => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                            logoHidden.value = reader.result;
+                            updateStep2QRPreview();
+                        };
+                        reader.readAsDataURL(blob);
+                    })
+                    .catch(() => {
+                        logoHidden.value = defaultLogoUrl;
+                        updateStep2QRPreview();
+                    });
+                return;
+            }
+            
             logoInput.value = '';
             logoHidden.value = '';
             if (logoFilename) logoFilename.textContent = '';
@@ -3249,32 +4381,6 @@ function validateStep1() {
             }
             break;
             
-        case 'mp3':
-            const mp3File = document.getElementById('mp3_file');
-            const songName = document.getElementById('song_name');
-            const artistName = document.getElementById('artist_name');
-            
-            if (!mp3File || !mp3File.files || mp3File.files.length === 0) {
-                errors.push('MP3 file is required');
-                if (mp3File) mp3File.closest('.border-dashed')?.classList.add('border-red-500');
-            } else if (mp3File) {
-                mp3File.closest('.border-dashed')?.classList.remove('border-red-500');
-            }
-            
-            if (!songName || !songName.value.trim()) {
-                errors.push('Song name is required');
-                if (songName) songName.classList.add('border-red-500');
-            } else if (songName) {
-                songName.classList.remove('border-red-500');
-            }
-            
-            if (!artistName || !artistName.value.trim()) {
-                errors.push('Artist name is required');
-                if (artistName) artistName.classList.add('border-red-500');
-            } else if (artistName) {
-                artistName.classList.remove('border-red-500');
-            }
-            break;
             
         case 'app':
             // Validate URL fields if provided
@@ -3483,6 +4589,71 @@ function getRecaptchaToken() {
     });
 }
 
+// Helper function: Calculate FormData size and validate
+function calculateAndValidateFormDataSize(formData) {
+    let totalSize = 0;
+    let fileCount = 0;
+    let dataUrlSize = 0;
+    
+    for (const [key, value] of formData.entries()) {
+        if (value instanceof File) {
+            totalSize += value.size;
+            fileCount++;
+            console.log(`File: ${key} = ${value.name}, Size: ${(value.size / 1024 / 1024).toFixed(2)}MB`);
+        } else if (typeof value === 'string') {
+            const stringSize = new Blob([value]).size;
+            totalSize += stringSize;
+            
+            if (value.startsWith('data:')) {
+                dataUrlSize += stringSize;
+                console.log(`Data URL: ${key}, Size: ${(stringSize / 1024 / 1024).toFixed(2)}MB`);
+            }
+        }
+    }
+    
+    const estimatedRequestSize = totalSize * 1.35; // 35% overhead for multipart encoding
+    const totalSizeMB = (totalSize / 1024 / 1024).toFixed(2);
+    const estimatedSizeMB = (estimatedRequestSize / 1024 / 1024).toFixed(2);
+    
+    console.log(`Raw data size: ${totalSizeMB}MB (${fileCount} file(s) + ${dataUrlSize > 0 ? 'data URLs' : 'no data URLs'})`);
+    console.log(`Estimated request size (with encoding overhead): ${estimatedSizeMB}MB`);
+    
+    return {
+        totalSize,
+        totalSizeMB,
+        estimatedRequestSize,
+        estimatedSizeMB,
+        fileCount,
+        isValid: estimatedRequestSize <= 60 * 1024 * 1024 // 60MB threshold
+    };
+}
+
+// Helper function: Fix HTTP/HTTPS URL mismatch
+function fixUrlProtocol(url) {
+    const currentProtocol = window.location.protocol;
+    if (url.startsWith('http://') && currentProtocol === 'https:') {
+        return url.replace('http://', 'https://').replace('localhost', window.location.hostname);
+    }
+    return url;
+}
+
+// Helper function: Handle 413 Payload Too Large error
+function handle413Error(totalSizeMB, estimatedSizeMB, url, currentStep) {
+    const errMsg = `Server rejected the request (${totalSizeMB}MB raw, ${estimatedSizeMB}MB estimated). This might be due to a server configuration limit (Nginx, PHP, or proxy). Please check server logs or contact administrator.`;
+    console.error('413 Error Details:', {
+        rawSize: totalSizeMB + 'MB',
+        estimatedSize: estimatedSizeMB + 'MB',
+        url: url,
+        status: 413
+    });
+    
+    if (currentStep === 2) {
+        showErrorInStep2(errMsg);
+    } else {
+        showError(errMsg);
+    }
+}
+
 async function generateQRCode() {
     // Sync Step 2 color hex fields into named inputs so primary_color/secondary_color are always valid #rrggbb
     const primaryColorInput = document.getElementById('primary_color');
@@ -3499,6 +4670,18 @@ async function generateQRCode() {
     const recaptchaToken = await getRecaptchaToken();
     if (recaptchaToken) formData.append('recaptcha_token', recaptchaToken);
 
+    // Calculate and validate FormData size
+    const sizeInfo = calculateAndValidateFormDataSize(formData);
+    if (!sizeInfo.isValid) {
+        const errMsg = `Request is too large (estimated ${sizeInfo.estimatedSizeMB}MB). Maximum allowed is 68MB. Please reduce file sizes or remove some product images.`;
+        if (currentStep === 2) {
+            showErrorInStep2(errMsg);
+        } else {
+            showError(errMsg);
+        }
+        return false;
+    }
+
     // Show loading state in Step 3
     document.getElementById('qr-loading').classList.remove('hidden');
     document.getElementById('qr-error').classList.add('hidden');
@@ -3508,7 +4691,12 @@ async function generateQRCode() {
     document.getElementById('download-svg-btn').disabled = true;
     
     try {
-        const response = await fetch('{{ route("qr-codes.store") }}', {
+        // Fix HTTP/HTTPS URL mismatch
+        const storeUrl = '{{ route("qr-codes.store") }}';
+        const fixedUrl = fixUrlProtocol(storeUrl);
+        console.log('Fetch URL:', fixedUrl);
+        
+        const response = await fetch(fixedUrl, {
             method: 'POST',
             body: formData,
             headers: {
@@ -3516,20 +4704,43 @@ async function generateQRCode() {
             }
         });
         
+        // Handle 413 Payload Too Large error
+        if (response.status === 413) {
+            handle413Error(sizeInfo.totalSizeMB, sizeInfo.estimatedSizeMB, fixedUrl, currentStep);
+            document.getElementById('qr-loading').classList.add('hidden');
+            document.getElementById('download-png-btn').disabled = false;
+            document.getElementById('download-svg-btn').disabled = false;
+            return false;
+        }
+        
         const text = await response.text();
         let data;
         try {
             data = JSON.parse(text);
         } catch (e) {
-            // Server returned non-JSON (e.g. 500 HTML error page)
-            const errMsg = currentStep === 2
-                ? 'Server error. Please check your input and try again.'
-                : 'Server error. Please try again.';
-            if (currentStep === 2) {
-                showErrorInStep2(errMsg);
+            // Server returned non-JSON (e.g. 500 HTML error page or 413 HTML error)
+            if (response.status === 413) {
+                console.error('413 Error Details:', {
+                    rawSize: sizeInfo.totalSizeMB + 'MB',
+                    estimatedSize: sizeInfo.estimatedSizeMB + 'MB',
+                    url: fixedUrl,
+                    status: response.status,
+                    responseText: text.substring(0, 500)
+                });
+                handle413Error(sizeInfo.totalSizeMB, sizeInfo.estimatedSizeMB, fixedUrl, currentStep);
             } else {
-                showError(errMsg);
+                const errMsg = currentStep === 2
+                    ? 'Server error. Please check your input and try again.'
+                    : 'Server error. Please try again.';
+                if (currentStep === 2) {
+                    showErrorInStep2(errMsg);
+                } else {
+                    showError(errMsg);
+                }
             }
+            document.getElementById('qr-loading').classList.add('hidden');
+            document.getElementById('download-png-btn').disabled = false;
+            document.getElementById('download-svg-btn').disabled = false;
             return false;
         }
         
@@ -3586,6 +4797,13 @@ async function updateQRCode(id) {
     const recaptchaToken = await getRecaptchaToken();
     if (recaptchaToken) formData.append('recaptcha_token', recaptchaToken);
 
+    // Calculate and validate FormData size
+    const sizeInfo = calculateAndValidateFormDataSize(formData);
+    if (!sizeInfo.isValid) {
+        showErrorInStep2(`Request is too large (estimated ${sizeInfo.estimatedSizeMB}MB). Maximum allowed is 68MB. Please reduce file sizes or remove some product images.`);
+        return false;
+    }
+
     const qrLoading = document.getElementById('qr-loading');
     const qrError = document.getElementById('qr-error');
     const downloadPngBtn = document.getElementById('download-png-btn');
@@ -3596,7 +4814,11 @@ async function updateQRCode(id) {
     if (downloadSvgBtn) downloadSvgBtn.disabled = true;
 
     try {
-        const url = `{{ url("/qr-codes") }}/${id}`;
+        // Fix HTTP/HTTPS URL mismatch
+        let url = `{{ url("/qr-codes") }}/${id}/creation-update`;
+        url = fixUrlProtocol(url);
+        console.log('Update URL:', url);
+        
         const response = await fetch(url, {
             method: 'POST',
             body: formData,
@@ -3604,12 +4826,30 @@ async function updateQRCode(id) {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
             }
         });
+        
+        // Handle 413 Payload Too Large error
+        if (response.status === 413) {
+            handle413Error(sizeInfo.totalSizeMB, sizeInfo.estimatedSizeMB, url, 2);
+            if (qrLoading) qrLoading.classList.add('hidden');
+            if (downloadPngBtn) downloadPngBtn.disabled = false;
+            if (downloadSvgBtn) downloadSvgBtn.disabled = false;
+            return false;
+        }
+        
         const text = await response.text();
         let data;
         try {
             data = JSON.parse(text);
         } catch (e) {
-            showErrorInStep2('Server error. Please try again.');
+            // Server returned non-JSON (e.g. 500 HTML error page or 413 HTML error)
+            if (response.status === 413) {
+                handle413Error(sizeInfo.totalSizeMB, sizeInfo.estimatedSizeMB, url, 2);
+            } else {
+                showErrorInStep2('Server error. Please try again.');
+            }
+            if (qrLoading) qrLoading.classList.add('hidden');
+            if (downloadPngBtn) downloadPngBtn.disabled = false;
+            if (downloadSvgBtn) downloadSvgBtn.disabled = false;
             return false;
         }
         if (data.success) {
@@ -3812,9 +5052,44 @@ function retryGeneration() {
 }
 
 
+let pendingDownloadFormat = null;
+let guestDownloadApproved = false;
+
+function showAuthGateModal(format) {
+    pendingDownloadFormat = format;
+    const modal = document.getElementById('auth-gate-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        // Store current page URL for redirect after auth
+        try {
+            localStorage.setItem('imqr_redirect_after_auth', window.location.href);
+        } catch(e) {}
+    }
+}
+
+function closeAuthGateModal() {
+    const modal = document.getElementById('auth-gate-modal');
+    if (modal) modal.classList.add('hidden');
+    pendingDownloadFormat = null;
+}
+
+function proceedAsGuest() {
+    closeAuthGateModal();
+    guestDownloadApproved = true;
+    if (pendingDownloadFormat) {
+        downloadQR(pendingDownloadFormat);
+    }
+}
+
 async function downloadQR(format) {
     if (!qrCodeId) {
         alert('Please generate a QR code first.');
+        return;
+    }
+
+    // Show auth gate modal for guest users (first download only)
+    if (isGuest && !guestDownloadApproved) {
+        showAuthGateModal(format);
         return;
     }
 

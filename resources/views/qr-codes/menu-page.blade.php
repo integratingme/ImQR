@@ -235,7 +235,8 @@
     </style>
 </head>
 <body>
-    <div class="header">
+    <div class="max-w-md mx-auto shadow-2xl overflow-hidden min-h-screen flex flex-col">
+        <div class="header">
         <div class="header-content">
             <h1 class="restaurant-name">{{ $restaurantName ?? 'Restaurant Name' }}</h1>
             @if(!empty($restaurantDescription))
@@ -313,6 +314,7 @@
                 </div>
             @endif
         </div>
+    </div>
     </div>
     <script>
         function showSection(index) {

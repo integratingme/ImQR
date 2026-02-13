@@ -14,7 +14,7 @@ class QrCodeService
     /**
      * Generate QR code based on type and data
      */
-    public function generate(string $type, array $data, ?array $colors = null, ?array $customization = null): QrCode
+    public function generate(string $type, array $data, ?array $colors = null, ?array $customization = null, ?int $userId = null): QrCode
     {
         // Generate QR code content based on type
         $qrContent = $this->generateQrContent($type, $data);
@@ -31,6 +31,7 @@ class QrCodeService
             'data' => $data,
             'colors' => $colors ?? ['primary' => '#000000', 'secondary' => '#FFFFFF'],
             'customization' => $customization ?? $this->getDefaultCustomization(),
+            'user_id' => $userId,
         ]);
 
         // Generate and save QR code image
@@ -70,7 +71,6 @@ class QrCodeService
             'phone' => $this->generatePhoneContent($data),
             'business_card' => $this->generateBusinessCardContent($data),
             'personal_vcard' => $this->generatePersonalVCardContent($data),
-            'mp3' => $data['mp3_url'] ?? '',
             default => '',
         };
     }
@@ -337,7 +337,6 @@ class QrCodeService
     private const EXTENSION_WHITELIST = [
         'pdf' => ['pdf'],
         'image' => ['jpg', 'jpeg', 'png'],
-        'audio' => ['mp3', 'm4a'],
     ];
 
     /**
@@ -373,8 +372,6 @@ class QrCodeService
             $allowed = self::EXTENSION_WHITELIST['image'];
         } elseif ($fileType === 'pdf' || $fileType === 'menu') {
             $allowed = self::EXTENSION_WHITELIST['pdf'];
-        } elseif ($fileType === 'audio' || $fileType === 'mp3_file') {
-            $allowed = self::EXTENSION_WHITELIST['audio'];
         } else {
             $allowed = self::EXTENSION_WHITELIST['image'];
         }

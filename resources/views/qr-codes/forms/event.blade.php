@@ -1,5 +1,105 @@
 <!-- Event QR Code Form -->
 <div class="space-y-6">
+    <!-- Design and Customize Section -->
+    <div class="card">
+        <div class="flex items-start justify-between mb-6">
+            <div class="flex items-start gap-3">
+                <div class="flex-shrink-0 mt-1">
+                    <svg class="w-6 h-6 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-dark-500">Design and customize</h3>
+                    <p class="text-sm text-dark-300 mt-1">Choose your color scheme</p>
+                </div>
+            </div>
+            <button type="button" class="text-dark-300 hover:text-dark-500 transition-colors" onclick="toggleEventSection('design-section')">
+                <svg class="w-5 h-5 transition-transform" id="design-section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                </svg>
+            </button>
+        </div>
+
+        <div id="design-section-content">
+            <!-- Color Palettes -->
+            <div class="mb-6">
+                <div class="grid grid-cols-2 md:flex gap-3 mb-4">
+                    <button type="button" class="event-color-preset border-2 border-primary-500 rounded-lg p-2 hover:border-primary-600 transition-colors" data-primary="#6594FF" data-secondary="#FFFFFF">
+                        <div class="flex gap-1">
+                            <div class="w-8 h-8 rounded" style="background-color: #6594FF;"></div>
+                            <div class="w-8 h-8 rounded border border-gray-200" style="background-color: #FFFFFF;"></div>
+                        </div>
+                    </button>
+                    <button type="button" class="event-color-preset border-2 border-dark-200 rounded-lg p-2 hover:border-primary-400 transition-colors" data-primary="#E5E7EB" data-secondary="#FFDAD8">
+                        <div class="flex gap-1">
+                            <div class="w-8 h-8 rounded" style="background-color: #E5E7EB;"></div>
+                            <div class="w-8 h-8 rounded" style="background-color: #FFDAD8;"></div>
+                        </div>
+                    </button>
+                    <button type="button" class="event-color-preset border-2 border-dark-200 rounded-lg p-2 hover:border-primary-400 transition-colors" data-primary="#E9D5FF" data-secondary="#FFFFFF">
+                        <div class="flex gap-1">
+                            <div class="w-8 h-8 rounded" style="background-color: #E9D5FF;"></div>
+                            <div class="w-8 h-8 rounded border border-gray-200" style="background-color: #FFFFFF;"></div>
+                        </div>
+                    </button>
+                    <button type="button" class="event-color-preset border-2 border-dark-200 rounded-lg p-2 hover:border-primary-400 transition-colors" data-primary="#FFD1DC" data-secondary="#B5E5CF">
+                        <div class="flex gap-1">
+                            <div class="w-8 h-8 rounded" style="background-color: #FFD1DC;"></div>
+                            <div class="w-8 h-8 rounded" style="background-color: #B5E5CF;"></div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Color Inputs -->
+            <div class="mb-4">
+                <!-- Labels Row -->
+                <div class="grid grid-cols-2 gap-4 mb-2">
+                    <label for="event_primary_color" class="text-sm font-bold text-dark-500">Primary color</label>
+                    <label for="event_secondary_color" class="text-sm font-bold text-dark-500">Secondary color</label>
+                </div>
+                
+                <!-- Inputs Row -->
+                <div class="grid grid-cols-2 gap-4 relative">
+                    <!-- Primary Color Input -->
+                    <div class="flex items-center gap-3 relative">
+                        <input type="text" id="event_primary_color_hex" name="event_primary_color" value="#6594FF" class="input flex-1" placeholder="#6594FF">
+                        <div class="relative">
+                            <input type="color" id="event_primary_color_picker" value="#6594FF" class="w-10 h-10 rounded border border-gray-200 cursor-pointer">
+                            <button type="button" id="event-swap-colors" class="absolute -top-6 left-1/2 transform -translate-x-1/2 text-dark-300 hover:text-dark-500 transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Secondary Color Input -->
+                    <div class="flex items-center gap-3">
+                        <input type="text" id="event_secondary_color_hex" name="event_secondary_color" value="#FFFFFF" class="input flex-1" placeholder="#FFFFFF">
+                        <input type="color" id="event_secondary_color_picker" value="#FFFFFF" class="w-10 h-10 rounded border border-gray-200 cursor-pointer">
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label for="event_font_family" class="text-sm font-bold text-dark-500 mb-2 block">Font family</label>
+                <select id="event_font_family" name="event_font_family" class="input w-full">
+                    <option value="Maven Pro">Maven Pro</option>
+                    <option value="Inter">Inter</option>
+                    <option value="Roboto">Roboto</option>
+                    <option value="Open Sans">Open Sans</option>
+                    <option value="Lato">Lato</option>
+                    <option value="Montserrat">Montserrat</option>
+                    <option value="Poppins">Poppins</option>
+                    <option value="Raleway">Raleway</option>
+                    <option value="Nunito">Nunito</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
     <div>
         <label for="event_image" class="label">Event Image (Optional)</label>
         <div id="event-upload-area" class="border-2 border-dashed border-dark-200 rounded-lg p-6 text-center hover:border-primary-400 transition-colors">
@@ -91,7 +191,10 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
             <label for="dress_code_color" class="label">Dress Code Color</label>
-            <input type="text" id="dress_code_color" name="dress_code_color" class="input" placeholder="e.g., Black Tie, Casual">
+            <div class="flex items-center gap-3">
+                <input type="color" id="dress_code_color" name="dress_code_color" class="h-10 w-20 rounded border border-gray-300 cursor-pointer" value="#000000">
+                <input type="text" id="dress_code_color_hex" class="input flex-1" placeholder="#000000" value="#000000">
+            </div>
         </div>
 
         <div>
@@ -148,4 +251,151 @@ function removeImage(inputId, previewId, uploadAreaId) {
         uploadArea.classList.remove('hidden');
     }
 }
+
+// Toggle design section
+function toggleEventSection(sectionId) {
+    const content = document.getElementById(sectionId + '-content');
+    const icon = document.getElementById(sectionId + '-icon');
+    if (content && icon) {
+        const isHidden = content.classList.contains('hidden');
+        if (isHidden) {
+            content.classList.remove('hidden');
+            icon.style.transform = 'rotate(180deg)';
+        } else {
+            content.classList.add('hidden');
+            icon.style.transform = 'rotate(0deg)';
+        }
+    }
+}
+
+// Sync color picker with hex input
+document.addEventListener('DOMContentLoaded', function() {
+    // Dress code color picker sync
+    const colorPicker = document.getElementById('dress_code_color');
+    const hexInput = document.getElementById('dress_code_color_hex');
+    
+    if (colorPicker && hexInput) {
+        // Update hex input when color picker changes
+        colorPicker.addEventListener('input', function(e) {
+            hexInput.value = e.target.value.toUpperCase();
+            if (typeof updateStep1Preview === 'function' && currentStep === 1) {
+                updateStep1Preview();
+            }
+        });
+        
+        // Update color picker when hex input changes (if valid hex)
+        hexInput.addEventListener('input', function(e) {
+            const value = e.target.value.trim();
+            if (/^#[0-9A-Fa-f]{6}$/.test(value)) {
+                colorPicker.value = value.toUpperCase();
+                if (typeof updateStep1Preview === 'function' && currentStep === 1) {
+                    updateStep1Preview();
+                }
+            }
+        });
+        
+        // Initialize hex input with color picker value
+        hexInput.value = colorPicker.value.toUpperCase();
+    }
+
+    // Event color presets
+    document.querySelectorAll('.event-color-preset').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const primary = this.dataset.primary;
+            const secondary = this.dataset.secondary;
+            
+            const primaryHex = document.getElementById('event_primary_color_hex');
+            const primaryPicker = document.getElementById('event_primary_color_picker');
+            const secondaryHex = document.getElementById('event_secondary_color_hex');
+            const secondaryPicker = document.getElementById('event_secondary_color_picker');
+            
+            if (primaryHex) primaryHex.value = primary;
+            if (primaryPicker) primaryPicker.value = primary;
+            if (secondaryHex) secondaryHex.value = secondary;
+            if (secondaryPicker) secondaryPicker.value = secondary;
+            
+            // Update active state
+            document.querySelectorAll('.event-color-preset').forEach(b => {
+                b.classList.remove('border-primary-500', 'border-primary-600');
+                b.classList.add('border-dark-200');
+            });
+            this.classList.remove('border-dark-200');
+            this.classList.add('border-primary-500', 'border-primary-600');
+            
+            if (typeof updateStep1Preview === 'function' && currentStep === 1) {
+                updateStep1Preview();
+            }
+        });
+    });
+
+    // Event color picker sync
+    const eventPrimaryPicker = document.getElementById('event_primary_color_picker');
+    const eventPrimaryHex = document.getElementById('event_primary_color_hex');
+    const eventSecondaryPicker = document.getElementById('event_secondary_color_picker');
+    const eventSecondaryHex = document.getElementById('event_secondary_color_hex');
+
+    if (eventPrimaryPicker && eventPrimaryHex) {
+        eventPrimaryPicker.addEventListener('input', function() {
+            eventPrimaryHex.value = this.value.toUpperCase();
+            if (typeof updateStep1Preview === 'function' && currentStep === 1) {
+                updateStep1Preview();
+            }
+        });
+        eventPrimaryHex.addEventListener('input', function() {
+            const value = this.value.trim();
+            if (/^#[0-9A-Fa-f]{6}$/.test(value)) {
+                eventPrimaryPicker.value = value.toUpperCase();
+                if (typeof updateStep1Preview === 'function' && currentStep === 1) {
+                    updateStep1Preview();
+                }
+            }
+        });
+    }
+
+    if (eventSecondaryPicker && eventSecondaryHex) {
+        eventSecondaryPicker.addEventListener('input', function() {
+            eventSecondaryHex.value = this.value.toUpperCase();
+            if (typeof updateStep1Preview === 'function' && currentStep === 1) {
+                updateStep1Preview();
+            }
+        });
+        eventSecondaryHex.addEventListener('input', function() {
+            const value = this.value.trim();
+            if (/^#[0-9A-Fa-f]{6}$/.test(value)) {
+                eventSecondaryPicker.value = value.toUpperCase();
+                if (typeof updateStep1Preview === 'function' && currentStep === 1) {
+                    updateStep1Preview();
+                }
+            }
+        });
+    }
+
+    // Swap colors button
+    const swapColorsBtn = document.getElementById('event-swap-colors');
+    if (swapColorsBtn && eventPrimaryHex && eventSecondaryHex && eventPrimaryPicker && eventSecondaryPicker) {
+        swapColorsBtn.addEventListener('click', function() {
+            const tempPrimary = eventPrimaryHex.value;
+            const tempSecondary = eventSecondaryHex.value;
+            
+            eventPrimaryHex.value = tempSecondary;
+            eventPrimaryPicker.value = tempSecondary;
+            eventSecondaryHex.value = tempPrimary;
+            eventSecondaryPicker.value = tempPrimary;
+            
+            if (typeof updateStep1Preview === 'function' && currentStep === 1) {
+                updateStep1Preview();
+            }
+        });
+    }
+
+    // Font family handler
+    const eventFontFamily = document.getElementById('event_font_family');
+    if (eventFontFamily) {
+        eventFontFamily.addEventListener('change', function() {
+            if (typeof updateStep1Preview === 'function' && currentStep === 1) {
+                updateStep1Preview();
+            }
+        });
+    }
+});
 </script>
