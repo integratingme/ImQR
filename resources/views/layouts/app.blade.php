@@ -25,9 +25,6 @@
                     <a href="{{ route('qr-codes.index') }}" class="text-dark-500 hover:text-primary-600 font-medium transition-colors">
                         Create QR
                     </a>
-                    <a href="{{ route('qr-codes.history') }}" class="text-dark-500 hover:text-primary-600 font-medium transition-colors">
-                        History
-                    </a>
 
                     @auth
                         <a href="{{ route('dashboard') }}" class="text-dark-500 hover:text-primary-600 font-medium transition-colors">
@@ -71,6 +68,9 @@
                             </div>
                         </div>
                     @else
+                        <a href="{{ route('qr-codes.history') }}" class="text-dark-500 hover:text-primary-600 font-medium transition-colors">
+                            History
+                        </a>
                         {{-- Guest: show Login / Register --}}
                         <div class="flex items-center gap-2">
                             <span class="px-2 py-0.5 rounded bg-gray-100 text-gray-500 font-medium text-xs">Guest</span>
@@ -104,7 +104,6 @@
         <div id="mobile-menu" class="hidden md:hidden border-t border-gray-100 bg-white">
             <div class="px-4 py-3 space-y-2">
                 <a href="{{ route('qr-codes.index') }}" class="block py-2 text-dark-500 hover:text-primary-600 font-medium transition-colors">Create QR</a>
-                <a href="{{ route('qr-codes.history') }}" class="block py-2 text-dark-500 hover:text-primary-600 font-medium transition-colors">History</a>
                 @auth
                     <a href="{{ route('dashboard') }}" class="block py-2 text-dark-500 hover:text-primary-600 font-medium transition-colors">Dashboard</a>
                     <div class="pt-2 border-t border-gray-100">
@@ -119,6 +118,7 @@
                         <button onclick="handleLogout()" class="block w-full text-left py-2 text-red-600 font-medium">Sign Out</button>
                     </div>
                 @else
+                    <a href="{{ route('qr-codes.history') }}" class="block py-2 text-dark-500 hover:text-primary-600 font-medium transition-colors">History</a>
                     <div class="pt-2 border-t border-gray-100 flex gap-2">
                         <a href="{{ route('login') }}" class="flex-1 text-center py-2 border border-gray-300 text-dark-500 font-medium rounded-lg hover:bg-gray-50 transition-colors">Login</a>
                         <a href="{{ route('register') }}" class="flex-1 text-center py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition-colors">Register</a>

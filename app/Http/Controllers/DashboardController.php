@@ -3,29 +3,61 @@
 namespace App\Http\Controllers;
 
 use App\Models\QrCode;
+use App\Services\QrCodeService;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
+    protected QrCodeService $qrCodeService;
+
+    public function __construct(QrCodeService $qrCodeService)
+    {
+        $this->qrCodeService = $qrCodeService;
+    }
+
     /**
-     * Show the user dashboard.
+     * Show the user dashboard with full QR code history.
      */
     public function index(Request $request)
     {
         $user = $request->user();
 
-        // Get user's QR codes, most recent first
-        $qrCodes = QrCode::where('user_id', $user->id)
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $historyTypes = ['url', 'email', 'text', 'coupon', 'pdf', 'app', 'phone', 'menu', 'location', 'wifi', 'event', 'business_card', 'personal_vcard'];
+        $typeFilter = $request->get('type');
 
-        // Statistics
+        // Statistics (from all user codes, unfiltered)
+        $allCodes = QrCode::where('user_id', $user->id)->get();
         $stats = [
-            'total_qr_codes' => $qrCodes->count(),
-            'total_scans' => $qrCodes->sum('scan_count'),
-            'dynamic_codes' => $qrCodes->where('is_dynamic', true)->count(),
+            'total_qr_codes' => $allCodes->count(),
+            'total_scans' => $allCodes->sum('scan_count'),
+            'dynamic_codes' => $allCodes->where('is_dynamic', true)->count(),
         ];
 
-        return view('dashboard', compact('user', 'qrCodes', 'stats'));
+        // Filtered & paginated QR codes for the grid
+        $query = QrCode::where('user_id', $user->id)
+            ->whereIn('type', $historyTypes)
+            ->latest();
+
+        if ($typeFilter && in_array($typeFilter, $historyTypes)) {
+            $query->where('type', $typeFilter);
+        }
+
+        $qrCodes = $query->paginate(12)->withQueryString();
+
+        // Frame configuration for QR preview rendering
+        $frameConfig = [];
+        foreach (['standard-border', 'thick-border', 'speech-bubble', 'menu-qr', 'location', 'wifi', 'chat', 'coupon', 'review-us'] as $frameId) {
+            $frameConfig[$frameId] = $this->qrCodeService->getFrameConfig($frameId);
+        }
+
+        return view('dashboard', [
+            'user' => $user,
+            'qrCodes' => $qrCodes,
+            'stats' => $stats,
+            'historyTypes' => $historyTypes,
+            'currentType' => $typeFilter,
+            'frameConfig' => $frameConfig,
+        ]);
     }
 }
+

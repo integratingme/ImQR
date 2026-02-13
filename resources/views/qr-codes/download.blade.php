@@ -66,7 +66,7 @@
         <div class="spinner"></div>
         <h1>Preparing your QR code...</h1>
         <p>Your download will start automatically.</p>
-        <a href="{{ route('qr-codes.history') }}" class="back-link">Back to History</a>
+        <a href="{{ auth()->check() ? route('dashboard') : route('qr-codes.history') }}" class="back-link">Back to {{ auth()->check() ? 'Dashboard' : 'History' }}</a>
     </div>
     
     <div id="qr-container"></div>
