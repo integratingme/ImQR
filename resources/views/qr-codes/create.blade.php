@@ -784,6 +784,7 @@ let currentStep = 1;
 let qrCodeId = @json(isset($qrCode) ? $qrCode->id : null);
 let lastSubmittedFormFingerprint = null;
 let qrStylingInstance = null;
+const isGuest = {{ auth()->check() ? 'false' : 'true' }};
 
 // QR code data for editing
 @if(isset($qrCode))
@@ -3745,7 +3746,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const logoFilename = document.getElementById('qr_logo_filename');
     const logoRemoveBtn = document.getElementById('qr_logo_remove_btn');
     const logoLimitWarning = document.getElementById('logo-limit-warning');
-    const isGuest = {{ auth()->check() ? 'false' : 'true' }};
+    // isGuest is now defined globally at the top of the script
     const defaultLogoUrl = '{{ asset('logo-integrating-me.webp') }}';
     let canAddLogo = true; // Will be checked on page load
 
@@ -4478,6 +4479,13 @@ async function nextStep(step) {
 
         if (nothingChanged) {
             // No API call: just show Step 3 with existing QR
+            // But still need to generate the QR preview if it doesn't exist
+            const qrPreviewContainer = document.getElementById('qr-preview');
+            if (!qrPreviewContainer || !qrPreviewContainer.querySelector('canvas')) {
+                // QR preview doesn't exist, regenerate it
+                const menuPageUrl = window.step3MenuPageUrl || null;
+                await generateStep3CustomizedQR(menuPageUrl);
+            }
         } else {
             if (nextBtn && nextText && nextLoading) {
                 nextBtn.disabled = true;
@@ -4516,6 +4524,23 @@ async function nextStep(step) {
     if (step === 1) {
         setTimeout(() => {
             updateStep1Preview();
+        }, 100);
+    } else if (step === 3) {
+        // Ensure QR preview is generated for step 3
+        setTimeout(async () => {
+            const qrPreviewContainer = document.getElementById('qr-preview');
+            if (qrPreviewContainer && (!qrPreviewContainer.querySelector('canvas') && !qrPreviewContainer.querySelector('.frame-wrapper'))) {
+                // QR preview doesn't exist, regenerate it
+                const menuPageUrl = window.step3MenuPageUrl || null;
+                await generateStep3CustomizedQR(menuPageUrl);
+            }
+            // Ensure download buttons are enabled if QR code exists
+            if (qrCodeId) {
+                const downloadPngBtn = document.getElementById('download-png-btn');
+                const downloadSvgBtn = document.getElementById('download-svg-btn');
+                if (downloadPngBtn) downloadPngBtn.disabled = false;
+                if (downloadSvgBtn) downloadSvgBtn.disabled = false;
+            }
         }, 100);
     }
     
@@ -4728,6 +4753,7 @@ async function generateQRCode() {
         if (data.success) {
             qrCodeId = data.qr_code_id;
             window.step3MenuPageUrl = data.menu_page_url || null;
+            console.log('QR code saved successfully with ID:', qrCodeId);
             
             // Hide loading
             document.getElementById('qr-loading').classList.add('hidden');
@@ -4835,6 +4861,7 @@ async function updateQRCode(id) {
         }
         if (data.success) {
             window.step3MenuPageUrl = data.menu_page_url || null;
+            console.log('QR code updated successfully with ID:', qrCodeId);
             if (qrLoading) qrLoading.classList.add('hidden');
             await generateStep3CustomizedQR(data.menu_page_url || null);
             if (downloadPngBtn) downloadPngBtn.disabled = false;
@@ -4855,138 +4882,168 @@ async function updateQRCode(id) {
 // Generate customized QR code for Step 3 with same styling as Step 2
 // menuPageUrl: for type=menu, the actual URL to the menu page (/menu/{id}) from the server so the QR never points to /menu/preview
 async function generateStep3CustomizedQR(menuPageUrl) {
-    const qrPreviewContainer = document.getElementById('qr-preview');
-    if (!qrPreviewContainer) return;
-    
-    // Get customization parameters from Step 2
-    const type = document.querySelector('input[name="type"]').value;
-    const primaryColor = document.getElementById('primary_color')?.value || '#000000';
-    const secondaryColor = document.getElementById('secondary_color')?.value || '#FFFFFF';
-    const pattern = document.getElementById('selected_pattern')?.value || 'square';
-    const cornerStyle = document.getElementById('selected_corner')?.value || 'square';
-    const cornerDotStyle = document.getElementById('selected_corner_dot')?.value || 'square';
-    const logoDataUrl = document.getElementById('qr_logo_data_url')?.value || '';
-    
-    // Build QR content; for menu type always use real menu page URL (/menu/{id}), never placeholder /menu/preview
-    let qrContent;
-    if (type === 'menu') {
-        qrContent = menuPageUrl || (qrCodeId ? (window.location.origin + '/menu/' + qrCodeId) : buildQrContentFromForm());
-    } else {
-        qrContent = buildQrContentFromForm();
-    }
-    
-    if (!window.QRCodeStyling) {
-        console.warn('QR Code Styling library is not loaded.');
-        qrPreviewContainer.innerHTML = '<p class="text-red-500">Failed to load QR code styling library</p>';
-        return;
-    }
-    
-    // Map UI values to qr-code-styling types
-    const dotsTypeMap = {
-        square: 'square',
-        circle: 'dots',
-        rounded: 'rounded',
-    };
-    
-    const cornersSquareTypeMap = {
-        square: 'square',
-        rounded: 'rounded',
-        'extra-rounded': 'extra-rounded',
-    };
-    
-    const cornersDotTypeMap = {
-        square: 'square',
-        circle: 'dot',
-        rounded: 'rounded',
-    };
-    
-    const dotsType = dotsTypeMap[pattern] || 'square';
-    const cornersSquareType = cornersSquareTypeMap[cornerStyle] || 'square';
-    const cornersDotType = cornersDotTypeMap[cornerDotStyle] || 'dot';
-    
-    const frameId = document.getElementById('selected_frame')?.value || 'none';
-    const STEP3_HOLE_SIZE = 300;
-    const STEP2_QR_IN_FRAME = 220;
-    const STEP2_HOLE_PX = 260;
-    const step3QrDisplaySize = (frameId && frameId !== 'none')
-        ? Math.round(STEP2_QR_IN_FRAME * STEP3_HOLE_SIZE / STEP2_HOLE_PX)
-        : STEP3_HOLE_SIZE;
-    
-    const options = {
-        width: step3QrDisplaySize,
-        height: step3QrDisplaySize,
-        type: 'canvas',
-        data: qrContent,
-        margin: 0,
-        qrOptions: {
-            errorCorrectionLevel: 'H',
-        },
-        dotsOptions: {
-            color: primaryColor,
-            type: dotsType,
-        },
-        backgroundOptions: {
-            color: secondaryColor,
-        },
-        cornersSquareOptions: {
-            type: cornersSquareType,
-            color: primaryColor,
-        },
-        cornersDotOptions: {
-            type: cornersDotType,
-            color: primaryColor,
-        },
-        image: logoDataUrl || undefined,
-        imageOptions: {
-            hideBackgroundDots: true,
-            imageSize: 0.4,
-            margin: 4,
-            crossOrigin: 'anonymous',
-        },
-    };
-
-    let step3AppendTarget = qrPreviewContainer;
-
-    if (frameId && frameId !== 'none' && FRAME_CONFIG[frameId]) {
-        const cfg = FRAME_CONFIG[frameId];
-        if (cfg.url && cfg.qrLeft !== undefined) {
-            const wrapper = document.createElement('div');
-            wrapper.className = 'frame-wrapper relative mx-auto inline-block';
-            const holePx = STEP3_HOLE_SIZE;
-            const totalW = holePx / (cfg.qrWidth / 100);
-            const totalH = totalW * (cfg.frameHeight / cfg.frameWidth);
-            wrapper.style.width = totalW + 'px';
-            wrapper.style.height = totalH + 'px';
-            const img = document.createElement('img');
-            if (frameId === 'review-us') {
-                img.src = await getReviewUsFrameUrl();
-            } else {
-                img.src = cfg.themable
-                    ? await getThemedFrameUrl(cfg.url, primaryColor, secondaryColor)
-                    : cfg.url;
-            }
-            img.alt = 'Frame';
-            img.className = 'frame-img w-full h-full object-contain block';
-            const qrInFrame = document.createElement('div');
-            qrInFrame.className = 'qr-in-frame absolute flex items-center justify-center';
-            qrInFrame.style.left = cfg.qrLeft + '%';
-            qrInFrame.style.top = cfg.qrTop + '%';
-            qrInFrame.style.width = cfg.qrWidth + '%';
-            qrInFrame.style.height = cfg.qrHeight + '%';
-            wrapper.appendChild(img);
-            wrapper.appendChild(qrInFrame);
-            qrPreviewContainer.innerHTML = '';
-            qrPreviewContainer.appendChild(wrapper);
-            step3AppendTarget = qrInFrame;
+    try {
+        const qrPreviewContainer = document.getElementById('qr-preview');
+        if (!qrPreviewContainer) {
+            console.error('QR preview container not found');
+            return;
         }
-    } else {
-        qrPreviewContainer.innerHTML = '';
+        
+        // Get customization parameters from Step 2
+        const type = document.querySelector('input[name="type"]').value;
+        const primaryColor = document.getElementById('primary_color')?.value || '#000000';
+        const secondaryColor = document.getElementById('secondary_color')?.value || '#FFFFFF';
+        const pattern = document.getElementById('selected_pattern')?.value || 'square';
+        const cornerStyle = document.getElementById('selected_corner')?.value || 'square';
+        const cornerDotStyle = document.getElementById('selected_corner_dot')?.value || 'square';
+        const logoDataUrl = document.getElementById('qr_logo_data_url')?.value || '';
+        
+        // Build QR content; for menu type always use real menu page URL (/menu/{id}), never placeholder /menu/preview
+        let qrContent;
+        if (type === 'menu') {
+            qrContent = menuPageUrl || (qrCodeId ? (window.location.origin + '/menu/' + qrCodeId) : buildQrContentFromForm());
+        } else {
+            qrContent = buildQrContentFromForm();
+        }
+        
+        if (!qrContent) {
+            console.error('QR content is empty');
+            qrPreviewContainer.innerHTML = '<p class="text-red-500">Failed to generate QR code: No content provided</p>';
+            return;
+        }
+        
+        if (!window.QRCodeStyling) {
+            console.warn('QR Code Styling library is not loaded.');
+            qrPreviewContainer.innerHTML = '<p class="text-red-500">Failed to load QR code styling library</p>';
+            return;
+        }
+        
+        // Map UI values to qr-code-styling types
+        const dotsTypeMap = {
+            square: 'square',
+            circle: 'dots',
+            rounded: 'rounded',
+        };
+        
+        const cornersSquareTypeMap = {
+            square: 'square',
+            rounded: 'rounded',
+            'extra-rounded': 'extra-rounded',
+        };
+        
+        const cornersDotTypeMap = {
+            square: 'square',
+            circle: 'dot',
+            rounded: 'rounded',
+        };
+        
+        const dotsType = dotsTypeMap[pattern] || 'square';
+        const cornersSquareType = cornersSquareTypeMap[cornerStyle] || 'square';
+        const cornersDotType = cornersDotTypeMap[cornerDotStyle] || 'dot';
+        
+        const frameId = document.getElementById('selected_frame')?.value || 'none';
+        const STEP3_HOLE_SIZE = 300;
+        const STEP2_QR_IN_FRAME = 220;
+        const STEP2_HOLE_PX = 260;
+        const step3QrDisplaySize = (frameId && frameId !== 'none')
+            ? Math.round(STEP2_QR_IN_FRAME * STEP3_HOLE_SIZE / STEP2_HOLE_PX)
+            : STEP3_HOLE_SIZE;
+        
+        const options = {
+            width: step3QrDisplaySize,
+            height: step3QrDisplaySize,
+            type: 'canvas',
+            data: qrContent,
+            margin: 0,
+            qrOptions: {
+                errorCorrectionLevel: 'H',
+            },
+            dotsOptions: {
+                color: primaryColor,
+                type: dotsType,
+            },
+            backgroundOptions: {
+                color: secondaryColor,
+            },
+            cornersSquareOptions: {
+                type: cornersSquareType,
+                color: primaryColor,
+            },
+            cornersDotOptions: {
+                type: cornersDotType,
+                color: primaryColor,
+            },
+            image: logoDataUrl || undefined,
+            imageOptions: {
+                hideBackgroundDots: true,
+                imageSize: 0.4,
+                margin: 4,
+                crossOrigin: 'anonymous',
+            },
+        };
+
+        let step3AppendTarget = qrPreviewContainer;
+
+        if (frameId && frameId !== 'none' && FRAME_CONFIG[frameId]) {
+            const cfg = FRAME_CONFIG[frameId];
+            if (cfg.url && cfg.qrLeft !== undefined) {
+                try {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'frame-wrapper relative mx-auto inline-block';
+                    const holePx = STEP3_HOLE_SIZE;
+                    const totalW = holePx / (cfg.qrWidth / 100);
+                    const totalH = totalW * (cfg.frameHeight / cfg.frameWidth);
+                    wrapper.style.width = totalW + 'px';
+                    wrapper.style.height = totalH + 'px';
+                    const img = document.createElement('img');
+                    if (frameId === 'review-us') {
+                        img.src = await getReviewUsFrameUrl();
+                    } else {
+                        img.src = cfg.themable
+                            ? await getThemedFrameUrl(cfg.url, primaryColor, secondaryColor)
+                            : cfg.url;
+                    }
+                    img.alt = 'Frame';
+                    img.className = 'frame-img w-full h-full object-contain block';
+                    const qrInFrame = document.createElement('div');
+                    qrInFrame.className = 'qr-in-frame absolute flex items-center justify-center';
+                    qrInFrame.style.left = cfg.qrLeft + '%';
+                    qrInFrame.style.top = cfg.qrTop + '%';
+                    qrInFrame.style.width = cfg.qrWidth + '%';
+                    qrInFrame.style.height = cfg.qrHeight + '%';
+                    wrapper.appendChild(img);
+                    wrapper.appendChild(qrInFrame);
+                    qrPreviewContainer.innerHTML = '';
+                    qrPreviewContainer.appendChild(wrapper);
+                    step3AppendTarget = qrInFrame;
+                } catch (frameError) {
+                    console.error('Error creating frame:', frameError);
+                    // Fallback: create QR without frame if frame fails
+                    qrPreviewContainer.innerHTML = '';
+                    step3AppendTarget = qrPreviewContainer;
+                }
+            }
+        } else {
+            qrPreviewContainer.innerHTML = '';
+        }
+
+        const qrCodeStyling = new window.QRCodeStyling(options);
+        qrCodeStyling.append(step3AppendTarget);
+
+        window.step3QrInstance = qrCodeStyling;
+        console.log('Step 3 QR instance created successfully');
+    } catch (error) {
+        console.error('Error generating Step 3 QR code:', error);
+        const qrPreviewContainer = document.getElementById('qr-preview');
+        if (qrPreviewContainer) {
+            qrPreviewContainer.innerHTML = '<p class="text-red-500">Failed to generate QR code. Please try again.</p>';
+        }
+        // Ensure download buttons are enabled even on error
+        const downloadPngBtn = document.getElementById('download-png-btn');
+        const downloadSvgBtn = document.getElementById('download-svg-btn');
+        if (downloadPngBtn) downloadPngBtn.disabled = false;
+        if (downloadSvgBtn) downloadSvgBtn.disabled = false;
     }
-
-    const qrCodeStyling = new window.QRCodeStyling(options);
-    qrCodeStyling.append(step3AppendTarget);
-
-    window.step3QrInstance = qrCodeStyling;
 }
 
 function showErrorInStep2(message) {
@@ -5074,65 +5131,107 @@ async function downloadQR(format) {
         return;
     }
 
-    const frameId = document.getElementById('selected_frame')?.value || 'none';
-    const hasFrame = frameId && frameId !== 'none' && FRAME_CONFIG[frameId] && FRAME_CONFIG[frameId].qrLeft !== undefined;
+    try {
+        const frameId = document.getElementById('selected_frame')?.value || 'none';
+        const hasFrame = frameId && frameId !== 'none' && FRAME_CONFIG[frameId] && FRAME_CONFIG[frameId].qrLeft !== undefined;
 
-    // When a frame is selected, download composite (frame + QR) as PNG
-    if (hasFrame && window.step3QrInstance) {
-        const cfg = FRAME_CONFIG[frameId];
-        const primaryColor = document.getElementById('primary_color')?.value || '#000000';
-        const secondaryColor = document.getElementById('secondary_color')?.value || '#FFFFFF';
-        const frameUrl = frameId === 'review-us'
-            ? await getReviewUsFrameUrl()
-            : (cfg.themable
-                ? await getThemedFrameUrl(cfg.url, primaryColor, secondaryColor)
-                : cfg.url);
-
-        const holePx = 300;
-        const qrSize = Math.round(220 * holePx / 260);
-        const totalW = Math.round(holePx / (cfg.qrWidth / 100));
-        const totalH = Math.round(totalW * (cfg.frameHeight / cfg.frameWidth));
-        const holeLeft = totalW * (cfg.qrLeft / 100);
-        const holeTop = totalH * (cfg.qrTop / 100);
-        const holeWidth = totalW * (cfg.qrWidth / 100);
-        const holeHeight = totalH * (cfg.qrHeight / 100);
-        const qrX = holeLeft + (holeWidth - qrSize) / 2;
-        const qrY = holeTop + (holeHeight - qrSize) / 2;
-
-        const canvas = document.createElement('canvas');
-        canvas.width = totalW;
-        canvas.height = totalH;
-        const ctx = canvas.getContext('2d');
-
-        const frameImg = new Image();
-        frameImg.crossOrigin = 'anonymous';
-        frameImg.onload = function() {
-            ctx.drawImage(frameImg, 0, 0, totalW, totalH);
-            const qrCanvas = document.querySelector('#qr-preview canvas');
-            if (qrCanvas) {
-                ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+        // When a frame is selected, download composite (frame + QR) as PNG
+        if (hasFrame && window.step3QrInstance) {
+            const cfg = FRAME_CONFIG[frameId];
+            const primaryColor = document.getElementById('primary_color')?.value || '#000000';
+            const secondaryColor = document.getElementById('secondary_color')?.value || '#FFFFFF';
+            let frameUrl;
+            try {
+                frameUrl = frameId === 'review-us'
+                    ? await getReviewUsFrameUrl()
+                    : (cfg.themable
+                        ? await getThemedFrameUrl(cfg.url, primaryColor, secondaryColor)
+                        : cfg.url);
+            } catch (frameUrlError) {
+                console.error('Error getting frame URL:', frameUrlError);
+                // Fallback to QR only download
+                if (window.step3QrInstance) {
+                    window.step3QrInstance.download({ name: `qr-code-${qrCodeId}`, extension: 'png' });
+                } else {
+                    window.location.href = `/qr-codes/${qrCodeId}/download/png`;
+                }
+                return;
             }
-            const link = document.createElement('a');
-            link.download = `qr-code-${qrCodeId}.png`;
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-        };
-        frameImg.onerror = function() {
-            window.step3QrInstance.download({ name: `qr-code-${qrCodeId}`, extension: 'png' });
-        };
-        frameImg.src = frameUrl;
-        return;
-    }
 
-    // No frame: download only QR
-    if (window.step3QrInstance) {
-        const fileName = `qr-code-${qrCodeId}`;
-        if (format === 'png') {
-            window.step3QrInstance.download({ name: fileName, extension: 'png' });
-        } else if (format === 'svg') {
-            window.step3QrInstance.download({ name: fileName, extension: 'svg' });
+            const holePx = 300;
+            const qrSize = Math.round(220 * holePx / 260);
+            const totalW = Math.round(holePx / (cfg.qrWidth / 100));
+            const totalH = Math.round(totalW * (cfg.frameHeight / cfg.frameWidth));
+            const holeLeft = totalW * (cfg.qrLeft / 100);
+            const holeTop = totalH * (cfg.qrTop / 100);
+            const holeWidth = totalW * (cfg.qrWidth / 100);
+            const holeHeight = totalH * (cfg.qrHeight / 100);
+            const qrX = holeLeft + (holeWidth - qrSize) / 2;
+            const qrY = holeTop + (holeHeight - qrSize) / 2;
+
+            const canvas = document.createElement('canvas');
+            canvas.width = totalW;
+            canvas.height = totalH;
+            const ctx = canvas.getContext('2d');
+
+            const frameImg = new Image();
+            frameImg.crossOrigin = 'anonymous';
+            frameImg.onload = function() {
+                try {
+                    ctx.drawImage(frameImg, 0, 0, totalW, totalH);
+                    const qrCanvas = document.querySelector('#qr-preview canvas');
+                    if (qrCanvas) {
+                        ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+                    }
+                    const link = document.createElement('a');
+                    link.download = `qr-code-${qrCodeId}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                } catch (drawError) {
+                    console.error('Error drawing frame composite:', drawError);
+                    // Fallback to QR only download
+                    if (window.step3QrInstance) {
+                        window.step3QrInstance.download({ name: `qr-code-${qrCodeId}`, extension: 'png' });
+                    } else {
+                        window.location.href = `/qr-codes/${qrCodeId}/download/png`;
+                    }
+                }
+            };
+            frameImg.onerror = function() {
+                console.error('Error loading frame image');
+                // Fallback to QR only download
+                if (window.step3QrInstance) {
+                    window.step3QrInstance.download({ name: `qr-code-${qrCodeId}`, extension: 'png' });
+                } else {
+                    window.location.href = `/qr-codes/${qrCodeId}/download/png`;
+                }
+            };
+            frameImg.src = frameUrl;
+            return;
         }
-    } else {
+
+        // No frame: download only QR
+        if (window.step3QrInstance) {
+            const fileName = `qr-code-${qrCodeId}`;
+            try {
+                if (format === 'png') {
+                    window.step3QrInstance.download({ name: fileName, extension: 'png' });
+                } else if (format === 'svg') {
+                    window.step3QrInstance.download({ name: fileName, extension: 'svg' });
+                }
+            } catch (downloadError) {
+                console.error('Error downloading QR code:', downloadError);
+                // Fallback to server-side download
+                window.location.href = `/qr-codes/${qrCodeId}/download/${format}`;
+            }
+        } else {
+            console.warn('Step 3 QR instance not found, using server-side download');
+            window.location.href = `/qr-codes/${qrCodeId}/download/${format}`;
+        }
+    } catch (error) {
+        console.error('Error in downloadQR:', error);
+        alert('Failed to download QR code. Please try again or use the server-side download.');
+        // Fallback to server-side download
         window.location.href = `/qr-codes/${qrCodeId}/download/${format}`;
     }
 }
