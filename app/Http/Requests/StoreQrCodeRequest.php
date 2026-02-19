@@ -130,6 +130,8 @@ class StoreQrCodeRequest extends FormRequest
                 'app_image' => 'nullable|image|mimes:jpeg,png,jpg|mimetypes:image/jpeg,image/png|image_signature|max:5120',
                 'app_name' => 'nullable|string|max:255',
                 'app_description' => 'nullable|string|max:1000',
+                'app_rating' => 'nullable|numeric|min:0|max:5',
+                'app_review_count' => 'nullable|string|max:50',
                 'app_primary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
                 'app_secondary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
                 'app_button_text' => 'nullable|string|max:255',

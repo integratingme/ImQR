@@ -89,18 +89,6 @@
                 frameWidth: 400, frameHeight: 500,
                 themable: true
             },
-            'thick-border': {
-                url: '{{ asset("frames/thick-border.svg") }}',
-                qrLeft: 5, qrTop: 4, qrWidth: 90, qrHeight: 72,
-                frameWidth: 400, frameHeight: 500,
-                themable: true
-            },
-            'speech-bubble': {
-                url: '{{ asset("frames/speech-bubble.svg") }}',
-                qrLeft: 5, qrTop: 3.85, qrWidth: 90, qrHeight: 69.2,
-                frameWidth: 400, frameHeight: 520,
-                themable: true
-            },
             'menu-qr': {
                 url: '{{ asset("frames/menu-qr.svg") }}',
                 qrLeft: 5, qrTop: 4, qrWidth: 90, qrHeight: 72,

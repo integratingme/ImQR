@@ -917,7 +917,7 @@ class QrCodeController extends Controller
         
         // Pass frame configuration to view
         $frameConfig = [];
-        foreach (['standard-border', 'thick-border', 'speech-bubble', 'menu-qr', 'location', 'wifi', 'chat', 'coupon', 'review-us'] as $frameId) {
+        foreach (['standard-border', 'menu-qr', 'location', 'wifi', 'chat', 'coupon', 'review-us'] as $frameId) {
             $frameConfig[$frameId] = $this->qrCodeService->getFrameConfig($frameId);
         }
 
@@ -1061,6 +1061,9 @@ class QrCodeController extends Controller
         $appTextFontSize = max(12, min(24, $appTextFontSize));
         $appIconSize = (int) ($data['app_icon_size'] ?? 96);
         $appIconSize = max(64, min(128, $appIconSize));
+        // Rating and review count
+        $appRating = $data['app_rating'] ?? null;
+        $appReviewCount = $data['app_review_count'] ?? null;
         
         // Get colors from QR code colors field (Step 2 colors)
         $primaryColor = $qrCode->colors['primary'] ?? '#6594FF';
@@ -1086,7 +1089,9 @@ class QrCodeController extends Controller
             'secondaryColor',
             'appStoreButtonColor',
             'appStoreButtonTextColor',
-            'appImageUrl'
+            'appImageUrl',
+            'appRating',
+            'appReviewCount'
         ));
     }
 

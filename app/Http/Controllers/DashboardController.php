@@ -46,7 +46,7 @@ class DashboardController extends Controller
 
         // Frame configuration for QR preview rendering
         $frameConfig = [];
-        foreach (['standard-border', 'thick-border', 'speech-bubble', 'menu-qr', 'location', 'wifi', 'chat', 'coupon', 'review-us'] as $frameId) {
+        foreach (['standard-border', 'menu-qr', 'location', 'wifi', 'chat', 'coupon', 'review-us'] as $frameId) {
             $frameConfig[$frameId] = $this->qrCodeService->getFrameConfig($frameId);
         }
 

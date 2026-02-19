@@ -554,14 +554,6 @@ window.recaptchaSiteKey = @json($recaptchaSiteKey);
                                         <img src="{{ asset('frames/standard-border.svg') }}" alt="Standard" class="w-full h-16 object-contain object-center border border-dark-200">
                                         <p class="text-xs text-center mt-2 text-dark-400">Standard</p>
                                     </button>
-                                    <button type="button" class="frame-option border-2 border-dark-200 p-3 hover:border-primary-400 transition-colors flex flex-col items-center" data-frame="thick-border" onclick="selectFrame(this, 'thick-border')">
-                                        <img src="{{ asset('frames/thick-border.svg') }}" alt="Thick" class="w-full h-16 object-contain object-center border border-dark-200">
-                                        <p class="text-xs text-center mt-2 text-dark-400">Thick</p>
-                                    </button>
-                                    <button type="button" class="frame-option border-2 border-dark-200 p-3 hover:border-primary-400 transition-colors flex flex-col items-center" data-frame="speech-bubble" onclick="selectFrame(this, 'speech-bubble')">
-                                        <img src="{{ asset('frames/speech-bubble.svg') }}" alt="Speech bubble" class="w-full h-16 object-contain object-center border border-dark-200">
-                                        <p class="text-xs text-center mt-2 text-dark-400">Speech bubble</p>
-                                    </button>
                                     <button type="button" class="frame-option border-2 border-dark-200 p-3 hover:border-primary-400 transition-colors flex flex-col items-center" data-frame="menu-qr" onclick="selectFrame(this, 'menu-qr')">
                                         <img src="{{ asset('frames/menu-qr.svg') }}" alt="Menu" class="w-full h-16 object-contain object-center border border-dark-200">
                                         <p class="text-xs text-center mt-2 text-dark-400">Menu</p>
@@ -1774,21 +1766,17 @@ function updateStep1Preview() {
             const appSecondaryColor = document.getElementById('app_secondary_color_hex')?.value || '#FFFFFF';
             const appPrimaryColor = document.getElementById('app_primary_color_hex')?.value || '#6594FF';
             const appFontFamily = document.getElementById('app_font_family')?.value || 'Maven Pro';
-            const appTextColor = document.getElementById('app_text_color_hex')?.value || '#000000';
+            const appTextColor = document.getElementById('app_text_color_hex')?.value || '#111827';
             const appTextFontSize = parseInt(document.getElementById('app_text_font_size')?.value || '16', 10);
             const appIconSize = parseInt(document.getElementById('app_icon_size')?.value || '96', 10);
-            const appStoreLink = document.getElementById('app_store_link')?.value || '';
-            const playStoreLink = document.getElementById('play_store_link')?.value || '';
-            const appStoreButtonColor = document.getElementById('app_store_button_color_hex')?.value || appPrimaryColor;
-            const appStoreButtonTextColor = document.getElementById('app_store_button_text_color_hex')?.value || appSecondaryColor;
+            const appStoreButtonColor = document.getElementById('app_store_button_color_hex')?.value || '#000000';
+            const appStoreButtonTextColor = document.getElementById('app_store_button_text_color_hex')?.value || '#FFFFFF';
+            const appRating = parseFloat(document.getElementById('app_rating')?.value || '0') || null;
+            const appReviewCount = document.getElementById('app_review_count')?.value?.trim() || null;
             const appImagePreview = document.getElementById('app-img-preview');
             const appImageSrc = appImagePreview && !appImagePreview.classList.contains('hidden') 
                 ? appImagePreview.querySelector('img')?.src || '' 
                 : '';
-            
-            // Button texts - always show both buttons
-            const appStoreButtonText = 'Download on the App Store';
-            const playStoreButtonText = 'Get it on Google Play';
             
             // Load Google Font if needed
             if (appFontFamily !== 'Maven Pro') {
@@ -1804,33 +1792,79 @@ function updateStep1Preview() {
             }
             
             if (overlay) overlay.style.background = '';
-            const appIconHalf = Math.floor(appIconSize / 2);
+            const starSvg = '<svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>';
+            const appleSvg = '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.1 2.48-1.34.03-1.77-.79-3.29-.79-1.53 0-1.99.77-3.26.82-1.31.05-2.31-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>';
+            const playSvg = '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M3,20.5V3.5C3,2.91 3.34,2.39 3.84,2.15L13.69,12L3.84,21.85C3.34,21.61 3,21.09 3,20.5M16.81,15.12L18.77,14.01C20.42,13.06 20.42,10.94 18.77,10L16.81,8.88L14.39,11.3L16.81,15.12M13.69,12L16.11,9.58L4.54,3L13.69,12M4.54,21L13.69,12L16.11,14.42L4.54,21Z"/></svg>';
+            
+            // Calculate stars
+            let starsHtml = '';
+            if (appRating || appReviewCount) {
+                const ratingValue = appRating || 4.8;
+                const fullStars = Math.floor(ratingValue);
+                const hasHalfStar = (ratingValue - fullStars) >= 0.5;
+                const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+                const reviewText = appReviewCount || '1.2k';
+                
+                for (let i = 0; i < fullStars; i++) {
+                    starsHtml += '<span class="text-yellow-500">' + starSvg + '</span>';
+                }
+                if (hasHalfStar) {
+                    starsHtml += '<span class="text-yellow-500">' + starSvg + '</span>';
+                }
+                for (let i = 0; i < emptyStars; i++) {
+                    starsHtml += '<span class="text-gray-300">' + starSvg + '</span>';
+                }
+                starsHtml = `<div class="flex items-center justify-center gap-0.5 my-1">
+                    ${starsHtml}
+                    <span class="text-[9px] text-gray-500 ml-0.5">(${ratingValue.toFixed(1)} / ${reviewText})</span>
+                </div>`;
+            }
+            
+            // Convert hex to rgba with 20% opacity for App Store button
+            const hexToRgba = (hex, alpha) => {
+                const r = parseInt(hex.slice(1, 3), 16);
+                const g = parseInt(hex.slice(3, 5), 16);
+                const b = parseInt(hex.slice(5, 7), 16);
+                return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+            };
+            const appStoreButtonColorTransparent = hexToRgba(appStoreButtonColor || '#000000', 0.2);
+            
             mockupHtml = `
-                <div class="w-full h-full rounded-lg overflow-hidden flex flex-col relative" style="font-family: '${appFontFamily}', sans-serif;">
-                    <div class="flex-shrink-0 flex flex-col justify-end items-center" style="height: 25vh; background-color: ${appPrimaryColor};">
-                        <div class="rounded-3xl flex items-center justify-center text-white font-bold text-2xl flex-shrink-0 shadow-lg border-4 border-white" style="width: ${appIconSize}px; height: ${appIconSize}px; background-color: ${appPrimaryColor}; margin-bottom: -5vh; position: relative; z-index: 10;">
+                <div class="w-full h-full rounded-lg overflow-hidden flex flex-col relative" style="font-family: '${appFontFamily}', sans-serif; background: #fff;">
+                    <div class="flex-shrink-0 flex flex-col items-center justify-center pt-6 pb-4" style="height: 32%; background: linear-gradient(135deg, #000000 0%, ${appPrimaryColor} 100%);">
+                        <div class="rounded-[16px] bg-white flex items-center justify-center flex-shrink-0 shadow-lg overflow-hidden" style="width: ${Math.min(appIconSize, 80)}px; height: ${Math.min(appIconSize, 80)}px;">
                             ${appImageSrc 
-                                ? `<img src="${appImageSrc}" alt="App Logo" class="w-full h-full object-contain rounded-xl">`
-                                : (appName ? appName.charAt(0).toUpperCase() : 'A')
+                                ? `<img src="${appImageSrc}" alt="App Logo" class="w-full h-full object-cover">`
+                                : `<span class="text-2xl font-extrabold" style="color: ${appPrimaryColor}">${appName ? appName.charAt(0).toUpperCase() : 'A'}</span>`
                             }
                         </div>
+                        <span class="bg-white/20 text-white text-[8px] uppercase tracking-wider px-2 py-0.5 rounded-full mt-2">Mobile App</span>
                     </div>
-                    <div class="flex-1 flex flex-col min-h-0" style="background-color: ${appSecondaryColor}; padding-top: calc(3vh + ${appIconHalf}px);">
-                        <div class="flex flex-col items-center px-4 pt-0">
-                            <div class="font-bold mb-2 text-center" style="color: ${appTextColor}; font-size: ${appTextFontSize + 16}px;">
-                                ${appName || 'Your app name here'}
+                    <div class="flex-1 flex flex-col min-h-0 rounded-t-[20px] overflow-hidden" style="background: ${appSecondaryColor}; margin-top: -12px; padding-top: 12px; backdrop-filter: blur(10px);">
+                        <div class="text-center px-3 mb-2">
+                            <h2 class="font-extrabold leading-tight" style="color: ${appTextColor}; font-size: ${Math.min(appTextFontSize + 6, 18)}px;">${appName || 'Your Awesome App'}</h2>
+                            ${starsHtml || ''}
+                            <p class="text-left leading-snug line-clamp-2" style="color: ${appTextColor}; font-size: ${Math.max(10, appTextFontSize - 2)}px; opacity: 0.85;">${appDescription || 'Enter your application description here.'}</p>
+                        </div>
+                        <div class="flex-1 flex flex-col justify-center gap-2 px-3 pb-3 min-h-0">
+                            <div class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-left" style="background: ${appStoreButtonColorTransparent}; color: ${appStoreButtonTextColor};">
+                                ${appleSvg}
+                                <div><div class="text-[8px] uppercase opacity-70">Download on the</div><div class="text-xs font-semibold leading-none">App Store</div></div>
                             </div>
-                            <div class="px-2 text-center max-w-md mb-6" style="color: ${appTextColor}; font-size: ${appTextFontSize}px;">
-                                ${appDescription || 'Your app description here'}
+                            <div class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-white text-left" style="background: ${appStoreButtonColor}; color: ${appStoreButtonTextColor};">
+                                ${playSvg}
+                                <div><div class="text-[8px] uppercase opacity-70">Get it on</div><div class="text-xs font-semibold leading-none">Google Play</div></div>
                             </div>
                         </div>
-                        <div class="flex-1 flex flex-col justify-center gap-3 px-4 pb-4 min-h-0">
-                            <button class="w-full py-3 rounded-lg font-medium transition-colors shadow-lg" style="background-color: ${appStoreButtonColor}; color: ${appStoreButtonTextColor};">
-                                ${appStoreButtonText}
-                            </button>
-                            <button class="w-full py-3 rounded-lg font-medium transition-colors shadow-lg" style="background-color: ${appStoreButtonColor}; color: ${appStoreButtonTextColor};">
-                                ${playStoreButtonText}
-                            </button>
+                        <div class="grid grid-cols-2 gap-2 px-3 pb-2">
+                            <div class="bg-gray-100 p-2 rounded-xl flex flex-col items-center text-center">
+                                <div class="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-0.5"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></div>
+                                <span class="text-[9px] font-bold text-gray-800">Ultra Fast</span>
+                            </div>
+                            <div class="bg-gray-100 p-2 rounded-xl flex flex-col items-center text-center">
+                                <div class="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-0.5"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg></div>
+                                <span class="text-[9px] font-bold text-gray-800">Secure</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2471,23 +2505,11 @@ function buildQrContentFromForm() {
 // themable: true = SVG may use #PRIMARY# and #SECONDARY# placeholders, replaced by palette colors
 const FRAME_CONFIG = {
     'none': null,
-    'standard-border': {
-        url: '{{ asset("frames/standard-border.svg") }}',
-        qrLeft: 5, qrTop: 4, qrWidth: 90, qrHeight: 72,
-        frameWidth: 400, frameHeight: 500,
-        themable: true
-    },
-    'thick-border': {
-        url: '{{ asset("frames/thick-border.svg") }}',
-        qrLeft: 5, qrTop: 4, qrWidth: 90, qrHeight: 72,
-        frameWidth: 400, frameHeight: 500,
-        themable: true
-    },
-    'speech-bubble': {
-        url: '{{ asset("frames/speech-bubble.svg") }}',
-        qrLeft: 5, qrTop: 3.85, qrWidth: 90, qrHeight: 69.2,
-        frameWidth: 400, frameHeight: 520,
-        themable: true
+    'scanme': {
+        url: '{{ asset("frames/scanme.svg") }}',
+        qrLeft: 10, qrTop: 10, qrWidth: 80, qrHeight: 65,
+        frameWidth: 400, frameHeight: 400,
+        themable: false
     },
     'menu-qr': {
         url: '{{ asset("frames/menu-qr.svg") }}',
@@ -3208,6 +3230,14 @@ function populateStep1Fields(type, data, files) {
                 const appStoreButtonTextColorInput = document.getElementById('app_store_button_text_color');
                 if (appStoreButtonTextColorInput) appStoreButtonTextColorInput.value = data.app_store_button_text_color;
             }
+            if (data.app_rating != null && data.app_rating !== '') {
+                const appRatingInput = document.getElementById('app_rating');
+                if (appRatingInput) appRatingInput.value = data.app_rating;
+            }
+            if (data.app_review_count) {
+                const appReviewCountInput = document.getElementById('app_review_count');
+                if (appReviewCountInput) appReviewCountInput.value = data.app_review_count;
+            }
             // Handle app image
             const appImageFile = files.find(f => f.file_type === 'image');
             if (appImageFile && appImageFile.file_path) {
@@ -3714,7 +3744,7 @@ document.addEventListener('DOMContentLoaded', function() {
         'name', 'url', 'email', 'subject', 'message', 'text', 'full_name', 'phone_number', 'phone_background_color_hex', 'phone_font_family', 
         'app_name', 'website_url', 'app_store_link', 'play_store_link', 'app_description',
         'app_primary_color_hex', 'app_secondary_color_hex', 'app_button_text', 'app_button_color_hex', 'app_font_family', 'app_text_color_hex',
-        'app_text_font_size', 'app_icon_size',
+        'app_text_font_size', 'app_icon_size', 'app_rating', 'app_review_count',
         'app_store_button_color_hex', 'app_store_button_text_color_hex',
         'ssid', 'encryption', 'password', 'address',
         'event_name', 'company_name', 'date', 'time', 'location', 'description', 'contact', 'dress_code_color', 'dress_code_color_hex',

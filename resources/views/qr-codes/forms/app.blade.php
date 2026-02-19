@@ -193,6 +193,20 @@
                 <textarea id="app_description" name="app_description" rows="4" class="input" placeholder="Enter app description"></textarea>
             </div>
 
+            <!-- Rating and Reviews -->
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label for="app_rating" class="label">Rating</label>
+                    <input type="number" id="app_rating" name="app_rating" step="0.1" min="0" max="5" class="input" placeholder="4.8" oninput="if(this.value > 5) this.value = 5; if(this.value < 0) this.value = 0;">
+                    <p class="text-xs text-dark-300 mt-1">Rating from 0.0 to 5.0</p>
+                </div>
+                <div>
+                    <label for="app_review_count" class="label">Review Count</label>
+                    <input type="text" id="app_review_count" name="app_review_count" class="input" placeholder="1.2k">
+                    <p class="text-xs text-dark-300 mt-1">e.g. 1200 or 1.2k</p>
+                </div>
+            </div>
+
             <!-- Text font size -->
             <div>
                 <label for="app_text_font_size" class="label flex items-center justify-between">
@@ -619,6 +633,25 @@ document.addEventListener('DOMContentLoaded', function() {
     if (appIconSizeInput && appIconSizeValue) {
         appIconSizeInput.addEventListener('input', function() {
             appIconSizeValue.textContent = this.value + 'px';
+            if (typeof updateStep1Preview === 'function') {
+                updateStep1Preview();
+            }
+        });
+    }
+
+    // Rating and review count handlers
+    const appRatingInput = document.getElementById('app_rating');
+    if (appRatingInput) {
+        appRatingInput.addEventListener('input', function() {
+            if (typeof updateStep1Preview === 'function') {
+                updateStep1Preview();
+            }
+        });
+    }
+
+    const appReviewCountInput = document.getElementById('app_review_count');
+    if (appReviewCountInput) {
+        appReviewCountInput.addEventListener('input', function() {
             if (typeof updateStep1Preview === 'function') {
                 updateStep1Preview();
             }
