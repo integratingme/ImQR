@@ -1763,12 +1763,13 @@ function updateStep1Preview() {
         case 'app':
             const appName = document.getElementById('app_name')?.value || '';
             const appDescription = document.getElementById('app_description')?.value || '';
+            // Use secondary color from Step 1 for the bottom div (app name and description area)
             const appSecondaryColor = document.getElementById('app_secondary_color_hex')?.value || '#FFFFFF';
             const appPrimaryColor = document.getElementById('app_primary_color_hex')?.value || '#6594FF';
             const appFontFamily = document.getElementById('app_font_family')?.value || 'Maven Pro';
             const appTextColor = document.getElementById('app_text_color_hex')?.value || '#111827';
             const appTextFontSize = parseInt(document.getElementById('app_text_font_size')?.value || '16', 10);
-            const appIconSize = parseInt(document.getElementById('app_icon_size')?.value || '96', 10);
+            const appIconSize = parseInt(document.getElementById('app_icon_size')?.value || '95', 10);
             const appStoreButtonColor = document.getElementById('app_store_button_color_hex')?.value || '#000000';
             const appStoreButtonTextColor = document.getElementById('app_store_button_text_color_hex')?.value || '#FFFFFF';
             const appRating = parseFloat(document.getElementById('app_rating')?.value || '0') || null;
@@ -1828,25 +1829,37 @@ function updateStep1Preview() {
                 return `rgba(${r}, ${g}, ${b}, ${alpha})`;
             };
             const appStoreButtonColorTransparent = hexToRgba(appStoreButtonColor || '#000000', 0.2);
+            // Use Step 1 primary color for Ultra Fast and Secure buttons (same as top div)
+            const primaryColorTransparent = hexToRgba(appPrimaryColor || '#6594FF', 0.2);
+            
+            // Collect selected languages for mockup (short labels: EN, DE, HR, etc.)
+            const langShort = { en: 'EN', de: 'DE', hr: 'HR', fr: 'FR', es: 'ES', it: 'IT', nl: 'NL', pt: 'PT', pl: 'PL', tr: 'TR', ru: 'RU', ja: 'JA', zh: 'ZH' };
+            const appLanguagesChecked = Array.from(document.querySelectorAll('input[name="app_languages[]"]:checked')).map(cb => cb.value);
+            const appLanguagesHtml = appLanguagesChecked.length > 0
+                ? `<div class="flex flex-wrap justify-center gap-1 mt-1.5">${appLanguagesChecked.map(code => `<span class="bg-white/20 text-white text-[7px] uppercase tracking-wider px-1.5 py-0.5 rounded">${langShort[code] || code.toUpperCase()}</span>`).join('')}</div>`
+                : '';
             
             mockupHtml = `
                 <div class="w-full h-full rounded-lg overflow-hidden flex flex-col relative" style="font-family: '${appFontFamily}', sans-serif; background: #fff;">
                     <div class="flex-shrink-0 flex flex-col items-center justify-center pt-6 pb-4" style="height: 32%; background: linear-gradient(135deg, #000000 0%, ${appPrimaryColor} 100%);">
-                        <div class="rounded-[16px] bg-white flex items-center justify-center flex-shrink-0 shadow-lg overflow-hidden" style="width: ${Math.min(appIconSize, 80)}px; height: ${Math.min(appIconSize, 80)}px;">
+                        <div class="rounded-[16px] bg-white flex items-center justify-center flex-shrink-0 shadow-lg overflow-hidden" style="width: min(50%, max(60px, ${appIconSize}px)); height: min(50%, max(60px, ${appIconSize}px)); min-width: 60px; min-height: 60px;">
                             ${appImageSrc 
                                 ? `<img src="${appImageSrc}" alt="App Logo" class="w-full h-full object-cover">`
                                 : `<span class="text-2xl font-extrabold" style="color: ${appPrimaryColor}">${appName ? appName.charAt(0).toUpperCase() : 'A'}</span>`
                             }
                         </div>
                         <span class="bg-white/20 text-white text-[8px] uppercase tracking-wider px-2 py-0.5 rounded-full mt-2">Mobile App</span>
+                        ${appLanguagesHtml}
                     </div>
                     <div class="flex-1 flex flex-col min-h-0 rounded-t-[20px] overflow-hidden" style="background: ${appSecondaryColor}; margin-top: -12px; padding-top: 12px; backdrop-filter: blur(10px);">
-                        <div class="text-center px-3 mb-2">
-                            <h2 class="font-extrabold leading-tight" style="color: ${appTextColor}; font-size: ${Math.min(appTextFontSize + 6, 18)}px;">${appName || 'Your Awesome App'}</h2>
+                        <div class="text-center px-3 mb-3 flex-shrink-0">
+                            <h2 class="font-extrabold leading-tight mb-2" style="color: ${appTextColor}; font-size: ${appTextFontSize}px;">${appName || 'Your Awesome App'}</h2>
                             ${starsHtml || ''}
-                            <p class="text-left leading-snug line-clamp-2" style="color: ${appTextColor}; font-size: ${Math.max(10, appTextFontSize - 2)}px; opacity: 0.85;">${appDescription || 'Enter your application description here.'}</p>
                         </div>
-                        <div class="flex-1 flex flex-col justify-center gap-2 px-3 pb-3 min-h-0">
+                        <div class="flex-1 min-h-0 px-3 overflow-hidden flex flex-col">
+                            <p class="text-left leading-snug line-clamp-6 flex-1 min-h-0" style="color: ${appTextColor}; font-size: 14px; opacity: 0.85;">${appDescription || 'Enter your application description here.'}</p>
+                        </div>
+                        <div class="flex-shrink-0 flex flex-col gap-2 px-3 pb-2 mb-2">
                             <div class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-left" style="background: ${appStoreButtonColorTransparent}; color: ${appStoreButtonTextColor};">
                                 ${appleSvg}
                                 <div><div class="text-[8px] uppercase opacity-70">Download on the</div><div class="text-xs font-semibold leading-none">App Store</div></div>
@@ -1856,14 +1869,14 @@ function updateStep1Preview() {
                                 <div><div class="text-[8px] uppercase opacity-70">Get it on</div><div class="text-xs font-semibold leading-none">Google Play</div></div>
                             </div>
                         </div>
-                        <div class="grid grid-cols-2 gap-2 px-3 pb-2">
-                            <div class="bg-gray-100 p-2 rounded-xl flex flex-col items-center text-center">
-                                <div class="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-0.5"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></div>
-                                <span class="text-[9px] font-bold text-gray-800">Ultra Fast</span>
+                        <div class="grid grid-cols-2 gap-2 px-3 pb-3 mb-3">
+                            <div class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-left" style="background: ${primaryColorTransparent}; color: ${appStoreButtonTextColor};">
+                                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                <div><div class="text-[8px] uppercase opacity-70">Lightning</div><div class="text-xs font-semibold leading-none">Ultra Fast</div></div>
                             </div>
-                            <div class="bg-gray-100 p-2 rounded-xl flex flex-col items-center text-center">
-                                <div class="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-0.5"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg></div>
-                                <span class="text-[9px] font-bold text-gray-800">Secure</span>
+                            <div class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-left" style="background: ${primaryColorTransparent}; color: ${appStoreButtonTextColor};">
+                                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                <div><div class="text-[8px] uppercase opacity-70">Protected</div><div class="text-xs font-semibold leading-none">Secure</div></div>
                             </div>
                         </div>
                     </div>
@@ -3210,9 +3223,23 @@ function populateStep1Fields(type, data, files) {
                 const appFontInput = document.getElementById('app_font_family');
                 if (appFontInput) appFontInput.value = data.app_font_family;
             }
+            if (data.app_primary_color) {
+                const appPrimaryColorHex = document.getElementById('app_primary_color_hex');
+                const appPrimaryColorPicker = document.getElementById('app_primary_color_picker');
+                if (appPrimaryColorHex) appPrimaryColorHex.value = data.app_primary_color;
+                if (appPrimaryColorPicker) appPrimaryColorPicker.value = data.app_primary_color;
+            }
+            if (data.app_secondary_color) {
+                const appSecondaryColorHex = document.getElementById('app_secondary_color_hex');
+                const appSecondaryColorPicker = document.getElementById('app_secondary_color_picker');
+                if (appSecondaryColorHex) appSecondaryColorHex.value = data.app_secondary_color;
+                if (appSecondaryColorPicker) appSecondaryColorPicker.value = data.app_secondary_color;
+            }
             if (data.app_text_color) {
-                const appTextColorInput = document.getElementById('app_text_color');
-                if (appTextColorInput) appTextColorInput.value = data.app_text_color;
+                const appTextColorHex = document.getElementById('app_text_color_hex');
+                const appTextColorPicker = document.getElementById('app_text_color_picker');
+                if (appTextColorHex) appTextColorHex.value = data.app_text_color;
+                if (appTextColorPicker) appTextColorPicker.value = data.app_text_color;
             }
             if (data.app_text_font_size) {
                 const appTextFontSizeInput = document.getElementById('app_text_font_size');
@@ -3223,12 +3250,16 @@ function populateStep1Fields(type, data, files) {
                 if (appIconSizeInput) appIconSizeInput.value = data.app_icon_size;
             }
             if (data.app_store_button_color) {
-                const appStoreButtonColorInput = document.getElementById('app_store_button_color');
-                if (appStoreButtonColorInput) appStoreButtonColorInput.value = data.app_store_button_color;
+                const appStoreButtonColorHex = document.getElementById('app_store_button_color_hex');
+                const appStoreButtonColorPicker = document.getElementById('app_store_button_color_picker');
+                if (appStoreButtonColorHex) appStoreButtonColorHex.value = data.app_store_button_color;
+                if (appStoreButtonColorPicker) appStoreButtonColorPicker.value = data.app_store_button_color;
             }
             if (data.app_store_button_text_color) {
-                const appStoreButtonTextColorInput = document.getElementById('app_store_button_text_color');
-                if (appStoreButtonTextColorInput) appStoreButtonTextColorInput.value = data.app_store_button_text_color;
+                const appStoreButtonTextColorHex = document.getElementById('app_store_button_text_color_hex');
+                const appStoreButtonTextColorPicker = document.getElementById('app_store_button_text_color_picker');
+                if (appStoreButtonTextColorHex) appStoreButtonTextColorHex.value = data.app_store_button_text_color;
+                if (appStoreButtonTextColorPicker) appStoreButtonTextColorPicker.value = data.app_store_button_text_color;
             }
             if (data.app_rating != null && data.app_rating !== '') {
                 const appRatingInput = document.getElementById('app_rating');
@@ -3237,6 +3268,11 @@ function populateStep1Fields(type, data, files) {
             if (data.app_review_count) {
                 const appReviewCountInput = document.getElementById('app_review_count');
                 if (appReviewCountInput) appReviewCountInput.value = data.app_review_count;
+            }
+            if (data.app_languages && Array.isArray(data.app_languages)) {
+                document.querySelectorAll('input[name="app_languages[]"]').forEach(cb => {
+                    cb.checked = data.app_languages.includes(cb.value);
+                });
             }
             // Handle app image
             const appImageFile = files.find(f => f.file_type === 'image');
@@ -3743,7 +3779,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const step1Fields = [
         'name', 'url', 'email', 'subject', 'message', 'text', 'full_name', 'phone_number', 'phone_background_color_hex', 'phone_font_family', 
         'app_name', 'website_url', 'app_store_link', 'play_store_link', 'app_description',
-        'app_primary_color_hex', 'app_secondary_color_hex', 'app_button_text', 'app_button_color_hex', 'app_font_family', 'app_text_color_hex',
+        'app_primary_color_hex', 'app_secondary_color_hex', 'app_font_family', 'app_text_color_hex',
         'app_text_font_size', 'app_icon_size', 'app_rating', 'app_review_count',
         'app_store_button_color_hex', 'app_store_button_text_color_hex',
         'ssid', 'encryption', 'password', 'address',
@@ -3782,8 +3818,8 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     });
-    // Business card: dynamic button/social rows
-    ['business-card-buttons-container', 'business-card-socials-container', 'personal-vcard-socials-container'].forEach(containerId => {
+    // Business card: dynamic button/social rows; app: languages checkboxes
+    ['business-card-buttons-container', 'business-card-socials-container', 'personal-vcard-socials-container', 'app_languages_wrapper'].forEach(containerId => {
         const container = document.getElementById(containerId);
         if (container) {
             container.addEventListener('input', () => { if (currentStep === 1) updateStep1Preview(); });

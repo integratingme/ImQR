@@ -83,22 +83,6 @@
                 </div>
             </div>
             
-            <!-- Button Customization -->
-            <div class="grid grid-cols-2 gap-4 mb-4">
-                <div>
-                    <label for="app_button_text" class="text-sm font-bold text-dark-500 mb-2 block">Button text</label>
-                    <input type="text" id="app_button_text" name="app_button_text" value="Download App" class="input w-full" placeholder="Download App">
-                </div>
-                
-                <div>
-                    <label for="app_button_color" class="text-sm font-bold text-dark-500 mb-2 block">Button color</label>
-                    <div class="flex items-center gap-3">
-                        <input type="text" id="app_button_color_hex" name="app_button_color" value="#D6D6D6" class="input flex-1" placeholder="#D6D6D6">
-                        <input type="color" id="app_button_color_picker" value="#D6D6D6" class="w-10 h-10 rounded border border-gray-200 cursor-pointer">
-                    </div>
-                </div>
-            </div>
-            
             <!-- Font Selection and Text Color -->
             <div class="grid grid-cols-2 gap-4 mb-4">
                 <div>
@@ -172,13 +156,17 @@
                 </div>
             </div>
 
-            <!-- App icon size (logo) -->
-            <div>
-                <label for="app_icon_size" class="label flex items-center justify-between">
-                    <span>App icon size</span>
-                    <span id="app_icon_size_value" class="text-sm font-medium text-dark-500">96px</span>
-                </label>
-                <input type="range" id="app_icon_size" name="app_icon_size" min="64" max="128" value="96" class="w-full h-2 rounded-lg appearance-none cursor-pointer bg-dark-500 accent-primary-500 [&::-webkit-slider-runnable-track]:bg-dark-500 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary-500 [&::-webkit-slider-thumb]:border-0 [&::-webkit-slider-thumb]:cursor-pointer">
+            <!-- App icon size (logo): 60px–50% of section height, default 95px -->
+            <div class="rounded-xl border border-dark-200 bg-dark-50/50 p-4">
+                <div class="flex items-center justify-between gap-3 mb-3">
+                    <label for="app_icon_size" class="text-sm font-semibold text-dark-500">App icon size</label>
+                    <span id="app_icon_size_value" class="inline-flex items-center justify-center min-w-[3.5rem] px-2.5 py-1 rounded-lg text-sm font-semibold bg-primary-500/15 text-primary-600">95px</span>
+                </div>
+                <div id="app_icon_size_track" class="relative h-3 rounded-full bg-dark-200 overflow-visible" style="--p: 51.47%;">
+                    <div class="absolute inset-y-0 left-0 rounded-full bg-primary-500/30 transition-all duration-150 pointer-events-none" style="width: var(--p);"></div>
+                    <input type="range" id="app_icon_size" name="app_icon_size" min="60" max="128" value="95" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                    <div class="absolute top-1/2 -translate-y-1/2 left-[var(--p)] -translate-x-1/2 w-5 h-5 rounded-full bg-white border-2 border-primary-500 shadow-md pointer-events-none z-20 transition-all duration-150"></div>
+                </div>
             </div>
 
             <!-- App Name -->
@@ -191,6 +179,19 @@
             <div>
                 <label for="app_description" class="label">Description</label>
                 <textarea id="app_description" name="app_description" rows="4" class="input" placeholder="Enter app description"></textarea>
+            </div>
+
+            <!-- Available languages -->
+            <div id="app_languages_wrapper" class="rounded-xl border border-dark-200 bg-dark-50/30 p-3">
+                <label class="text-xs font-semibold text-dark-500 mb-2 block">Available languages</label>
+                <div class="flex flex-wrap gap-1.5">
+                    @foreach(['en' => 'EN', 'de' => 'DE', 'hr' => 'HR', 'fr' => 'FR', 'es' => 'ES', 'it' => 'IT', 'nl' => 'NL', 'pt' => 'PT', 'pl' => 'PL', 'tr' => 'TR', 'ru' => 'RU', 'ja' => 'JA', 'zh' => 'ZH'] as $code => $short)
+                    <label class="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-dark-200 bg-white cursor-pointer transition-all duration-150 hover:border-primary-400 hover:bg-primary-50/50 has-[:checked]:border-primary-500 has-[:checked]:bg-primary-500/15 has-[:checked]:text-primary-700">
+                        <input type="checkbox" name="app_languages[]" value="{{ $code }}" class="sr-only">
+                        <span class="text-[11px] font-medium text-dark-600">{{ $short }}</span>
+                    </label>
+                    @endforeach
+                </div>
             </div>
 
             <!-- Rating and Reviews -->
@@ -207,13 +208,17 @@
                 </div>
             </div>
 
-            <!-- Text font size -->
-            <div>
-                <label for="app_text_font_size" class="label flex items-center justify-between">
-                    <span>Text font size</span>
-                    <span id="app_text_font_size_value" class="text-sm font-medium text-dark-500">16px</span>
-                </label>
-                <input type="range" id="app_text_font_size" name="app_text_font_size" min="12" max="24" value="16" class="w-full h-2 rounded-lg appearance-none cursor-pointer bg-dark-500 accent-primary-500 [&::-webkit-slider-runnable-track]:bg-dark-500 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary-500 [&::-webkit-slider-thumb]:border-0 [&::-webkit-slider-thumb]:cursor-pointer">
+            <!-- App name font size -->
+            <div class="rounded-xl border border-dark-200 bg-dark-50/50 p-4">
+                <div class="flex items-center justify-between gap-3 mb-3">
+                    <label for="app_text_font_size" class="text-sm font-semibold text-dark-500">App name font size</label>
+                    <span id="app_text_font_size_value" class="inline-flex items-center justify-center min-w-[3.5rem] px-2.5 py-1 rounded-lg text-sm font-semibold bg-primary-500/15 text-primary-600">16px</span>
+                </div>
+                <div id="app_text_font_size_track" class="relative h-3 rounded-full bg-dark-200 overflow-visible" style="--p: 33.33%;">
+                    <div class="absolute inset-y-0 left-0 rounded-full bg-primary-500/30 transition-all duration-150 pointer-events-none" style="width: var(--p);"></div>
+                    <input type="range" id="app_text_font_size" name="app_text_font_size" min="12" max="24" value="16" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                    <div class="absolute top-1/2 -translate-y-1/2 left-[var(--p)] -translate-x-1/2 w-5 h-5 rounded-full bg-white border-2 border-primary-500 shadow-md pointer-events-none z-20 transition-all duration-150"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -545,31 +550,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Button color handlers
-    const buttonColorInput = document.getElementById('app_button_color_hex');
-    const buttonColorPicker = document.getElementById('app_button_color_picker');
-    
-    if (buttonColorPicker && buttonColorInput) {
-        buttonColorPicker.addEventListener('input', function() {
-            buttonColorInput.value = this.value.toUpperCase();
-            if (typeof updateStep1Preview === 'function') {
-                updateStep1Preview();
-            }
-        });
-    }
-    
-    if (buttonColorInput && buttonColorPicker) {
-        buttonColorInput.addEventListener('input', function() {
-            const color = this.value;
-            if (/^#[0-9A-F]{6}$/i.test(color)) {
-                buttonColorPicker.value = color;
-                if (typeof updateStep1Preview === 'function') {
-                    updateStep1Preview();
-                }
-            }
-        });
-    }
-    
     // Font family handler
     const fontFamilySelect = document.getElementById('app_font_family');
     if (fontFamilySelect) {
@@ -604,39 +584,41 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
-    // Button text handler
-    const buttonTextInput = document.getElementById('app_button_text');
-    if (buttonTextInput) {
-        buttonTextInput.addEventListener('input', function() {
-            if (typeof updateStep1Preview === 'function') {
-                updateStep1Preview();
-            }
-        });
-    }
 
-    // Text font size slider
+    // App name font size slider – update value label and track fill
     const appTextFontSizeInput = document.getElementById('app_text_font_size');
     const appTextFontSizeValue = document.getElementById('app_text_font_size_value');
-    if (appTextFontSizeInput && appTextFontSizeValue) {
-        appTextFontSizeInput.addEventListener('input', function() {
-            appTextFontSizeValue.textContent = this.value + 'px';
-            if (typeof updateStep1Preview === 'function') {
-                updateStep1Preview();
-            }
-        });
+    const appTextFontSizeTrack = document.getElementById('app_text_font_size_track');
+    function updateAppTextFontSizeDisplay() {
+        if (!appTextFontSizeInput) return;
+        const v = parseInt(appTextFontSizeInput.value, 10);
+        const min = 12, max = 24;
+        const pct = ((v - min) / (max - min)) * 100;
+        if (appTextFontSizeValue) appTextFontSizeValue.textContent = v + 'px';
+        if (appTextFontSizeTrack) appTextFontSizeTrack.style.setProperty('--p', pct + '%');
+        if (typeof updateStep1Preview === 'function') updateStep1Preview();
+    }
+    if (appTextFontSizeInput) {
+        appTextFontSizeInput.addEventListener('input', updateAppTextFontSizeDisplay);
+        updateAppTextFontSizeDisplay(); // initial fill and label
     }
 
-    // App icon size slider
+    // App icon size slider – update value label and track fill
     const appIconSizeInput = document.getElementById('app_icon_size');
     const appIconSizeValue = document.getElementById('app_icon_size_value');
-    if (appIconSizeInput && appIconSizeValue) {
-        appIconSizeInput.addEventListener('input', function() {
-            appIconSizeValue.textContent = this.value + 'px';
-            if (typeof updateStep1Preview === 'function') {
-                updateStep1Preview();
-            }
-        });
+    const appIconSizeTrack = document.getElementById('app_icon_size_track');
+    function updateAppIconSizeDisplay() {
+        if (!appIconSizeInput) return;
+        const v = parseInt(appIconSizeInput.value, 10);
+        const min = 60, max = 128;
+        const pct = ((v - min) / (max - min)) * 100;
+        if (appIconSizeValue) appIconSizeValue.textContent = v + 'px';
+        if (appIconSizeTrack) appIconSizeTrack.style.setProperty('--p', pct + '%');
+        if (typeof updateStep1Preview === 'function') updateStep1Preview();
+    }
+    if (appIconSizeInput) {
+        appIconSizeInput.addEventListener('input', updateAppIconSizeDisplay);
+        updateAppIconSizeDisplay(); // initial fill and label
     }
 
     // Rating and review count handlers

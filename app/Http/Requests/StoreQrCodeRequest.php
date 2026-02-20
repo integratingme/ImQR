@@ -145,6 +145,8 @@ class StoreQrCodeRequest extends FormRequest
                 'play_store_link' => ['nullable', 'url', 'max:2048', 'regex:/^https:\/\/play\.google\.com\/store\/apps\//'],
                 'app_store_button_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
                 'app_store_button_text_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+                'app_languages' => 'nullable|array',
+                'app_languages.*' => 'string|in:en,de,hr,fr,es,it,nl,pt,pl,tr,ru,ja,zh',
             ],
             'location' => [
                 'address' => 'nullable|string|max:500',

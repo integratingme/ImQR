@@ -1059,21 +1059,33 @@ class QrCodeController extends Controller
         // Font size from slider (12–24px), stored in data when QR code is created
         $appTextFontSize = (int) ($data['app_text_font_size'] ?? 16);
         $appTextFontSize = max(12, min(24, $appTextFontSize));
-        $appIconSize = (int) ($data['app_icon_size'] ?? 96);
-        $appIconSize = max(64, min(128, $appIconSize));
+        $appIconSize = (int) ($data['app_icon_size'] ?? 95);
+        $appIconSize = max(60, min(128, $appIconSize));
         // Rating and review count
         $appRating = $data['app_rating'] ?? null;
         $appReviewCount = $data['app_review_count'] ?? null;
         
-        // Get colors from QR code colors field (Step 2 colors)
-        $primaryColor = $qrCode->colors['primary'] ?? '#6594FF';
-        $secondaryColor = $qrCode->colors['secondary'] ?? '#FFFFFF';
+        // Use Step 1 colors for everything (same as mockup)
+        $primaryColor = $data['app_primary_color'] ?? '#6594FF';
+        $secondaryColor = $data['app_secondary_color'] ?? '#FFFFFF';
         $appStoreButtonColor = $data['app_store_button_color'] ?? $primaryColor;
-        $appStoreButtonTextColor = $data['app_store_button_text_color'] ?? $secondaryColor;
+        $appStoreButtonTextColor = $data['app_store_button_text_color'] ?? '#FFFFFF';
+        
+        // Ultra Fast / Secure buttons: use Step 1 primary color with 20% opacity
+        $hexToRgba = function($hex, $alpha) {
+            $hex = ltrim($hex, '#');
+            $r = hexdec(substr($hex, 0, 2));
+            $g = hexdec(substr($hex, 2, 2));
+            $b = hexdec(substr($hex, 4, 2));
+            return "rgba($r, $g, $b, $alpha)";
+        };
+        $primaryColorTransparent = $hexToRgba($primaryColor, 0.2);
         
         // Get app image if exists
         $appImageFile = $qrCode->files()->where('file_type', 'image')->first();
         $appImageUrl = $appImageFile ? asset('storage/' . $appImageFile->file_path) : null;
+        // Languages (array of codes: en, de, hr, ...)
+        $appLanguages = $data['app_languages'] ?? [];
 
         return view('qr-codes.app-page', compact(
             'qrCode',
@@ -1091,7 +1103,9 @@ class QrCodeController extends Controller
             'appStoreButtonTextColor',
             'appImageUrl',
             'appRating',
-            'appReviewCount'
+            'appReviewCount',
+            'primaryColorTransparent',
+            'appLanguages'
         ));
     }
 

@@ -12,15 +12,27 @@
         $secondaryColor = $secondaryColor ?? '#FFFFFF';
         $appStoreButtonColor = $appStoreButtonColor ?? '#000000';
         $appStoreButtonTextColor = $appStoreButtonTextColor ?? '#FFFFFF';
+        // Convert primary color to rgba with 20% opacity for Ultra Fast and Secure buttons
+        $hexToRgba = function($hex, $alpha) {
+            $hex = ltrim($hex, '#');
+            $r = hexdec(substr($hex, 0, 2));
+            $g = hexdec(substr($hex, 2, 2));
+            $b = hexdec(substr($hex, 4, 2));
+            return "rgba($r, $g, $b, $alpha)";
+        };
+        $primaryColorTransparent = $primaryColorTransparent ?? $hexToRgba($primaryColor, 0.2);
         $appImageUrl = $appImageUrl ?? null;
         $appName = $appName ?? '';
         $appDescription = $appDescription ?? '';
         $appStoreLink = $appStoreLink ?? '';
         $playStoreLink = $playStoreLink ?? '';
         $appTextFontSize = $appTextFontSize ?? 15;
-        $appIconSize = $appIconSize ?? 110;
+        $appIconSize = (int) ($appIconSize ?? 95);
+        $appIconSize = max(60, min(128, $appIconSize));
         $appRating = $appRating ?? null;
         $appReviewCount = $appReviewCount ?? null;
+        $appLanguages = $appLanguages ?? [];
+        $langShort = ['en' => 'EN', 'de' => 'DE', 'hr' => 'HR', 'fr' => 'FR', 'es' => 'ES', 'it' => 'IT', 'nl' => 'NL', 'pt' => 'PT', 'pl' => 'PL', 'tr' => 'TR', 'ru' => 'RU', 'ja' => 'JA', 'zh' => 'ZH'];
         $googleFonts = ['Inter', 'Roboto', 'Open Sans', 'Lato', 'Montserrat', 'Poppins', 'Raleway', 'Nunito'];
         
         // Calculate stars display
@@ -48,7 +60,7 @@
             backdrop-filter: blur(10px);
         }
         .app-gradient {
-            background: linear-gradient(135deg, {{ $primaryColor }} 0%, #4a74d6 100%);
+            background: linear-gradient(135deg, #000000 0%, {{ $primaryColor }} 100%);
         }
         .custom-shadow {
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
@@ -64,7 +76,7 @@
             
             <!-- Floating Icon -->
             <div id="app_icon_container" class="custom-shadow rounded-[24px] bg-white p-1 mb-4 flex items-center justify-center overflow-hidden transition-transform hover:scale-105" 
-                 style="width: {{ $appIconSize }}px; height: {{ $appIconSize }}px;">
+                 style="width: min(50%, max(60px, {{ $appIconSize }}px)); height: min(50%, max(60px, {{ $appIconSize }}px)); min-width: 60px; min-height: 60px;">
                 @if($appImageUrl)
                     <img id="preview_app_image" src="{{ $appImageUrl }}" alt="App Icon" class="w-full h-full object-cover rounded-[20px]">
                     <div id="preview_app_initial" class="hidden text-4xl font-extrabold" style="color: {{ $primaryColor }};">{{ $appName ? strtoupper(substr($appName, 0, 1)) : 'A' }}</div>
@@ -78,14 +90,21 @@
             <span id="preview_app_category" class="bg-white/20 backdrop-blur-md text-white text-[10px] uppercase tracking-widest px-3 py-1 rounded-full mb-2">
                 Mobile App
             </span>
+            @if(!empty($appLanguages))
+            <div class="flex flex-wrap justify-center gap-1.5 mt-1.5">
+                @foreach($appLanguages as $code)
+                <span class="bg-white/20 text-white text-[9px] uppercase tracking-wider px-2 py-0.5 rounded">{{ $langShort[$code] ?? strtoupper($code) }}</span>
+                @endforeach
+            </div>
+            @endif
         </div>
 
         <!-- Content Section -->
-        <div id="bottom_section" class="flex-grow -mt-8 rounded-t-[32px] glass-effect relative p-8 flex flex-col items-center" style="background: {{ $secondaryColor }};">
+        <div id="bottom_section" class="flex-grow flex flex-col min-h-0 -mt-8 rounded-t-[32px] glass-effect relative px-8 pt-8 pb-4" style="background: {{ $secondaryColor }};">
             
-            <!-- Name & Rating -->
-            <div class="text-center w-full mb-6">
-                <h1 id="preview_app_name" class="font-extrabold mb-1 leading-tight" style="font-size: 28px; color: {{ $textColor }};">
+            <!-- Name & Rating (top) -->
+            <div class="text-center w-full flex-shrink-0 mb-4">
+                <h1 id="preview_app_name" class="font-extrabold mb-1 leading-tight" style="font-size: {{ $appTextFontSize }}px; color: {{ $textColor }};">
                     {{ $appName ?: 'Your Awesome App' }}
                 </h1>
                 
@@ -106,13 +125,16 @@
                 </div>
                 @endif
 
-                <p id="preview_app_description" class="text-gray-600 leading-relaxed px-2" style="font-size: {{ $appTextFontSize }}px; color: {{ $textColor }}; opacity: 0.85;">
+                <p id="preview_app_description" class="text-gray-600 leading-relaxed px-2" style="font-size: 15px; color: {{ $textColor }}; opacity: 0.85;">
                     {{ $appDescription ?: 'Enter your application description here. Make it catchy and informative to attract more users.' }}
                 </p>
             </div>
 
-            <!-- Download Buttons -->
-            <div class="w-full space-y-4 mb-8">
+            <!-- Spacer: pushes buttons to ~70% of page height (hero 35vh + content + spacer = 70vh) -->
+            <div class="flex-grow min-h-[calc(35vh-10rem)] flex-shrink-0"></div>
+
+            <!-- Download Buttons (at ~70% page height) -->
+            <div class="w-full space-y-4 flex-shrink-0">
                 <a href="{{ $appStoreLink ?: '#' }}" 
                    @if($appStoreLink) target="_blank" rel="noopener noreferrer" @endif
                    id="preview_app_store_btn" 
@@ -138,19 +160,21 @@
                 </a>
             </div>
 
-            <!-- Features Grid -->
-            <div class="grid grid-cols-2 gap-4 w-full mt-4">
-                <div class="bg-gray-50 p-4 rounded-2xl flex flex-col items-center text-center">
-                    <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-2">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            <!-- Ultra Fast & Secure at the very bottom -->
+            <div class="grid grid-cols-2 gap-2 w-full mt-4 flex-shrink-0">
+                <div class="py-2.5 rounded-xl flex items-center justify-center gap-2 text-left" style="background: {{ $primaryColorTransparent ?? 'rgba(0, 0, 0, 0.2)' }}; color: {{ $appStoreButtonTextColor }};">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    <div>
+                        <div class="text-[8px] uppercase opacity-70">Lightning</div>
+                        <div class="text-xs font-semibold leading-none">Ultra Fast</div>
                     </div>
-                    <span class="text-xs font-bold text-gray-800">Ultra Fast</span>
                 </div>
-                <div class="bg-gray-50 p-4 rounded-2xl flex flex-col items-center text-center">
-                    <div class="w-10 h-10 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-2">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                <div class="py-2.5 rounded-xl flex items-center justify-center gap-2 text-left" style="background: {{ $primaryColorTransparent ?? 'rgba(0, 0, 0, 0.2)' }}; color: {{ $appStoreButtonTextColor }};">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                    <div>
+                        <div class="text-[8px] uppercase opacity-70">Protected</div>
+                        <div class="text-xs font-semibold leading-none">Secure</div>
                     </div>
-                    <span class="text-xs font-bold text-gray-800">Secure</span>
                 </div>
             </div>
         </div>
