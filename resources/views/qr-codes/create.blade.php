@@ -1563,31 +1563,61 @@ function updateStep1Preview() {
             break;
         }
             
-        case 'wifi':
-            if (overlay) overlay.style.backgroundColor = '#FFFFFF'; // white
-            const ssid = document.getElementById('ssid')?.value || '';
+        case 'wifi': {
+            const escapeHtml = (s) => { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+            
+            // Get values from inputs or defaults
+            const ssid = document.getElementById('ssid')?.value || 'Guest_Network_2.4G';
             const encryption = document.getElementById('encryption')?.value || 'WPA2';
+            const password = document.getElementById('password')?.value || '';
+            
+            // Use a tech-friendly primary color (like a Signal Blue or your brand color)
+            const wifiPrimary = '#2563eb'; 
+            const wifiSecondary = '#ffffff';
+
+            if (overlay) overlay.style.backgroundColor = '#f8fafc'; // Light grey background for the "phone" screen
+
             mockupHtml = `
-                <div class="w-full h-full rounded-lg overflow-hidden">
-                    <div class="p-4">
-                        <div class="flex items-center gap-3 mb-4">
-                            <div class="w-12 h-12 rounded-lg bg-primary-100 flex items-center justify-center">
-                                <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path>
-                                </svg>
+                <div class="w-full h-full rounded-lg flex flex-col items-center justify-center p-6 text-center" style="font-family: 'Maven Pro', sans-serif; background-color: #f8fafc;">
+                    <div class="mb-6 relative">
+                        <div class="w-20 h-20 rounded-full flex items-center justify-center shadow-inner" style="background-color: ${wifiPrimary}10">
+                            <svg class="w-10 h-10" style="color: ${wifiPrimary}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div class="w-full bg-white rounded-3xl p-6 shadow-sm border border-gray-100 mb-6">
+                        <p class="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Network Name</p>
+                        <h2 class="text-xl font-bold text-gray-800 mb-4 truncate">${escapeHtml(ssid)}</h2>
+                        
+                        <div class="flex justify-center gap-6 border-t border-gray-50 pt-4">
+                            <div class="text-left">
+                                <p class="text-[10px] uppercase text-gray-400 font-bold">Security</p>
+                                <p class="text-sm font-semibold text-gray-700">${escapeHtml(encryption)}</p>
                             </div>
-                            <div class="flex-1">
-                                <div class="text-sm font-medium text-gray-900">${ssid || 'WiFi Network'}</div>
-                                <div class="text-xs text-gray-500">${encryption === 'nopass' ? 'Open Network' : encryption + ' Protected'}</div>
+                            <div class="text-left">
+                                <p class="text-[10px] uppercase text-gray-400 font-bold">Password</p>
+                                <p class="text-sm font-semibold text-gray-700">
+                                    ${password ? '••••••••' : '<span class="text-gray-300 italic">None</span>'}
+                                </p>
                             </div>
                         </div>
-                        <div class="border-t border-gray-200 pt-3">
-                            <div class="text-xs text-gray-600">Tap to connect</div>
-                        </div>
+                    </div>
+
+                    <div class="w-full space-y-3">
+                        <button class="w-full py-4 rounded-2xl text-white font-bold shadow-lg transition-transform active:scale-95" 
+                                style="background-color: ${wifiPrimary}">
+                            Join Network
+                        </button>
+                        <p class="text-xs text-gray-400 px-4 leading-relaxed">
+                            Scan the QR code to connect automatically to this network.
+                        </p>
                     </div>
                 </div>
             `;
             break;
+        }
             
         case 'location':
             if (overlay) {
