@@ -204,6 +204,15 @@ window.recaptchaSiteKey = @json($recaptchaSiteKey);
     top: 70%;
     transform: translateY(-50%);
 }
+/* Honeypot fields - hidden using CSS class (harder for bots to detect) */
+.honeypot-field {
+    display: none;
+    height: 0;
+    overflow: hidden;
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+}
 </style>
 <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
     <!-- Progress Steps -->
@@ -246,10 +255,21 @@ window.recaptchaSiteKey = @json($recaptchaSiteKey);
         <input type="hidden" name="type" value="{{ $type }}">
 
         {{-- Honeypot fields – invisible to users, bots often fill these --}}
-        <div style="display: none; position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden;">
-            <input type="text" name="hp_url" value="" autocomplete="off" tabindex="-1" disabled>
-            <input type="text" name="hp_comment" value="" autocomplete="off" tabindex="-1" disabled>
+        {{-- Using realistic field names and CSS class for better bot detection --}}
+        <div class="honeypot-field">
+            <label for="secondary-email">Leave this empty</label>
+            <input type="text" name="second_email" id="secondary-email" value="" tabindex="-1" autocomplete="off">
         </div>
+        <div class="honeypot-field">
+            <label for="alternate-phone">Leave this empty</label>
+            <input type="text" name="alternate_phone" id="alternate-phone" value="" tabindex="-1" autocomplete="off">
+        </div>
+        <div class="honeypot-field">
+            <label for="company-website">Leave this empty</label>
+            <input type="text" name="company_website" id="company-website" value="" tabindex="-1" autocomplete="off">
+        </div>
+        {{-- JavaScript token field - populated only on submit --}}
+        <input type="hidden" name="form_token" id="form-token" value="">
 
         <!-- Step 1: Setup Info -->
         <div id="step-1" class="step-content">
@@ -297,335 +317,355 @@ window.recaptchaSiteKey = @json($recaptchaSiteKey);
                     <div class="card self-start">
                         <h2 class="text-2xl font-bold text-dark-500 mb-6">Customize QR Code Design</h2>
                         
-                        <!-- Color Selection -->
-                        <div class="mb-6">
-                            <label class="label">Select Colors</label>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label for="primary_color" class="text-sm text-dark-300 mb-2 block">Primary Color (QR Code)</label>
-                                    <div class="flex items-center space-x-3">
-                                        <input type="color" id="primary_color" name="primary_color" value="{{ isset($qrCode) ? ($qrCode->colors['primary'] ?? '#000000') : '#000000' }}" class="w-16 h-12 rounded border-2 border-dark-200 cursor-pointer">
-                                        <input type="text" id="primary_color_hex" value="{{ isset($qrCode) ? ($qrCode->colors['primary'] ?? '#000000') : '#000000' }}" class="input flex-1" placeholder="#000000">
+                        <!-- Color Palette -->
+                        <div class="card mb-6">
+                            <h3 class="text-xl font-semibold text-dark-500 mb-4">Color Palette</h3>
+                            <div class="mb-6">
+                                <label class="label">Select Colors</label>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="primary_color" class="text-sm text-dark-300 mb-2 block">Primary Color (QR Code)</label>
+                                        <div class="flex items-center space-x-3">
+                                            <input type="color" id="primary_color" name="primary_color" value="{{ isset($qrCode) ? ($qrCode->colors['primary'] ?? '#000000') : '#000000' }}" class="w-16 h-12 rounded border-2 border-dark-200 cursor-pointer">
+                                            <input type="text" id="primary_color_hex" value="{{ isset($qrCode) ? ($qrCode->colors['primary'] ?? '#000000') : '#000000' }}" class="input flex-1" placeholder="#000000">
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label for="secondary_color" class="text-sm text-dark-300 mb-2 block">Background Color</label>
+                                        <div class="flex items-center space-x-3">
+                                            <input type="color" id="secondary_color" name="secondary_color" value="{{ isset($qrCode) ? ($qrCode->colors['secondary'] ?? '#FFFFFF') : '#FFFFFF' }}" class="w-16 h-12 rounded border-2 border-dark-200 cursor-pointer">
+                                            <input type="text" id="secondary_color_hex" value="{{ isset($qrCode) ? ($qrCode->colors['secondary'] ?? '#FFFFFF') : '#FFFFFF' }}" class="input flex-1" placeholder="#FFFFFF">
+                                        </div>
                                     </div>
                                 </div>
-                                <div>
-                                    <label for="secondary_color" class="text-sm text-dark-300 mb-2 block">Background Color</label>
-                                    <div class="flex items-center space-x-3">
-                                        <input type="color" id="secondary_color" name="secondary_color" value="{{ isset($qrCode) ? ($qrCode->colors['secondary'] ?? '#FFFFFF') : '#FFFFFF' }}" class="w-16 h-12 rounded border-2 border-dark-200 cursor-pointer">
-                                        <input type="text" id="secondary_color_hex" value="{{ isset($qrCode) ? ($qrCode->colors['secondary'] ?? '#FFFFFF') : '#FFFFFF' }}" class="input flex-1" placeholder="#FFFFFF">
+                                
+                                <!-- Color Presets -->
+                                <div class="mt-4">
+                                    <p class="text-sm text-dark-300 mb-2">Quick Presets:</p>
+                                    <div class="grid grid-cols-3 md:flex gap-3">
+                                        <button type="button" class="color-preset border-2 border-primary-500 rounded-lg p-2 hover:border-primary-600 transition-colors" data-primary="#2F4858" data-secondary="#c86a51" title="#2F4858 / #c86a51">
+                                            <div class="flex gap-1">
+                                                <div class="w-8 h-8 rounded" style="background-color:#2F4858;"></div>
+                                                <div class="w-8 h-8 rounded" style="background-color:#c86a51;"></div>
+                                            </div>
+                                        </button>
+                                        <button type="button" class="color-preset border-2 border-dark-200 rounded-lg p-2 hover:border-primary-400 transition-colors" data-primary="#F1F1E6" data-secondary="#232323" title="#F1F1E6 / #232323">
+                                            <div class="flex gap-1">
+                                                <div class="w-8 h-8 rounded" style="background-color:#F1F1E6;"></div>
+                                                <div class="w-8 h-8 rounded" style="background-color:#232323;"></div>
+                                            </div>
+                                        </button>
+                                        <button type="button" class="color-preset border-2 border-dark-200 rounded-lg p-2 hover:border-primary-400 transition-colors" data-primary="#402E32" data-secondary="#F59E0B" title="#402E32 / #F59E0B">
+                                            <div class="flex gap-1">
+                                                <div class="w-8 h-8 rounded" style="background-color:#402E32;"></div>
+                                                <div class="w-8 h-8 rounded" style="background-color:#F59E0B;"></div>
+                                            </div>
+                                        </button>
+                                        <button type="button" class="color-preset border-2 border-dark-200 rounded-lg p-2 hover:border-primary-400 transition-colors" data-primary="#96ADCF" data-secondary="#551A65" title="#96ADCF / #551A65">
+                                            <div class="flex gap-1">
+                                                <div class="w-8 h-8 rounded" style="background-color:#96ADCF;"></div>
+                                                <div class="w-8 h-8 rounded" style="background-color:#551A65;"></div>
+                                            </div>
+                                        </button>
+                                        <button type="button" class="color-preset border-2 border-dark-200 rounded-lg p-2 hover:border-primary-400 transition-colors" data-primary="#94B5FF" data-secondary="#005B5A" title="#94B5FF / #005B5A">
+                                            <div class="flex gap-1">
+                                                <div class="w-8 h-8 rounded" style="background-color:#94B5FF;"></div>
+                                                <div class="w-8 h-8 rounded" style="background-color:#005B5A;"></div>
+                                            </div>
+                                        </button>
                                     </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Color Presets -->
-                            <div class="mt-4">
-                                <p class="text-sm text-dark-300 mb-2">Quick Presets:</p>
-                                <div class="flex flex-wrap gap-2">
-                                    <button type="button" class="color-preset" data-primary="#000000" data-secondary="#FFFFFF">
-                                        <div class="w-10 h-10 rounded border-2 border-dark-200 bg-black"></div>
-                                    </button>
-                                    <button type="button" class="color-preset" data-primary="#FF6a00" data-secondary="#FFFFFF">
-                                        <div class="w-10 h-10 rounded border-2 border-dark-200" style="background-color: #FF6a00;"></div>
-                                    </button>
-                                    <button type="button" class="color-preset" data-primary="#10B981" data-secondary="#FFFFFF">
-                                        <div class="w-10 h-10 rounded border-2 border-dark-200 bg-green-500"></div>
-                                    </button>
-                                    <button type="button" class="color-preset" data-primary="#8B5CF6" data-secondary="#FFFFFF">
-                                        <div class="w-10 h-10 rounded border-2 border-dark-200 bg-purple-500"></div>
-                                    </button>
-                                    <button type="button" class="color-preset" data-primary="#EF4444" data-secondary="#FFFFFF">
-                                        <div class="w-10 h-10 rounded border-2 border-dark-200 bg-red-500"></div>
-                                    </button>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Logo (optional) -->
-                        <div class="mb-6">
-                            <label class="label">Logo (optional)</label>
-                            <p class="text-sm text-dark-300 mb-3">
-                                Add a logo or image in the center of the QR code. This affects only the visual preview for now.
-                            </p>
-                            @guest
-                            <div class="mb-3 flex items-center gap-2 px-4 py-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-800">
-                                <svg class="w-5 h-5 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                                <p class="text-sm font-medium">Guest users will use the default IntegratingMe logo. Sign up to upload your own logo.</p>
+                        <!-- Logo -->
+                        <div class="card mb-6">
+                            <h3 class="text-xl font-semibold text-dark-500 mb-4">Logo</h3>
+                            <div class="mb-6">
+                                <label class="label">Logo (optional)</label>
+                                <p class="text-sm text-dark-300 mb-3">
+                                    Add a logo or image in the center of the QR code. This affects only the visual preview for now.
+                                </p>
+                                @guest
+                                <div class="mb-3 flex items-center gap-2 px-4 py-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-800">
+                                    <svg class="w-5 h-5 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    <p class="text-sm font-medium">Guest users will use the default IntegratingMe logo. Sign up to upload your own logo.</p>
+                                </div>
+                                @endguest
+                                <div id="logo-limit-warning" class="mb-3 hidden flex items-center gap-2 px-4 py-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800">
+                                    <svg class="w-5 h-5 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                    </svg>
+                                    <p class="text-sm font-medium">You have already created a QR code with a custom logo. Free plan allows only one QR code with a custom logo.</p>
+                                </div>
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                                    <div class="flex-1">
+                                        <label for="qr_logo" class="sr-only">Upload logo</label>
+                                        <div class="flex items-center justify-center w-full">
+                                            <label for="qr_logo" class="w-full flex flex-col items-center justify-center px-4 py-3 border-2 border-dashed border-dark-200 rounded-lg {{ auth()->check() ? 'cursor-pointer bg-white hover:border-primary-400' : 'cursor-not-allowed bg-gray-50 opacity-60' }} transition-colors" @guest style="pointer-events: none;" @endguest>
+                                                <div class="flex items-center space-x-3">
+                                                    <svg class="w-6 h-6 text-dark-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V8a2 2 0 00-2-2h-3.172a2 2 0 01-1.414-.586l-1.828-1.828A2 2 0 0010.172 3H6a2 2 0 00-2 2v13a2 2 0 002 2z"></path>
+                                                    </svg>
+                                                    <div class="text-left">
+                                                        <p class="text-sm font-medium text-dark-500">Upload logo image</p>
+                                                        <p class="text-xs text-dark-300">PNG, JPEG or SVG, max ~2 MB</p>
+                                                    </div>
+                                                </div>
+                                                <input id="qr_logo" name="qr_logo" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" class="hidden" @guest disabled @endguest>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col items-start gap-2">
+                                        <button type="button" id="qr_logo_remove_btn" class="btn btn-secondary btn-xs" style="display:none;" @guest disabled @endguest>
+                                            Remove logo
+                                        </button>
+                                        <div id="qr_logo_filename" class="text-xs text-dark-300 line-clamp-2 max-w-[180px]"></div>
+                                    </div>
+                                </div>
+                                <input type="hidden" id="qr_logo_data_url" name="qr_logo_data_url" value="@guest{{ asset('logo-integrating-me.webp') }}@endguest">
                             </div>
-                            @endguest
-                            <div id="logo-limit-warning" class="mb-3 hidden flex items-center gap-2 px-4 py-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800">
-                                <svg class="w-5 h-5 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                                </svg>
-                                <p class="text-sm font-medium">You have already created a QR code with a custom logo. Free plan allows only one QR code with a custom logo.</p>
+                        </div>
+
+                        <!-- QR Style -->
+                        <div class="card mb-6">
+                            <h3 class="text-xl font-semibold text-dark-500 mb-4">QR Style</h3>
+                            <!-- Pattern Selection -->
+                            <div class="mb-6">
+                                <label class="label">Pattern Style</label>
+                                <p class="text-sm text-dark-300 mb-4">Choose the pattern style for QR code modules.</p>
+                                <div class="grid grid-cols-3 gap-3">
+                                    <button type="button" class="pattern-option border-2 border-primary-500 rounded-lg p-4 hover:border-primary-600 transition-colors" data-pattern="square" onclick="selectPattern(this, 'square')">
+                                        <div class="w-full h-20 bg-white rounded border-2 border-dark-200 flex items-center justify-center">
+                                            <div class="grid grid-cols-3 gap-1">
+                                                <div class="w-4 h-4 bg-black rounded-sm"></div>
+                                                <div class="w-4 h-4 bg-black rounded-sm"></div>
+                                                <div class="w-4 h-4 bg-black rounded-sm"></div>
+                                                <div class="w-4 h-4 bg-black rounded-sm"></div>
+                                                <div class="w-4 h-4 bg-black rounded-sm"></div>
+                                                <div class="w-4 h-4 bg-black rounded-sm"></div>
+                                        </div>
+                                        </div>
+                                        <p class="text-xs text-center mt-2 text-dark-400">Square</p>
+                                    </button>
+                                    <button type="button" class="pattern-option border-2 border-dark-200 rounded-lg p-4 hover:border-primary-400 transition-colors" data-pattern="circle" onclick="selectPattern(this, 'circle')">
+                                        <div class="w-full h-20 bg-white rounded border-2 border-dark-200 flex items-center justify-center">
+                                            <div class="grid grid-cols-3 gap-1">
+                                                <div class="w-4 h-4 bg-black rounded-full"></div>
+                                                <div class="w-4 h-4 bg-black rounded-full"></div>
+                                                <div class="w-4 h-4 bg-black rounded-full"></div>
+                                                <div class="w-4 h-4 bg-black rounded-full"></div>
+                                                <div class="w-4 h-4 bg-black rounded-full"></div>
+                                                <div class="w-4 h-4 bg-black rounded-full"></div>
+                                        </div>
+                                        </div>
+                                        <p class="text-xs text-center mt-2 text-dark-400">Circle</p>
+                                    </button>
+                                    <button type="button" class="pattern-option border-2 border-dark-200 rounded-lg p-4 hover:border-primary-400 transition-colors" data-pattern="rounded" onclick="selectPattern(this, 'rounded')">
+                                        <div class="w-full h-20 bg-white rounded border-2 border-dark-200 flex items-center justify-center">
+                                            <div class="grid grid-cols-3 gap-1">
+                                                <div class="w-4 h-4 bg-black rounded"></div>
+                                                <div class="w-4 h-4 bg-black rounded"></div>
+                                                <div class="w-4 h-4 bg-black rounded"></div>
+                                                <div class="w-4 h-4 bg-black rounded"></div>
+                                                <div class="w-4 h-4 bg-black rounded"></div>
+                                                <div class="w-4 h-4 bg-black rounded"></div>
+                                        </div>
+                                        </div>
+                                        <p class="text-xs text-center mt-2 text-dark-400">Rounded</p>
+                                    </button>
+                                </div>
+                                <input type="hidden" id="selected_pattern" name="pattern" value="{{ isset($qrCode) ? ($qrCode->customization['pattern'] ?? 'square') : 'square' }}">
                             </div>
-                            <div class="flex flex-col sm:flex-row sm:items-center gap-4">
-                                <div class="flex-1">
-                                    <label for="qr_logo" class="sr-only">Upload logo</label>
-                                    <div class="flex items-center justify-center w-full">
-                                        <label for="qr_logo" class="w-full flex flex-col items-center justify-center px-4 py-3 border-2 border-dashed border-dark-200 rounded-lg {{ auth()->check() ? 'cursor-pointer bg-white hover:border-primary-400' : 'cursor-not-allowed bg-gray-50 opacity-60' }} transition-colors" @guest style="pointer-events: none;" @endguest>
-                                            <div class="flex items-center space-x-3">
-                                                <svg class="w-6 h-6 text-dark-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V8a2 2 0 00-2-2h-3.172a2 2 0 01-1.414-.586l-1.828-1.828A2 2 0 0010.172 3H6a2 2 0 00-2 2v13a2 2 0 002 2z"></path>
-                                                </svg>
-                                                <div class="text-left">
-                                                    <p class="text-sm font-medium text-dark-500">Upload logo image</p>
-                                                    <p class="text-xs text-dark-300">PNG, JPEG or SVG, max ~2 MB</p>
+
+                            <!-- Corner Style -->
+                            <div class="mb-6">
+                                <label class="label">Corner Style</label>
+                                <p class="text-sm text-dark-300 mb-4">Customize the corner squares of your QR code.</p>
+                                <div class="grid grid-cols-3 gap-3">
+                                    <button type="button" class="corner-option border-2 border-primary-500 rounded-lg p-4 hover:border-primary-600 transition-colors" data-corner="square" onclick="selectCorner(this, 'square')">
+                                        <div class="w-full h-20 bg-white rounded border-2 border-dark-200 flex items-center justify-center">
+                                            <div class="relative w-16 h-16">
+                                                <div class="absolute top-0 left-0 w-6 h-6 border-4 border-black"></div>
+                                                <div class="absolute top-0 right-0 w-6 h-6 border-4 border-black"></div>
+                                                <div class="absolute bottom-0 left-0 w-6 h-6 border-4 border-black"></div>
+                                        </div>
+                                        </div>
+                                        <p class="text-xs text-center mt-2 text-dark-400">Square</p>
+                                    </button>
+                                    <button type="button" class="corner-option border-2 border-dark-200 rounded-lg p-4 hover:border-primary-400 transition-colors" data-corner="rounded" onclick="selectCorner(this, 'rounded')">
+                                        <div class="w-full h-20 bg-white rounded border-2 border-dark-200 flex items-center justify-center">
+                                            <div class="relative w-16 h-16">
+                                                <div class="absolute top-0 left-0 w-6 h-6 border-4 border-black rounded"></div>
+                                                <div class="absolute top-0 right-0 w-6 h-6 border-4 border-black rounded"></div>
+                                                <div class="absolute bottom-0 left-0 w-6 h-6 border-4 border-black rounded"></div>
+                                        </div>
+                                        </div>
+                                        <p class="text-xs text-center mt-2 text-dark-400">Rounded</p>
+                                    </button>
+                                    <button type="button" class="corner-option border-2 border-dark-200 rounded-lg p-4 hover:border-primary-400 transition-colors" data-corner="extra-rounded" onclick="selectCorner(this, 'extra-rounded')">
+                                        <div class="w-full h-20 bg-white rounded border-2 border-dark-200 flex items-center justify-center">
+                                            <div class="relative w-16 h-16">
+                                                <div class="absolute top-0 left-0 w-6 h-6 border-4 border-black rounded-lg"></div>
+                                                <div class="absolute top-0 right-0 w-6 h-6 border-4 border-black rounded-lg"></div>
+                                                <div class="absolute bottom-0 left-0 w-6 h-6 border-4 border-black rounded-lg"></div>
+                                        </div>
+                                        </div>
+                                        <p class="text-xs text-center mt-2 text-dark-400">Extra Rounded</p>
+                                    </button>
+                                </div>
+                                <input type="hidden" id="selected_corner" name="corner_style" value="{{ isset($qrCode) ? ($qrCode->customization['corner_style'] ?? 'square') : 'square' }}">
+                            </div>
+
+                            <!-- Corner Dot Style -->
+                            <div class="mb-6">
+                                <label class="label">Corner Dot Style</label>
+                                <p class="text-sm text-dark-300 mb-4">Choose the style for the center dot in corner squares.</p>
+                                <div class="grid grid-cols-3 gap-3">
+                                    <button type="button" class="corner-dot-option border-2 border-primary-500 rounded-lg p-4 hover:border-primary-600 transition-colors" data-corner-dot="square" onclick="selectCornerDot(this, 'square')">
+                                        <div class="w-full h-20 bg-white rounded border-2 border-dark-200 flex items-center justify-center">
+                                            <div class="w-12 h-12 border-4 border-black">
+                                                <div class="w-full h-full flex items-center justify-center">
+                                                    <div class="w-3 h-3 bg-black"></div>
+                                    </div>
+                                    </div>
+                                </div>
+                                        <p class="text-xs text-center mt-2 text-dark-400">Square</p>
+                                    </button>
+                                    <button type="button" class="corner-dot-option border-2 border-dark-200 rounded-lg p-4 hover:border-primary-400 transition-colors" data-corner-dot="circle" onclick="selectCornerDot(this, 'circle')">
+                                        <div class="w-full h-20 bg-white rounded border-2 border-dark-200 flex items-center justify-center">
+                                            <div class="w-12 h-12 border-4 border-black rounded">
+                                                <div class="w-full h-full flex items-center justify-center">
+                                                    <div class="w-3 h-3 bg-black rounded-full"></div>
+                            </div>
+                                            </div>
+                                        </div>
+                                        <p class="text-xs text-center mt-2 text-dark-400">Circle</p>
+                                    </button>
+                                    <button type="button" class="corner-dot-option border-2 border-dark-200 rounded-lg p-4 hover:border-primary-400 transition-colors" data-corner-dot="rounded" onclick="selectCornerDot(this, 'rounded')">
+                                        <div class="w-full h-20 bg-white rounded border-2 border-dark-200 flex items-center justify-center">
+                                            <div class="w-12 h-12 border-4 border-black rounded">
+                                                <div class="w-full h-full flex items-center justify-center">
+                                                    <div class="w-3 h-3 bg-black rounded"></div>
                                                 </div>
                                             </div>
-                                            <input id="qr_logo" name="qr_logo" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" class="hidden" @guest disabled @endguest>
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="flex flex-col items-start gap-2">
-                                    <button type="button" id="qr_logo_remove_btn" class="btn btn-secondary btn-xs" style="display:none;" @guest disabled @endguest>
-                                        Remove logo
-                                    </button>
-                                    <div id="qr_logo_filename" class="text-xs text-dark-300 line-clamp-2 max-w-[180px]"></div>
-                                </div>
-                            </div>
-                            <input type="hidden" id="qr_logo_data_url" name="qr_logo_data_url" value="@guest{{ asset('logo-integrating-me.webp') }}@endguest">
-                        </div>
-
-                        <!-- Pattern Selection -->
-                        <div class="mb-6">
-                            <label class="label">Pattern Style</label>
-                            <p class="text-sm text-dark-300 mb-4">Choose the pattern style for QR code modules.</p>
-                            <div class="grid grid-cols-3 gap-3">
-                                <button type="button" class="pattern-option border-2 border-primary-500 rounded-lg p-4 hover:border-primary-600 transition-colors" data-pattern="square" onclick="selectPattern(this, 'square')">
-                                    <div class="w-full h-20 bg-white rounded border-2 border-dark-200 flex items-center justify-center">
-                                        <div class="grid grid-cols-3 gap-1">
-                                            <div class="w-4 h-4 bg-black rounded-sm"></div>
-                                            <div class="w-4 h-4 bg-black rounded-sm"></div>
-                                            <div class="w-4 h-4 bg-black rounded-sm"></div>
-                                            <div class="w-4 h-4 bg-black rounded-sm"></div>
-                                            <div class="w-4 h-4 bg-black rounded-sm"></div>
-                                            <div class="w-4 h-4 bg-black rounded-sm"></div>
-                                    </div>
-                                    </div>
-                                    <p class="text-xs text-center mt-2 text-dark-400">Square</p>
-                                </button>
-                                <button type="button" class="pattern-option border-2 border-dark-200 rounded-lg p-4 hover:border-primary-400 transition-colors" data-pattern="circle" onclick="selectPattern(this, 'circle')">
-                                    <div class="w-full h-20 bg-white rounded border-2 border-dark-200 flex items-center justify-center">
-                                        <div class="grid grid-cols-3 gap-1">
-                                            <div class="w-4 h-4 bg-black rounded-full"></div>
-                                            <div class="w-4 h-4 bg-black rounded-full"></div>
-                                            <div class="w-4 h-4 bg-black rounded-full"></div>
-                                            <div class="w-4 h-4 bg-black rounded-full"></div>
-                                            <div class="w-4 h-4 bg-black rounded-full"></div>
-                                            <div class="w-4 h-4 bg-black rounded-full"></div>
-                                    </div>
-                                    </div>
-                                    <p class="text-xs text-center mt-2 text-dark-400">Circle</p>
-                                </button>
-                                <button type="button" class="pattern-option border-2 border-dark-200 rounded-lg p-4 hover:border-primary-400 transition-colors" data-pattern="rounded" onclick="selectPattern(this, 'rounded')">
-                                    <div class="w-full h-20 bg-white rounded border-2 border-dark-200 flex items-center justify-center">
-                                        <div class="grid grid-cols-3 gap-1">
-                                            <div class="w-4 h-4 bg-black rounded"></div>
-                                            <div class="w-4 h-4 bg-black rounded"></div>
-                                            <div class="w-4 h-4 bg-black rounded"></div>
-                                            <div class="w-4 h-4 bg-black rounded"></div>
-                                            <div class="w-4 h-4 bg-black rounded"></div>
-                                            <div class="w-4 h-4 bg-black rounded"></div>
-                                    </div>
-                                    </div>
-                                    <p class="text-xs text-center mt-2 text-dark-400">Rounded</p>
-                                </button>
-                            </div>
-                            <input type="hidden" id="selected_pattern" name="pattern" value="{{ isset($qrCode) ? ($qrCode->customization['pattern'] ?? 'square') : 'square' }}">
-                        </div>
-
-                        <!-- Corner Style -->
-                        <div class="mb-6">
-                            <label class="label">Corner Style</label>
-                            <p class="text-sm text-dark-300 mb-4">Customize the corner squares of your QR code.</p>
-                            <div class="grid grid-cols-3 gap-3">
-                                <button type="button" class="corner-option border-2 border-primary-500 rounded-lg p-4 hover:border-primary-600 transition-colors" data-corner="square" onclick="selectCorner(this, 'square')">
-                                    <div class="w-full h-20 bg-white rounded border-2 border-dark-200 flex items-center justify-center">
-                                        <div class="relative w-16 h-16">
-                                            <div class="absolute top-0 left-0 w-6 h-6 border-4 border-black"></div>
-                                            <div class="absolute top-0 right-0 w-6 h-6 border-4 border-black"></div>
-                                            <div class="absolute bottom-0 left-0 w-6 h-6 border-4 border-black"></div>
-                                    </div>
-                                    </div>
-                                    <p class="text-xs text-center mt-2 text-dark-400">Square</p>
-                                </button>
-                                <button type="button" class="corner-option border-2 border-dark-200 rounded-lg p-4 hover:border-primary-400 transition-colors" data-corner="rounded" onclick="selectCorner(this, 'rounded')">
-                                    <div class="w-full h-20 bg-white rounded border-2 border-dark-200 flex items-center justify-center">
-                                        <div class="relative w-16 h-16">
-                                            <div class="absolute top-0 left-0 w-6 h-6 border-4 border-black rounded"></div>
-                                            <div class="absolute top-0 right-0 w-6 h-6 border-4 border-black rounded"></div>
-                                            <div class="absolute bottom-0 left-0 w-6 h-6 border-4 border-black rounded"></div>
-                                    </div>
-                                    </div>
-                                    <p class="text-xs text-center mt-2 text-dark-400">Rounded</p>
-                                </button>
-                                <button type="button" class="corner-option border-2 border-dark-200 rounded-lg p-4 hover:border-primary-400 transition-colors" data-corner="extra-rounded" onclick="selectCorner(this, 'extra-rounded')">
-                                    <div class="w-full h-20 bg-white rounded border-2 border-dark-200 flex items-center justify-center">
-                                        <div class="relative w-16 h-16">
-                                            <div class="absolute top-0 left-0 w-6 h-6 border-4 border-black rounded-lg"></div>
-                                            <div class="absolute top-0 right-0 w-6 h-6 border-4 border-black rounded-lg"></div>
-                                            <div class="absolute bottom-0 left-0 w-6 h-6 border-4 border-black rounded-lg"></div>
-                                    </div>
-                                    </div>
-                                    <p class="text-xs text-center mt-2 text-dark-400">Extra Rounded</p>
-                                </button>
-                            </div>
-                            <input type="hidden" id="selected_corner" name="corner_style" value="{{ isset($qrCode) ? ($qrCode->customization['corner_style'] ?? 'square') : 'square' }}">
-                        </div>
-
-                        <!-- Corner Dot Style -->
-                        <div class="mb-6">
-                            <label class="label">Corner Dot Style</label>
-                            <p class="text-sm text-dark-300 mb-4">Choose the style for the center dot in corner squares.</p>
-                            <div class="grid grid-cols-3 gap-3">
-                                <button type="button" class="corner-dot-option border-2 border-primary-500 rounded-lg p-4 hover:border-primary-600 transition-colors" data-corner-dot="square" onclick="selectCornerDot(this, 'square')">
-                                    <div class="w-full h-20 bg-white rounded border-2 border-dark-200 flex items-center justify-center">
-                                        <div class="w-12 h-12 border-4 border-black">
-                                            <div class="w-full h-full flex items-center justify-center">
-                                                <div class="w-3 h-3 bg-black"></div>
-                                </div>
-                                </div>
-                            </div>
-                                    <p class="text-xs text-center mt-2 text-dark-400">Square</p>
-                                </button>
-                                <button type="button" class="corner-dot-option border-2 border-dark-200 rounded-lg p-4 hover:border-primary-400 transition-colors" data-corner-dot="circle" onclick="selectCornerDot(this, 'circle')">
-                                    <div class="w-full h-20 bg-white rounded border-2 border-dark-200 flex items-center justify-center">
-                                        <div class="w-12 h-12 border-4 border-black rounded">
-                                            <div class="w-full h-full flex items-center justify-center">
-                                                <div class="w-3 h-3 bg-black rounded-full"></div>
-                        </div>
                                         </div>
-                                    </div>
-                                    <p class="text-xs text-center mt-2 text-dark-400">Circle</p>
-                                </button>
-                                <button type="button" class="corner-dot-option border-2 border-dark-200 rounded-lg p-4 hover:border-primary-400 transition-colors" data-corner-dot="rounded" onclick="selectCornerDot(this, 'rounded')">
-                                    <div class="w-full h-20 bg-white rounded border-2 border-dark-200 flex items-center justify-center">
-                                        <div class="w-12 h-12 border-4 border-black rounded">
-                                            <div class="w-full h-full flex items-center justify-center">
-                                                <div class="w-3 h-3 bg-black rounded"></div>
+                                        <p class="text-xs text-center mt-2 text-dark-400">Rounded</p>
+                                    </button>
+                                </div>
+                                <input type="hidden" id="selected_corner_dot" name="corner_dot_style" value="{{ isset($qrCode) ? ($qrCode->customization['corner_dot_style'] ?? 'square') : 'square' }}">
+                            </div>
+                        </div>
+
+                        <!-- Frame Style -->
+                        <div class="card mb-6">
+                            <h3 class="text-xl font-semibold text-dark-500 mb-4">Frame Style</h3>
+                            <div class="mb-6">
+                                <label class="label">Frame</label>
+                                <p class="text-sm text-dark-300 mb-4">Add a frame around your QR code (e.g. border + "Scan me!").</p>
+                                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                                    <button type="button" class="frame-option border-2 border-primary-500 p-3 hover:border-primary-600 transition-colors flex flex-col items-center" data-frame="none" onclick="selectFrame(this, 'none')">
+                                        <div class="w-full h-16 bg-dark-100 border border-dark-200 flex items-center justify-center text-dark-400 text-xs">No frame</div>
+                                        <p class="text-xs text-center mt-2 text-dark-400">No frame</p>
+                                    </button>
+                                    <button type="button" class="frame-option border-2 border-dark-200 p-3 hover:border-primary-400 transition-colors flex flex-col items-center" data-frame="standard-border" onclick="selectFrame(this, 'standard-border')">
+                                        <img src="{{ asset('frames/standard-border.svg') }}" alt="Standard" class="w-full h-16 object-contain object-center border border-dark-200">
+                                        <p class="text-xs text-center mt-2 text-dark-400">Standard</p>
+                                    </button>
+                                    <button type="button" class="frame-option border-2 border-dark-200 p-3 hover:border-primary-400 transition-colors flex flex-col items-center" data-frame="menu-qr" onclick="selectFrame(this, 'menu-qr')">
+                                        <img src="{{ asset('frames/menu-qr.svg') }}" alt="Menu" class="w-full h-16 object-contain object-center border border-dark-200">
+                                        <p class="text-xs text-center mt-2 text-dark-400">Menu</p>
+                                    </button>
+                                    <button type="button" class="frame-option border-2 border-dark-200 p-3 hover:border-primary-400 transition-colors flex flex-col items-center" data-frame="location" onclick="selectFrame(this, 'location')">
+                                        <img src="{{ asset('frames/location.svg') }}" alt="Location" class="w-full h-16 object-contain object-center border border-dark-200">
+                                        <p class="text-xs text-center mt-2 text-dark-400">Location</p>
+                                    </button>
+                                    <button type="button" class="frame-option border-2 border-dark-200 p-3 hover:border-primary-400 transition-colors flex flex-col items-center" data-frame="wifi" onclick="selectFrame(this, 'wifi')">
+                                        <img src="{{ asset('frames/wifi.svg') }}" alt="Wi‑Fi" class="w-full h-16 object-contain object-center border border-dark-200">
+                                        <p class="text-xs text-center mt-2 text-dark-400">Wi‑Fi</p>
+                                    </button>
+                                    <button type="button" class="frame-option border-2 border-dark-200 p-3 hover:border-primary-400 transition-colors flex flex-col items-center" data-frame="chat" onclick="selectFrame(this, 'chat')">
+                                        <img src="{{ asset('frames/chat.svg') }}" alt="Chat" class="w-full h-16 object-contain object-center border border-dark-200">
+                                        <p class="text-xs text-center mt-2 text-dark-400">Chat</p>
+                                    </button>
+                                    <button type="button" class="frame-option border-2 border-dark-200 p-3 hover:border-primary-400 transition-colors flex flex-col items-center" data-frame="review-us" onclick="selectFrame(this, 'review-us')">
+                                        <img src="{{ asset('frames/review-us.svg') }}" alt="Review us" class="w-full h-16 object-contain object-center border border-dark-200">
+                                        <p class="text-xs text-center mt-2 text-dark-400">Review us</p>
+                                    </button>
+                                </div>
+                                <input type="hidden" id="selected_frame" name="frame" value="{{ isset($qrCode) ? ($qrCode->customization['frame'] ?? 'none') : 'none' }}">
+
+                                <!-- Review-us frame options (visible only when this frame is selected) -->
+                                <div id="review-us-frame-options" class="hidden mt-4 p-4 border border-dark-200 rounded-xl bg-dark-50 space-y-4">
+                                    <p class="text-sm font-medium text-dark-600">Customize Review us frame</p>
+                                    <div class="flex flex-wrap items-center gap-6">
+                                        <div>
+                                            <label for="review_frame_color" class="block text-xs font-medium text-dark-500 mb-1">Frame color</label>
+                                            <div class="flex items-center gap-2">
+                                                <input type="color" id="review_frame_color" name="review_frame_color" value="{{ isset($qrCode) && isset($qrCode->customization['review_us_config']['color']) ? $qrCode->customization['review_us_config']['color'] : '#84BD00' }}" class="h-10 w-14 cursor-pointer rounded border border-dark-200 bg-white p-0.5">
+                                                <input type="text" id="review_frame_color_hex" maxlength="7" value="{{ isset($qrCode) && isset($qrCode->customization['review_us_config']['color']) ? $qrCode->customization['review_us_config']['color'] : '#84BD00' }}" class="w-24 rounded-lg border border-dark-200 px-2 py-1.5 text-sm font-mono" placeholder="#84BD00">
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label for="review_frame_text_color" class="block text-xs font-medium text-dark-500 mb-1">Text color</label>
+                                            <div class="flex items-center gap-2">
+                                                <input type="color" id="review_frame_text_color" name="review_frame_text_color" value="{{ isset($qrCode) && isset($qrCode->customization['review_us_config']['text_color']) ? $qrCode->customization['review_us_config']['text_color'] : '#000000' }}" class="h-10 w-14 cursor-pointer rounded border border-dark-200 bg-white p-0.5">
+                                                <input type="text" id="review_frame_text_color_hex" maxlength="7" value="{{ isset($qrCode) && isset($qrCode->customization['review_us_config']['text_color']) ? $qrCode->customization['review_us_config']['text_color'] : '#000000' }}" class="w-24 rounded-lg border border-dark-200 px-2 py-1.5 text-sm font-mono" placeholder="#000000">
                                             </div>
                                         </div>
                                     </div>
-                                    <p class="text-xs text-center mt-2 text-dark-400">Rounded</p>
-                                </button>
-                            </div>
-                            <input type="hidden" id="selected_corner_dot" name="corner_dot_style" value="{{ isset($qrCode) ? ($qrCode->customization['corner_dot_style'] ?? 'square') : 'square' }}">
-                        </div>
-
-                        <!-- Frame (around QR) -->
-                        <div class="mb-6">
-                            <label class="label">Frame</label>
-                            <p class="text-sm text-dark-300 mb-4">Add a frame around your QR code (e.g. border + "Scan me!").</p>
-                            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                                <button type="button" class="frame-option border-2 border-primary-500 p-3 hover:border-primary-600 transition-colors flex flex-col items-center" data-frame="none" onclick="selectFrame(this, 'none')">
-                                    <div class="w-full h-16 bg-dark-100 border border-dark-200 flex items-center justify-center text-dark-400 text-xs">No frame</div>
-                                    <p class="text-xs text-center mt-2 text-dark-400">No frame</p>
-                                </button>
-                                <button type="button" class="frame-option border-2 border-dark-200 p-3 hover:border-primary-400 transition-colors flex flex-col items-center" data-frame="standard-border" onclick="selectFrame(this, 'standard-border')">
-                                    <img src="{{ asset('frames/standard-border.svg') }}" alt="Standard" class="w-full h-16 object-contain object-center border border-dark-200">
-                                    <p class="text-xs text-center mt-2 text-dark-400">Standard</p>
-                                </button>
-                                <button type="button" class="frame-option border-2 border-dark-200 p-3 hover:border-primary-400 transition-colors flex flex-col items-center" data-frame="thick-border" onclick="selectFrame(this, 'thick-border')">
-                                    <img src="{{ asset('frames/thick-border.svg') }}" alt="Thick" class="w-full h-16 object-contain object-center border border-dark-200">
-                                    <p class="text-xs text-center mt-2 text-dark-400">Thick</p>
-                                </button>
-                                <button type="button" class="frame-option border-2 border-dark-200 p-3 hover:border-primary-400 transition-colors flex flex-col items-center" data-frame="speech-bubble" onclick="selectFrame(this, 'speech-bubble')">
-                                    <img src="{{ asset('frames/speech-bubble.svg') }}" alt="Speech bubble" class="w-full h-16 object-contain object-center border border-dark-200">
-                                    <p class="text-xs text-center mt-2 text-dark-400">Speech bubble</p>
-                                </button>
-                                <button type="button" class="frame-option border-2 border-dark-200 p-3 hover:border-primary-400 transition-colors flex flex-col items-center" data-frame="menu-qr" onclick="selectFrame(this, 'menu-qr')">
-                                    <img src="{{ asset('frames/menu-qr.svg') }}" alt="Menu" class="w-full h-16 object-contain object-center border border-dark-200">
-                                    <p class="text-xs text-center mt-2 text-dark-400">Menu</p>
-                                </button>
-                                <button type="button" class="frame-option border-2 border-dark-200 p-3 hover:border-primary-400 transition-colors flex flex-col items-center" data-frame="location" onclick="selectFrame(this, 'location')">
-                                    <img src="{{ asset('frames/location.svg') }}" alt="Location" class="w-full h-16 object-contain object-center border border-dark-200">
-                                    <p class="text-xs text-center mt-2 text-dark-400">Location</p>
-                                </button>
-                                <button type="button" class="frame-option border-2 border-dark-200 p-3 hover:border-primary-400 transition-colors flex flex-col items-center" data-frame="wifi" onclick="selectFrame(this, 'wifi')">
-                                    <img src="{{ asset('frames/wifi.svg') }}" alt="Wi‑Fi" class="w-full h-16 object-contain object-center border border-dark-200">
-                                    <p class="text-xs text-center mt-2 text-dark-400">Wi‑Fi</p>
-                                </button>
-                                <button type="button" class="frame-option border-2 border-dark-200 p-3 hover:border-primary-400 transition-colors flex flex-col items-center" data-frame="chat" onclick="selectFrame(this, 'chat')">
-                                    <img src="{{ asset('frames/chat.svg') }}" alt="Chat" class="w-full h-16 object-contain object-center border border-dark-200">
-                                    <p class="text-xs text-center mt-2 text-dark-400">Chat</p>
-                                </button>
-                                <button type="button" class="frame-option border-2 border-dark-200 p-3 hover:border-primary-400 transition-colors flex flex-col items-center" data-frame="review-us" onclick="selectFrame(this, 'review-us')">
-                                    <img src="{{ asset('frames/review-us.svg') }}" alt="Review us" class="w-full h-16 object-contain object-center border border-dark-200">
-                                    <p class="text-xs text-center mt-2 text-dark-400">Review us</p>
-                                </button>
-                            </div>
-                            <input type="hidden" id="selected_frame" name="frame" value="{{ isset($qrCode) ? ($qrCode->customization['frame'] ?? 'none') : 'none' }}">
-
-                            <!-- Review-us frame options (visible only when this frame is selected) -->
-                            <div id="review-us-frame-options" class="hidden mt-4 p-4 border border-dark-200 rounded-xl bg-dark-50 space-y-4">
-                                <p class="text-sm font-medium text-dark-600">Customize Review us frame</p>
-                                <div class="flex flex-wrap items-center gap-6">
-                                    <div>
-                                        <label for="review_frame_color" class="block text-xs font-medium text-dark-500 mb-1">Frame color</label>
-                                        <div class="flex items-center gap-2">
-                                            <input type="color" id="review_frame_color" name="review_frame_color" value="{{ isset($qrCode) && isset($qrCode->customization['review_us_config']['color']) ? $qrCode->customization['review_us_config']['color'] : '#84BD00' }}" class="h-10 w-14 cursor-pointer rounded border border-dark-200 bg-white p-0.5">
-                                            <input type="text" id="review_frame_color_hex" maxlength="7" value="{{ isset($qrCode) && isset($qrCode->customization['review_us_config']['color']) ? $qrCode->customization['review_us_config']['color'] : '#84BD00' }}" class="w-24 rounded-lg border border-dark-200 px-2 py-1.5 text-sm font-mono" placeholder="#84BD00">
+                                    <div class="grid grid-cols-1 gap-3">
+                                        <div>
+                                            <label for="review_frame_line1" class="block text-xs font-medium text-dark-500 mb-1">Line 1</label>
+                                            <input type="text" id="review_frame_line1" name="review_frame_line1" value="{{ isset($qrCode) && isset($qrCode->customization['review_us_config']['line1']) ? $qrCode->customization['review_us_config']['line1'] : 'your' }}" maxlength="100" class="w-full rounded-lg border border-dark-200 px-3 py-2 text-sm" placeholder="your">
+                                        </div>
+                                        <div>
+                                            <label for="review_frame_line2" class="block text-xs font-medium text-dark-500 mb-1">Line 2</label>
+                                            <input type="text" id="review_frame_line2" name="review_frame_line2" value="{{ isset($qrCode) && isset($qrCode->customization['review_us_config']['line2']) ? $qrCode->customization['review_us_config']['line2'] : 'text' }}" maxlength="100" class="w-full rounded-lg border border-dark-200 px-3 py-2 text-sm" placeholder="text">
+                                        </div>
+                                        <div>
+                                            <label for="review_frame_line3" class="block text-xs font-medium text-dark-500 mb-1">Line 3</label>
+                                            <input type="text" id="review_frame_line3" name="review_frame_line3" value="{{ isset($qrCode) && isset($qrCode->customization['review_us_config']['line3']) ? $qrCode->customization['review_us_config']['line3'] : 'here' }}" maxlength="100" class="w-full rounded-lg border border-dark-200 px-3 py-2 text-sm" placeholder="here">
                                         </div>
                                     </div>
                                     <div>
-                                        <label for="review_frame_text_color" class="block text-xs font-medium text-dark-500 mb-1">Text color</label>
-                                        <div class="flex items-center gap-2">
-                                            <input type="color" id="review_frame_text_color" name="review_frame_text_color" value="{{ isset($qrCode) && isset($qrCode->customization['review_us_config']['text_color']) ? $qrCode->customization['review_us_config']['text_color'] : '#000000' }}" class="h-10 w-14 cursor-pointer rounded border border-dark-200 bg-white p-0.5">
-                                            <input type="text" id="review_frame_text_color_hex" maxlength="7" value="{{ isset($qrCode) && isset($qrCode->customization['review_us_config']['text_color']) ? $qrCode->customization['review_us_config']['text_color'] : '#000000' }}" class="w-24 rounded-lg border border-dark-200 px-2 py-1.5 text-sm font-mono" placeholder="#000000">
+                                        <label class="block text-xs font-medium text-dark-500 mb-1">Icon</label>
+                                        <p class="text-xs text-dark-400 mb-2">Choose a predefined icon or upload your own (JPG/PNG, max 2MB).</p>
+                                        <input type="hidden" id="review_frame_icon" value="default">
+                                        <div id="review_frame_selected_preview" class="mb-3 p-3 rounded-lg border border-dark-200 bg-white flex items-center gap-2" data-default-icon-url="{{ asset('frames/review-us-icons/default.svg') }}">
+                                            <span class="text-xs text-dark-500 whitespace-nowrap">Selected:</span>
+                                            <img id="review_frame_selected_icon_img" src="{{ asset('frames/review-us-icons/default.svg') }}" alt="Selected icon" class="h-12 w-auto object-contain max-w-[200px]">
                                         </div>
-                                    </div>
-                                </div>
-                                <div class="grid grid-cols-1 gap-3">
-                                    <div>
-                                        <label for="review_frame_line1" class="block text-xs font-medium text-dark-500 mb-1">Line 1</label>
-                                        <input type="text" id="review_frame_line1" name="review_frame_line1" value="{{ isset($qrCode) && isset($qrCode->customization['review_us_config']['line1']) ? $qrCode->customization['review_us_config']['line1'] : 'your' }}" maxlength="100" class="w-full rounded-lg border border-dark-200 px-3 py-2 text-sm" placeholder="your">
-                                    </div>
-                                    <div>
-                                        <label for="review_frame_line2" class="block text-xs font-medium text-dark-500 mb-1">Line 2</label>
-                                        <input type="text" id="review_frame_line2" name="review_frame_line2" value="{{ isset($qrCode) && isset($qrCode->customization['review_us_config']['line2']) ? $qrCode->customization['review_us_config']['line2'] : 'text' }}" maxlength="100" class="w-full rounded-lg border border-dark-200 px-3 py-2 text-sm" placeholder="text">
-                                    </div>
-                                    <div>
-                                        <label for="review_frame_line3" class="block text-xs font-medium text-dark-500 mb-1">Line 3</label>
-                                        <input type="text" id="review_frame_line3" name="review_frame_line3" value="{{ isset($qrCode) && isset($qrCode->customization['review_us_config']['line3']) ? $qrCode->customization['review_us_config']['line3'] : 'here' }}" maxlength="100" class="w-full rounded-lg border border-dark-200 px-3 py-2 text-sm" placeholder="here">
-                                    </div>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-dark-500 mb-1">Icon</label>
-                                    <p class="text-xs text-dark-400 mb-2">Choose a predefined icon or upload your own (JPG/PNG, max 2MB).</p>
-                                    <input type="hidden" id="review_frame_icon" value="default">
-                                    <div id="review_frame_selected_preview" class="mb-3 p-3 rounded-lg border border-dark-200 bg-white flex items-center gap-2" data-default-icon-url="{{ asset('frames/review-us-icons/default.svg') }}">
-                                        <span class="text-xs text-dark-500 whitespace-nowrap">Selected:</span>
-                                        <img id="review_frame_selected_icon_img" src="{{ asset('frames/review-us-icons/default.svg') }}" alt="Selected icon" class="h-12 w-auto object-contain max-w-[200px]">
-                                    </div>
-                                    <div class="flex flex-wrap gap-2 mb-3">
-                                        <button type="button" class="review-frame-icon-option border-2 border-primary-500 px-3 py-2 rounded-lg text-xs font-medium flex flex-col items-center gap-1 min-w-[72px]" data-review-icon="default" onclick="selectReviewFrameIcon(this, 'default', 'here')" title="Default">
-                                            <img src="{{ asset('frames/review-us-icons/default.svg') }}" alt="Default" class="w-10 h-8 object-contain">
-                                            <span>Default</span>
-                                        </button>
-                                        @foreach($reviewUsIcons ?? [] as $icon)
-                                        <button type="button" class="review-frame-icon-option border-2 border-dark-200 px-3 py-2 rounded-lg text-xs font-medium flex flex-col items-center gap-1 min-w-[72px] hover:border-primary-400" data-review-icon-url="{{ $icon['url'] }}" data-review-icon-name="{{ $icon['name'] }}" onclick="selectReviewFrameIcon(this, this.getAttribute('data-review-icon-url'), this.getAttribute('data-review-icon-name'))" title="{{ $icon['name'] }}">
-                                            <img src="{{ $icon['url'] }}" alt="{{ $icon['name'] }}" class="w-10 h-8 object-contain">
-                                            <span class="truncate max-w-full">{{ $icon['name'] }}</span>
-                                        </button>
-                                        @endforeach
-                                        <button type="button" class="review-frame-icon-option border-2 border-dark-200 px-3 py-2 rounded-lg text-xs font-medium flex flex-col items-center gap-1 min-w-[72px] hover:border-primary-400" data-review-icon="custom" onclick="selectReviewFrameIcon(this, 'custom', null)" title="Upload your own">
-                                            <svg class="w-10 h-8 text-dark-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-                                            <span>Custom</span>
-                                        </button>
-                                    </div>
-                                    <div id="review_frame_custom_upload" class="hidden border border-dark-200 rounded-lg p-3 bg-white">
-                                        <p class="text-xs text-dark-500 mb-2">Upload your own icon (JPG or PNG, max 2MB)</p>
-                                        <div class="flex items-center gap-3">
-                                            <input type="file" id="review_frame_logo" name="review_frame_logo" accept=".jpg,.jpeg,.png,image/jpeg,image/png" class="hidden">
-                                            <input type="hidden" id="review_frame_logo_data_url" value="">
-                                            <button type="button" onclick="document.getElementById('review_frame_logo').click()" class="btn btn-secondary btn-sm">Choose image</button>
-                                            <span id="review_frame_logo_filename" class="text-xs text-dark-400 truncate max-w-[140px]"></span>
-                                            <button type="button" id="review_frame_logo_remove" class="hidden btn btn-outline btn-xs" onclick="clearReviewFrameLogo()">Remove</button>
+                                        <div class="flex flex-wrap gap-2 mb-3">
+                                            <button type="button" class="review-frame-icon-option border-2 border-primary-500 px-3 py-2 rounded-lg text-xs font-medium flex flex-col items-center gap-1 min-w-[72px]" data-review-icon="default" onclick="selectReviewFrameIcon(this, 'default', 'here')" title="Default">
+                                                <img src="{{ asset('frames/review-us-icons/default.svg') }}" alt="Default" class="w-10 h-8 object-contain">
+                                                <span>Default</span>
+                                            </button>
+                                            @foreach($reviewUsIcons ?? [] as $icon)
+                                            <button type="button" class="review-frame-icon-option border-2 border-dark-200 px-3 py-2 rounded-lg text-xs font-medium flex flex-col items-center gap-1 min-w-[72px] hover:border-primary-400" data-review-icon-url="{{ $icon['url'] }}" data-review-icon-name="{{ $icon['name'] }}" onclick="selectReviewFrameIcon(this, this.getAttribute('data-review-icon-url'), this.getAttribute('data-review-icon-name'))" title="{{ $icon['name'] }}">
+                                                <img src="{{ $icon['url'] }}" alt="{{ $icon['name'] }}" class="w-10 h-8 object-contain">
+                                                <span class="truncate max-w-full">{{ $icon['name'] }}</span>
+                                            </button>
+                                            @endforeach
+                                            <button type="button" class="review-frame-icon-option border-2 border-dark-200 px-3 py-2 rounded-lg text-xs font-medium flex flex-col items-center gap-1 min-w-[72px] hover:border-primary-400" data-review-icon="custom" onclick="selectReviewFrameIcon(this, 'custom', null)" title="Upload your own">
+                                                <svg class="w-10 h-8 text-dark-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                                                <span>Custom</span>
+                                            </button>
                                         </div>
-                                        <div id="review_frame_logo_preview" class="mt-2 hidden">
-                                            <img id="review_frame_logo_preview_img" src="" alt="Logo preview" class="h-14 w-auto object-contain border border-dark-200 rounded-lg">
+                                        <div id="review_frame_custom_upload" class="hidden border border-dark-200 rounded-lg p-3 bg-white">
+                                            <p class="text-xs text-dark-500 mb-2">Upload your own icon (JPG or PNG, max 2MB)</p>
+                                            <div class="flex items-center gap-3">
+                                                <input type="file" id="review_frame_logo" name="review_frame_logo" accept=".jpg,.jpeg,.png,image/jpeg,image/png" class="hidden">
+                                                <input type="hidden" id="review_frame_logo_data_url" value="">
+                                                <button type="button" onclick="document.getElementById('review_frame_logo').click()" class="btn btn-secondary btn-sm">Choose image</button>
+                                                <span id="review_frame_logo_filename" class="text-xs text-dark-400 truncate max-w-[140px]"></span>
+                                                <button type="button" id="review_frame_logo_remove" class="hidden btn btn-outline btn-xs" onclick="clearReviewFrameLogo()">Remove</button>
+                                            </div>
+                                            <div id="review_frame_logo_preview" class="mt-2 hidden">
+                                                <img id="review_frame_logo_preview_img" src="" alt="Logo preview" class="h-14 w-auto object-contain border border-dark-200 rounded-lg">
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -784,6 +824,7 @@ let currentStep = 1;
 let qrCodeId = @json(isset($qrCode) ? $qrCode->id : null);
 let lastSubmittedFormFingerprint = null;
 let qrStylingInstance = null;
+const isGuest = {{ auth()->check() ? 'false' : 'true' }};
 
 // QR code data for editing
 @if(isset($qrCode))
@@ -1440,33 +1481,52 @@ function updateStep1Preview() {
             const subject = document.getElementById('subject')?.value || '';
             const message = document.getElementById('message')?.value || '';
             mockupHtml = `
-                <div class="w-full h-full rounded-lg overflow-hidden flex flex-col">
-                    <!-- Email Header -->
-                    <div class="bg-gray-50 border-b border-gray-200 px-4 py-3 flex-shrink-0 mt-10">
-                        <div class="space-y-2">
-                            <div class="text-xs text-gray-600">
-                                <span class="font-medium">From:</span> <span class="text-gray-900">you</span>
-                            </div>
-                            <div class="text-xs text-gray-600">
-                                <span class="font-medium">To:</span> <span class="text-gray-900">${email || 'recipient@example.com'}</span>
-                            </div>
-                            <div class="text-xs text-gray-600">
-                                <span class="font-medium">Subject:</span> <span class="text-gray-900">${subject || 'Email Subject'}</span>
-                            </div>
+                <div class="w-full h-full bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col border border-gray-100">
+                    <div class="bg-white px-4 mt-10 py-3 flex items-center justify-between border-b border-gray-100">
+                        <div class="flex space-x-1.5">
+                            <div class="w-3 h-3 rounded-full bg-red-400"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-400"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-400"></div>
                         </div>
-                    </div>
-                    <!-- Email Body -->
-                    <div class="p-4 flex-1 overflow-y-auto">
-                        <div class="text-xs text-gray-600 mb-2">
-                            <span class="font-medium">Message:</span>
-                            <br>
-                            <br>
-                            <span class="text-gray-900">${message || 'Your message will appear here...'}</span>
+                        <div class="text-[10px] font-medium text-gray-400 uppercase tracking-widest">New Message</div>
+                        <div class="w-8"></div> </div>
+
+                    <div class="px-6 py-5 space-y-3 bg-white">
+                        <div class="flex items-center justify-between border-b border-gray-50 pb-3">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-sm">
+                                    ${email ? email[0].toUpperCase() : 'R'}
+                                </div>
+                                <div>
+                                    <div class="text-xs text-gray-400">To:</div>
+                                    <div class="text-sm font-semibold text-gray-800">${email || 'recipient@example.com'}</div>
+                                </div>
+                            </div>
+                            <div class="text-[11px] text-gray-400">Just now</div>
                         </div>
                         
+                        <div>
+                            <h2 class="text-lg font-bold text-gray-900 tracking-tight leading-tight">
+                                ${subject || 'No Subject'}
+                            </h2>
+                        </div>
+                    </div>
+
+                    <div class="px-6 py-4 flex-1 overflow-y-auto bg-white">
+                        <div class="text-sm leading-relaxed text-gray-700 whitespace-pre-line">
+                            ${message || 'Your message content will appear here...'}
+                        </div>
+                        
+                
+                    </div>
+
+                    <div class="p-4 flex items-center space-x-3">
+                        <div class="ml-4 mt-8 pt-6 border-t border-gray-50 text-xs text-gray-400">
+                            Sent from my secure workspace.
+                        </div>
                     </div>
                 </div>
-            `;
+    `;
             break;
             
         case 'text':
@@ -1542,31 +1602,61 @@ function updateStep1Preview() {
             break;
         }
             
-        case 'wifi':
-            if (overlay) overlay.style.backgroundColor = '#FFFFFF'; // white
-            const ssid = document.getElementById('ssid')?.value || '';
+        case 'wifi': {
+            const escapeHtml = (s) => { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+            
+            // Get values from inputs or defaults
+            const ssid = document.getElementById('ssid')?.value || 'Guest_Network_2.4G';
             const encryption = document.getElementById('encryption')?.value || 'WPA2';
+            const password = document.getElementById('password')?.value || '';
+            
+            // Use a tech-friendly primary color (like a Signal Blue or your brand color)
+            const wifiPrimary = '#2563eb'; 
+            const wifiSecondary = '#ffffff';
+
+            if (overlay) overlay.style.backgroundColor = '#f8fafc'; // Light grey background for the "phone" screen
+
             mockupHtml = `
-                <div class="w-full h-full rounded-lg overflow-hidden">
-                    <div class="p-4">
-                        <div class="flex items-center gap-3 mb-4">
-                            <div class="w-12 h-12 rounded-lg bg-primary-100 flex items-center justify-center">
-                                <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path>
-                                </svg>
+                <div class="w-full h-full rounded-lg flex flex-col items-center justify-center p-6 text-center" style="font-family: 'Maven Pro', sans-serif; background-color: #f8fafc;">
+                    <div class="mb-6 relative">
+                        <div class="w-20 h-20 rounded-full flex items-center justify-center shadow-inner" style="background-color: ${wifiPrimary}10">
+                            <svg class="w-10 h-10" style="color: ${wifiPrimary}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div class="w-full bg-white rounded-3xl p-6 shadow-sm border border-gray-100 mb-6">
+                        <p class="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Network Name</p>
+                        <h2 class="text-xl font-bold text-gray-800 mb-4 truncate">${escapeHtml(ssid)}</h2>
+                        
+                        <div class="flex justify-center gap-6 border-t border-gray-50 pt-4">
+                            <div class="text-left">
+                                <p class="text-[10px] uppercase text-gray-400 font-bold">Security</p>
+                                <p class="text-sm font-semibold text-gray-700">${escapeHtml(encryption)}</p>
                             </div>
-                            <div class="flex-1">
-                                <div class="text-sm font-medium text-gray-900">${ssid || 'WiFi Network'}</div>
-                                <div class="text-xs text-gray-500">${encryption === 'nopass' ? 'Open Network' : encryption + ' Protected'}</div>
+                            <div class="text-left">
+                                <p class="text-[10px] uppercase text-gray-400 font-bold">Password</p>
+                                <p class="text-sm font-semibold text-gray-700">
+                                    ${password ? '••••••••' : '<span class="text-gray-300 italic">None</span>'}
+                                </p>
                             </div>
                         </div>
-                        <div class="border-t border-gray-200 pt-3">
-                            <div class="text-xs text-gray-600">Tap to connect</div>
-                        </div>
+                    </div>
+
+                    <div class="w-full space-y-3">
+                        <button class="w-full py-4 rounded-2xl text-white font-bold shadow-lg transition-transform active:scale-95" 
+                                style="background-color: ${wifiPrimary}">
+                            Join Network
+                        </button>
+                        <p class="text-xs text-gray-400 px-4 leading-relaxed">
+                            Scan the QR code to connect automatically to this network.
+                        </p>
                     </div>
                 </div>
             `;
             break;
+        }
             
         case 'location':
             if (overlay) {
@@ -1742,24 +1832,21 @@ function updateStep1Preview() {
         case 'app':
             const appName = document.getElementById('app_name')?.value || '';
             const appDescription = document.getElementById('app_description')?.value || '';
+            // Use secondary color from Step 1 for the bottom div (app name and description area)
             const appSecondaryColor = document.getElementById('app_secondary_color_hex')?.value || '#FFFFFF';
             const appPrimaryColor = document.getElementById('app_primary_color_hex')?.value || '#6594FF';
             const appFontFamily = document.getElementById('app_font_family')?.value || 'Maven Pro';
-            const appTextColor = document.getElementById('app_text_color_hex')?.value || '#000000';
+            const appTextColor = document.getElementById('app_text_color_hex')?.value || '#111827';
             const appTextFontSize = parseInt(document.getElementById('app_text_font_size')?.value || '16', 10);
-            const appIconSize = parseInt(document.getElementById('app_icon_size')?.value || '96', 10);
-            const appStoreLink = document.getElementById('app_store_link')?.value || '';
-            const playStoreLink = document.getElementById('play_store_link')?.value || '';
-            const appStoreButtonColor = document.getElementById('app_store_button_color_hex')?.value || appPrimaryColor;
-            const appStoreButtonTextColor = document.getElementById('app_store_button_text_color_hex')?.value || appSecondaryColor;
+            const appIconSize = parseInt(document.getElementById('app_icon_size')?.value || '95', 10);
+            const appStoreButtonColor = document.getElementById('app_store_button_color_hex')?.value || '#000000';
+            const appStoreButtonTextColor = document.getElementById('app_store_button_text_color_hex')?.value || '#FFFFFF';
+            const appRating = parseFloat(document.getElementById('app_rating')?.value || '0') || null;
+            const appReviewCount = document.getElementById('app_review_count')?.value?.trim() || null;
             const appImagePreview = document.getElementById('app-img-preview');
             const appImageSrc = appImagePreview && !appImagePreview.classList.contains('hidden') 
                 ? appImagePreview.querySelector('img')?.src || '' 
                 : '';
-            
-            // Button texts - always show both buttons
-            const appStoreButtonText = 'Download on the App Store';
-            const playStoreButtonText = 'Get it on Google Play';
             
             // Load Google Font if needed
             if (appFontFamily !== 'Maven Pro') {
@@ -1775,33 +1862,91 @@ function updateStep1Preview() {
             }
             
             if (overlay) overlay.style.background = '';
-            const appIconHalf = Math.floor(appIconSize / 2);
+            const starSvg = '<svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>';
+            const appleSvg = '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.1 2.48-1.34.03-1.77-.79-3.29-.79-1.53 0-1.99.77-3.26.82-1.31.05-2.31-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>';
+            const playSvg = '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M3,20.5V3.5C3,2.91 3.34,2.39 3.84,2.15L13.69,12L3.84,21.85C3.34,21.61 3,21.09 3,20.5M16.81,15.12L18.77,14.01C20.42,13.06 20.42,10.94 18.77,10L16.81,8.88L14.39,11.3L16.81,15.12M13.69,12L16.11,9.58L4.54,3L13.69,12M4.54,21L13.69,12L16.11,14.42L4.54,21Z"/></svg>';
+            
+            // Calculate stars
+            let starsHtml = '';
+            if (appRating || appReviewCount) {
+                const ratingValue = appRating || 4.8;
+                const fullStars = Math.floor(ratingValue);
+                const hasHalfStar = (ratingValue - fullStars) >= 0.5;
+                const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+                const reviewText = appReviewCount || '1.2k';
+                
+                for (let i = 0; i < fullStars; i++) {
+                    starsHtml += '<span class="text-yellow-500">' + starSvg + '</span>';
+                }
+                if (hasHalfStar) {
+                    starsHtml += '<span class="text-yellow-500">' + starSvg + '</span>';
+                }
+                for (let i = 0; i < emptyStars; i++) {
+                    starsHtml += '<span class="text-gray-300">' + starSvg + '</span>';
+                }
+                starsHtml = `<div class="flex items-center justify-center gap-0.5 my-1">
+                    ${starsHtml}
+                    <span class="text-[9px] text-gray-500 ml-0.5">(${ratingValue.toFixed(1)} / ${reviewText})</span>
+                </div>`;
+            }
+            
+            // Convert hex to rgba with 20% opacity for App Store button
+            const hexToRgba = (hex, alpha) => {
+                const r = parseInt(hex.slice(1, 3), 16);
+                const g = parseInt(hex.slice(3, 5), 16);
+                const b = parseInt(hex.slice(5, 7), 16);
+                return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+            };
+            const appStoreButtonColorTransparent = hexToRgba(appStoreButtonColor || '#000000', 0.2);
+            // Use Step 1 primary color for Ultra Fast and Secure buttons (same as top div)
+            const primaryColorTransparent = hexToRgba(appPrimaryColor || '#6594FF', 0.2);
+            
+            // Collect selected languages for mockup (short labels: EN, DE, HR, etc.)
+            const langShort = { en: 'EN', de: 'DE', hr: 'HR', fr: 'FR', es: 'ES', it: 'IT', nl: 'NL', pt: 'PT', pl: 'PL', tr: 'TR', ru: 'RU', ja: 'JA', zh: 'ZH' };
+            const appLanguagesChecked = Array.from(document.querySelectorAll('input[name="app_languages[]"]:checked')).map(cb => cb.value);
+            const appLanguagesHtml = appLanguagesChecked.length > 0
+                ? `<div class="flex flex-wrap justify-center gap-1 mt-1.5">${appLanguagesChecked.map(code => `<span class="bg-white/20 text-white text-[7px] uppercase tracking-wider px-1.5 py-0.5 rounded">${langShort[code] || code.toUpperCase()}</span>`).join('')}</div>`
+                : '';
+            
             mockupHtml = `
-                <div class="w-full h-full rounded-lg overflow-hidden flex flex-col relative" style="font-family: '${appFontFamily}', sans-serif;">
-                    <div class="flex-shrink-0 flex flex-col justify-end items-center" style="height: 25vh; background-color: ${appPrimaryColor};">
-                        <div class="rounded-3xl flex items-center justify-center text-white font-bold text-2xl flex-shrink-0 shadow-lg border-4 border-white" style="width: ${appIconSize}px; height: ${appIconSize}px; background-color: ${appPrimaryColor}; margin-bottom: -5vh; position: relative; z-index: 10;">
+                <div class="w-full h-full rounded-lg overflow-hidden flex flex-col relative" style="font-family: '${appFontFamily}', sans-serif; background: #fff;">
+                    <div class="flex-shrink-0 flex flex-col items-center justify-center pt-6 pb-4" style="height: 32%; background: linear-gradient(135deg, #000000 0%, ${appPrimaryColor} 100%);">
+                        <div class="rounded-[16px] bg-white flex items-center justify-center flex-shrink-0 shadow-lg overflow-hidden" style="width: min(50%, max(60px, ${appIconSize}px)); height: min(50%, max(60px, ${appIconSize}px)); min-width: 60px; min-height: 60px;">
                             ${appImageSrc 
-                                ? `<img src="${appImageSrc}" alt="App Logo" class="w-full h-full object-contain rounded-xl">`
-                                : (appName ? appName.charAt(0).toUpperCase() : 'A')
+                                ? `<img src="${appImageSrc}" alt="App Logo" class="w-full h-full object-cover">`
+                                : `<span class="text-2xl font-extrabold" style="color: ${appPrimaryColor}">${appName ? appName.charAt(0).toUpperCase() : 'A'}</span>`
                             }
                         </div>
+                        <span class="bg-white/20 text-white text-[8px] uppercase tracking-wider px-2 py-0.5 rounded-full mt-2">Mobile App</span>
+                        ${appLanguagesHtml}
                     </div>
-                    <div class="flex-1 flex flex-col min-h-0" style="background-color: ${appSecondaryColor}; padding-top: calc(3vh + ${appIconHalf}px);">
-                        <div class="flex flex-col items-center px-4 pt-0">
-                            <div class="font-bold mb-2 text-center" style="color: ${appTextColor}; font-size: ${appTextFontSize + 16}px;">
-                                ${appName || 'Your app name here'}
+                    <div class="flex-1 flex flex-col min-h-0 rounded-t-[20px] overflow-hidden" style="background: ${appSecondaryColor}; margin-top: -12px; padding-top: 12px; backdrop-filter: blur(10px);">
+                        <div class="text-center px-3 mb-3 flex-shrink-0">
+                            <h2 class="font-extrabold leading-tight mb-2" style="color: ${appTextColor}; font-size: ${appTextFontSize}px;">${appName || 'Your Awesome App'}</h2>
+                            ${starsHtml || ''}
+                        </div>
+                        <div class="flex-1 min-h-0 px-3 overflow-hidden flex flex-col">
+                            <p class="text-left leading-snug line-clamp-6 flex-1 min-h-0" style="color: ${appTextColor}; font-size: 14px; opacity: 0.85;">${appDescription || 'Enter your application description here.'}</p>
+                        </div>
+                        <div class="flex-shrink-0 flex flex-col gap-2 px-3 pb-2 mb-2">
+                            <div class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-left" style="background: ${appStoreButtonColorTransparent}; color: ${appStoreButtonTextColor};">
+                                ${appleSvg}
+                                <div><div class="text-[8px] uppercase opacity-70">Download on the</div><div class="text-xs font-semibold leading-none">App Store</div></div>
                             </div>
-                            <div class="px-2 text-center max-w-md mb-6" style="color: ${appTextColor}; font-size: ${appTextFontSize}px;">
-                                ${appDescription || 'Your app description here'}
+                            <div class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-white text-left" style="background: ${appStoreButtonColor}; color: ${appStoreButtonTextColor};">
+                                ${playSvg}
+                                <div><div class="text-[8px] uppercase opacity-70">Get it on</div><div class="text-xs font-semibold leading-none">Google Play</div></div>
                             </div>
                         </div>
-                        <div class="flex-1 flex flex-col justify-center gap-3 px-4 pb-4 min-h-0">
-                            <button class="w-full py-3 rounded-lg font-medium transition-colors shadow-lg" style="background-color: ${appStoreButtonColor}; color: ${appStoreButtonTextColor};">
-                                ${appStoreButtonText}
-                            </button>
-                            <button class="w-full py-3 rounded-lg font-medium transition-colors shadow-lg" style="background-color: ${appStoreButtonColor}; color: ${appStoreButtonTextColor};">
-                                ${playStoreButtonText}
-                            </button>
+                        <div class="grid grid-cols-2 gap-2 px-3 pb-3 mb-3">
+                            <div class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-left" style="background: ${primaryColorTransparent}; color: ${appStoreButtonTextColor};">
+                                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                <div><div class="text-[8px] uppercase opacity-70">Lightning</div><div class="text-xs font-semibold leading-none">Ultra Fast</div></div>
+                            </div>
+                            <div class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-left" style="background: ${primaryColorTransparent}; color: ${appStoreButtonTextColor};">
+                                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                <div><div class="text-[8px] uppercase opacity-70">Protected</div><div class="text-xs font-semibold leading-none">Secure</div></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2382,27 +2527,8 @@ function buildQrContentFromForm() {
             return (typeof window !== 'undefined' && window.location && window.location.origin ? window.location.origin + '/menu/preview' : '/menu/preview');
         case 'coupon':
             return '/coupon/preview';
-        case 'event': {
-            const amenities = []; 
-            const checkedAmenities = document.querySelectorAll('input[name="amenities[]"]:checked');
-            checkedAmenities.forEach(cb => amenities.push(cb.value));
-            
-            return JSON.stringify({
-                type: 'event',
-                event_name: getValue('event_name'),
-                company_name: getValue('company_name'),
-                description: getValue('description'),
-                date: getValue('date'),
-                time: getValue('time'),
-                location: getValue('location'),
-                amenities,
-                dress_code_color: getValue('dress_code_color'),
-                contact: getValue('contact'),
-                event_primary_color: getValue('event_primary_color') || getValue('event_primary_color_hex') || '#6594FF',
-                event_secondary_color: getValue('event_secondary_color') || getValue('event_secondary_color_hex') || '#FFFFFF',
-                event_font_family: getValue('event_font_family') || 'Maven Pro',
-            });
-        }
+        case 'event':
+            return (typeof window !== 'undefined' && window.location && window.location.origin ? window.location.origin + '/event/preview' : '/event/preview');
         case 'app':
             // For app type, use app page URL (similar to PDF and text)
             return '/app/preview';
@@ -2461,23 +2587,11 @@ function buildQrContentFromForm() {
 // themable: true = SVG may use #PRIMARY# and #SECONDARY# placeholders, replaced by palette colors
 const FRAME_CONFIG = {
     'none': null,
-    'standard-border': {
-        url: '{{ asset("frames/standard-border.svg") }}',
-        qrLeft: 5, qrTop: 4, qrWidth: 90, qrHeight: 72,
-        frameWidth: 400, frameHeight: 500,
-        themable: true
-    },
-    'thick-border': {
-        url: '{{ asset("frames/thick-border.svg") }}',
-        qrLeft: 5, qrTop: 4, qrWidth: 90, qrHeight: 72,
-        frameWidth: 400, frameHeight: 500,
-        themable: true
-    },
-    'speech-bubble': {
-        url: '{{ asset("frames/speech-bubble.svg") }}',
-        qrLeft: 5, qrTop: 3.85, qrWidth: 90, qrHeight: 69.2,
-        frameWidth: 400, frameHeight: 520,
-        themable: true
+    'scanme': {
+        url: '{{ asset("frames/scanme.svg") }}',
+        qrLeft: 10, qrTop: 10, qrWidth: 80, qrHeight: 65,
+        frameWidth: 400, frameHeight: 400,
+        themable: false
     },
     'menu-qr': {
         url: '{{ asset("frames/menu-qr.svg") }}',
@@ -3178,9 +3292,23 @@ function populateStep1Fields(type, data, files) {
                 const appFontInput = document.getElementById('app_font_family');
                 if (appFontInput) appFontInput.value = data.app_font_family;
             }
+            if (data.app_primary_color) {
+                const appPrimaryColorHex = document.getElementById('app_primary_color_hex');
+                const appPrimaryColorPicker = document.getElementById('app_primary_color_picker');
+                if (appPrimaryColorHex) appPrimaryColorHex.value = data.app_primary_color;
+                if (appPrimaryColorPicker) appPrimaryColorPicker.value = data.app_primary_color;
+            }
+            if (data.app_secondary_color) {
+                const appSecondaryColorHex = document.getElementById('app_secondary_color_hex');
+                const appSecondaryColorPicker = document.getElementById('app_secondary_color_picker');
+                if (appSecondaryColorHex) appSecondaryColorHex.value = data.app_secondary_color;
+                if (appSecondaryColorPicker) appSecondaryColorPicker.value = data.app_secondary_color;
+            }
             if (data.app_text_color) {
-                const appTextColorInput = document.getElementById('app_text_color');
-                if (appTextColorInput) appTextColorInput.value = data.app_text_color;
+                const appTextColorHex = document.getElementById('app_text_color_hex');
+                const appTextColorPicker = document.getElementById('app_text_color_picker');
+                if (appTextColorHex) appTextColorHex.value = data.app_text_color;
+                if (appTextColorPicker) appTextColorPicker.value = data.app_text_color;
             }
             if (data.app_text_font_size) {
                 const appTextFontSizeInput = document.getElementById('app_text_font_size');
@@ -3191,12 +3319,29 @@ function populateStep1Fields(type, data, files) {
                 if (appIconSizeInput) appIconSizeInput.value = data.app_icon_size;
             }
             if (data.app_store_button_color) {
-                const appStoreButtonColorInput = document.getElementById('app_store_button_color');
-                if (appStoreButtonColorInput) appStoreButtonColorInput.value = data.app_store_button_color;
+                const appStoreButtonColorHex = document.getElementById('app_store_button_color_hex');
+                const appStoreButtonColorPicker = document.getElementById('app_store_button_color_picker');
+                if (appStoreButtonColorHex) appStoreButtonColorHex.value = data.app_store_button_color;
+                if (appStoreButtonColorPicker) appStoreButtonColorPicker.value = data.app_store_button_color;
             }
             if (data.app_store_button_text_color) {
-                const appStoreButtonTextColorInput = document.getElementById('app_store_button_text_color');
-                if (appStoreButtonTextColorInput) appStoreButtonTextColorInput.value = data.app_store_button_text_color;
+                const appStoreButtonTextColorHex = document.getElementById('app_store_button_text_color_hex');
+                const appStoreButtonTextColorPicker = document.getElementById('app_store_button_text_color_picker');
+                if (appStoreButtonTextColorHex) appStoreButtonTextColorHex.value = data.app_store_button_text_color;
+                if (appStoreButtonTextColorPicker) appStoreButtonTextColorPicker.value = data.app_store_button_text_color;
+            }
+            if (data.app_rating != null && data.app_rating !== '') {
+                const appRatingInput = document.getElementById('app_rating');
+                if (appRatingInput) appRatingInput.value = data.app_rating;
+            }
+            if (data.app_review_count) {
+                const appReviewCountInput = document.getElementById('app_review_count');
+                if (appReviewCountInput) appReviewCountInput.value = data.app_review_count;
+            }
+            if (data.app_languages && Array.isArray(data.app_languages)) {
+                document.querySelectorAll('input[name="app_languages[]"]').forEach(cb => {
+                    cb.checked = data.app_languages.includes(cb.value);
+                });
             }
             // Handle app image
             const appImageFile = files.find(f => f.file_type === 'image');
@@ -3703,8 +3848,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const step1Fields = [
         'name', 'url', 'email', 'subject', 'message', 'text', 'full_name', 'phone_number', 'phone_background_color_hex', 'phone_font_family', 
         'app_name', 'website_url', 'app_store_link', 'play_store_link', 'app_description',
-        'app_primary_color_hex', 'app_secondary_color_hex', 'app_button_text', 'app_button_color_hex', 'app_font_family', 'app_text_color_hex',
-        'app_text_font_size', 'app_icon_size',
+        'app_primary_color_hex', 'app_secondary_color_hex', 'app_font_family', 'app_text_color_hex',
+        'app_text_font_size', 'app_icon_size', 'app_rating', 'app_review_count',
         'app_store_button_color_hex', 'app_store_button_text_color_hex',
         'ssid', 'encryption', 'password', 'address',
         'event_name', 'company_name', 'date', 'time', 'location', 'description', 'contact', 'dress_code_color', 'dress_code_color_hex',
@@ -3742,8 +3887,8 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     });
-    // Business card: dynamic button/social rows
-    ['business-card-buttons-container', 'business-card-socials-container', 'personal-vcard-socials-container'].forEach(containerId => {
+    // Business card: dynamic button/social rows; app: languages checkboxes
+    ['business-card-buttons-container', 'business-card-socials-container', 'personal-vcard-socials-container', 'app_languages_wrapper'].forEach(containerId => {
         const container = document.getElementById(containerId);
         if (container) {
             container.addEventListener('input', () => { if (currentStep === 1) updateStep1Preview(); });
@@ -3764,7 +3909,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const logoFilename = document.getElementById('qr_logo_filename');
     const logoRemoveBtn = document.getElementById('qr_logo_remove_btn');
     const logoLimitWarning = document.getElementById('logo-limit-warning');
-    const isGuest = {{ auth()->check() ? 'false' : 'true' }};
+    // isGuest is now defined globally at the top of the script
     const defaultLogoUrl = '{{ asset('logo-integrating-me.webp') }}';
     let canAddLogo = true; // Will be checked on page load
 
@@ -4497,6 +4642,13 @@ async function nextStep(step) {
 
         if (nothingChanged) {
             // No API call: just show Step 3 with existing QR
+            // But still need to generate the QR preview if it doesn't exist
+            const qrPreviewContainer = document.getElementById('qr-preview');
+            if (!qrPreviewContainer || !qrPreviewContainer.querySelector('canvas')) {
+                // QR preview doesn't exist, regenerate it
+                const menuPageUrl = window.step3MenuPageUrl || null;
+                await generateStep3CustomizedQR(menuPageUrl);
+            }
         } else {
             if (nextBtn && nextText && nextLoading) {
                 nextBtn.disabled = true;
@@ -4535,6 +4687,23 @@ async function nextStep(step) {
     if (step === 1) {
         setTimeout(() => {
             updateStep1Preview();
+        }, 100);
+    } else if (step === 3) {
+        // Ensure QR preview is generated for step 3
+        setTimeout(async () => {
+            const qrPreviewContainer = document.getElementById('qr-preview');
+            if (qrPreviewContainer && (!qrPreviewContainer.querySelector('canvas') && !qrPreviewContainer.querySelector('.frame-wrapper'))) {
+                // QR preview doesn't exist, regenerate it
+                const menuPageUrl = window.step3MenuPageUrl || null;
+                await generateStep3CustomizedQR(menuPageUrl);
+            }
+            // Ensure download buttons are enabled if QR code exists
+            if (qrCodeId) {
+                const downloadPngBtn = document.getElementById('download-png-btn');
+                const downloadSvgBtn = document.getElementById('download-svg-btn');
+                if (downloadPngBtn) downloadPngBtn.disabled = false;
+                if (downloadSvgBtn) downloadSvgBtn.disabled = false;
+            }
         }, 100);
     }
     
@@ -4666,6 +4835,13 @@ async function generateQRCode() {
     if (secondaryColorInput && secondaryColorHex) {
         secondaryColorInput.value = normalizeHexColor(secondaryColorHex.value);
     }
+    
+    // Populate honeypot token field only on submit (bots won't do this)
+    const formTokenField = document.getElementById('form-token');
+    if (formTokenField) {
+        formTokenField.value = Date.now().toString(36) + Math.random().toString(36).substr(2);
+    }
+    
     const formData = new FormData(document.getElementById('qr-form'));
     const recaptchaToken = await getRecaptchaToken();
     if (recaptchaToken) formData.append('recaptcha_token', recaptchaToken);
@@ -4747,6 +4923,7 @@ async function generateQRCode() {
         if (data.success) {
             qrCodeId = data.qr_code_id;
             window.step3MenuPageUrl = data.menu_page_url || null;
+            console.log('QR code saved successfully with ID:', qrCodeId);
             
             // Hide loading
             document.getElementById('qr-loading').classList.add('hidden');
@@ -4854,6 +5031,7 @@ async function updateQRCode(id) {
         }
         if (data.success) {
             window.step3MenuPageUrl = data.menu_page_url || null;
+            console.log('QR code updated successfully with ID:', qrCodeId);
             if (qrLoading) qrLoading.classList.add('hidden');
             await generateStep3CustomizedQR(data.menu_page_url || null);
             if (downloadPngBtn) downloadPngBtn.disabled = false;
@@ -4874,138 +5052,168 @@ async function updateQRCode(id) {
 // Generate customized QR code for Step 3 with same styling as Step 2
 // menuPageUrl: for type=menu, the actual URL to the menu page (/menu/{id}) from the server so the QR never points to /menu/preview
 async function generateStep3CustomizedQR(menuPageUrl) {
-    const qrPreviewContainer = document.getElementById('qr-preview');
-    if (!qrPreviewContainer) return;
-    
-    // Get customization parameters from Step 2
-    const type = document.querySelector('input[name="type"]').value;
-    const primaryColor = document.getElementById('primary_color')?.value || '#000000';
-    const secondaryColor = document.getElementById('secondary_color')?.value || '#FFFFFF';
-    const pattern = document.getElementById('selected_pattern')?.value || 'square';
-    const cornerStyle = document.getElementById('selected_corner')?.value || 'square';
-    const cornerDotStyle = document.getElementById('selected_corner_dot')?.value || 'square';
-    const logoDataUrl = document.getElementById('qr_logo_data_url')?.value || '';
-    
-    // Build QR content; for menu type always use real menu page URL (/menu/{id}), never placeholder /menu/preview
-    let qrContent;
-    if (type === 'menu') {
-        qrContent = menuPageUrl || (qrCodeId ? (window.location.origin + '/menu/' + qrCodeId) : buildQrContentFromForm());
-    } else {
-        qrContent = buildQrContentFromForm();
-    }
-    
-    if (!window.QRCodeStyling) {
-        console.warn('QR Code Styling library is not loaded.');
-        qrPreviewContainer.innerHTML = '<p class="text-red-500">Failed to load QR code styling library</p>';
-        return;
-    }
-    
-    // Map UI values to qr-code-styling types
-    const dotsTypeMap = {
-        square: 'square',
-        circle: 'dots',
-        rounded: 'rounded',
-    };
-    
-    const cornersSquareTypeMap = {
-        square: 'square',
-        rounded: 'rounded',
-        'extra-rounded': 'extra-rounded',
-    };
-    
-    const cornersDotTypeMap = {
-        square: 'square',
-        circle: 'dot',
-        rounded: 'rounded',
-    };
-    
-    const dotsType = dotsTypeMap[pattern] || 'square';
-    const cornersSquareType = cornersSquareTypeMap[cornerStyle] || 'square';
-    const cornersDotType = cornersDotTypeMap[cornerDotStyle] || 'dot';
-    
-    const frameId = document.getElementById('selected_frame')?.value || 'none';
-    const STEP3_HOLE_SIZE = 300;
-    const STEP2_QR_IN_FRAME = 220;
-    const STEP2_HOLE_PX = 260;
-    const step3QrDisplaySize = (frameId && frameId !== 'none')
-        ? Math.round(STEP2_QR_IN_FRAME * STEP3_HOLE_SIZE / STEP2_HOLE_PX)
-        : STEP3_HOLE_SIZE;
-    
-    const options = {
-        width: step3QrDisplaySize,
-        height: step3QrDisplaySize,
-        type: 'canvas',
-        data: qrContent,
-        margin: 0,
-        qrOptions: {
-            errorCorrectionLevel: 'H',
-        },
-        dotsOptions: {
-            color: primaryColor,
-            type: dotsType,
-        },
-        backgroundOptions: {
-            color: secondaryColor,
-        },
-        cornersSquareOptions: {
-            type: cornersSquareType,
-            color: primaryColor,
-        },
-        cornersDotOptions: {
-            type: cornersDotType,
-            color: primaryColor,
-        },
-        image: logoDataUrl || undefined,
-        imageOptions: {
-            hideBackgroundDots: true,
-            imageSize: 0.4,
-            margin: 4,
-            crossOrigin: 'anonymous',
-        },
-    };
-
-    let step3AppendTarget = qrPreviewContainer;
-
-    if (frameId && frameId !== 'none' && FRAME_CONFIG[frameId]) {
-        const cfg = FRAME_CONFIG[frameId];
-        if (cfg.url && cfg.qrLeft !== undefined) {
-            const wrapper = document.createElement('div');
-            wrapper.className = 'frame-wrapper relative mx-auto inline-block';
-            const holePx = STEP3_HOLE_SIZE;
-            const totalW = holePx / (cfg.qrWidth / 100);
-            const totalH = totalW * (cfg.frameHeight / cfg.frameWidth);
-            wrapper.style.width = totalW + 'px';
-            wrapper.style.height = totalH + 'px';
-            const img = document.createElement('img');
-            if (frameId === 'review-us') {
-                img.src = await getReviewUsFrameUrl();
-            } else {
-                img.src = cfg.themable
-                    ? await getThemedFrameUrl(cfg.url, primaryColor, secondaryColor)
-                    : cfg.url;
-            }
-            img.alt = 'Frame';
-            img.className = 'frame-img w-full h-full object-contain block';
-            const qrInFrame = document.createElement('div');
-            qrInFrame.className = 'qr-in-frame absolute flex items-center justify-center';
-            qrInFrame.style.left = cfg.qrLeft + '%';
-            qrInFrame.style.top = cfg.qrTop + '%';
-            qrInFrame.style.width = cfg.qrWidth + '%';
-            qrInFrame.style.height = cfg.qrHeight + '%';
-            wrapper.appendChild(img);
-            wrapper.appendChild(qrInFrame);
-            qrPreviewContainer.innerHTML = '';
-            qrPreviewContainer.appendChild(wrapper);
-            step3AppendTarget = qrInFrame;
+    try {
+        const qrPreviewContainer = document.getElementById('qr-preview');
+        if (!qrPreviewContainer) {
+            console.error('QR preview container not found');
+            return;
         }
-    } else {
-        qrPreviewContainer.innerHTML = '';
+        
+        // Get customization parameters from Step 2
+        const type = document.querySelector('input[name="type"]').value;
+        const primaryColor = document.getElementById('primary_color')?.value || '#000000';
+        const secondaryColor = document.getElementById('secondary_color')?.value || '#FFFFFF';
+        const pattern = document.getElementById('selected_pattern')?.value || 'square';
+        const cornerStyle = document.getElementById('selected_corner')?.value || 'square';
+        const cornerDotStyle = document.getElementById('selected_corner_dot')?.value || 'square';
+        const logoDataUrl = document.getElementById('qr_logo_data_url')?.value || '';
+        
+        // Build QR content; for menu type always use real menu page URL (/menu/{id}), never placeholder /menu/preview
+        let qrContent;
+        if (type === 'menu') {
+            qrContent = menuPageUrl || (qrCodeId ? (window.location.origin + '/menu/' + qrCodeId) : buildQrContentFromForm());
+        } else {
+            qrContent = buildQrContentFromForm();
+        }
+        
+        if (!qrContent) {
+            console.error('QR content is empty');
+            qrPreviewContainer.innerHTML = '<p class="text-red-500">Failed to generate QR code: No content provided</p>';
+            return;
+        }
+        
+        if (!window.QRCodeStyling) {
+            console.warn('QR Code Styling library is not loaded.');
+            qrPreviewContainer.innerHTML = '<p class="text-red-500">Failed to load QR code styling library</p>';
+            return;
+        }
+        
+        // Map UI values to qr-code-styling types
+        const dotsTypeMap = {
+            square: 'square',
+            circle: 'dots',
+            rounded: 'rounded',
+        };
+        
+        const cornersSquareTypeMap = {
+            square: 'square',
+            rounded: 'rounded',
+            'extra-rounded': 'extra-rounded',
+        };
+        
+        const cornersDotTypeMap = {
+            square: 'square',
+            circle: 'dot',
+            rounded: 'rounded',
+        };
+        
+        const dotsType = dotsTypeMap[pattern] || 'square';
+        const cornersSquareType = cornersSquareTypeMap[cornerStyle] || 'square';
+        const cornersDotType = cornersDotTypeMap[cornerDotStyle] || 'dot';
+        
+        const frameId = document.getElementById('selected_frame')?.value || 'none';
+        const STEP3_HOLE_SIZE = 300;
+        const STEP2_QR_IN_FRAME = 220;
+        const STEP2_HOLE_PX = 260;
+        const step3QrDisplaySize = (frameId && frameId !== 'none')
+            ? Math.round(STEP2_QR_IN_FRAME * STEP3_HOLE_SIZE / STEP2_HOLE_PX)
+            : STEP3_HOLE_SIZE;
+        
+        const options = {
+            width: step3QrDisplaySize,
+            height: step3QrDisplaySize,
+            type: 'canvas',
+            data: qrContent,
+            margin: 0,
+            qrOptions: {
+                errorCorrectionLevel: 'H',
+            },
+            dotsOptions: {
+                color: primaryColor,
+                type: dotsType,
+            },
+            backgroundOptions: {
+                color: secondaryColor,
+            },
+            cornersSquareOptions: {
+                type: cornersSquareType,
+                color: primaryColor,
+            },
+            cornersDotOptions: {
+                type: cornersDotType,
+                color: primaryColor,
+            },
+            image: logoDataUrl || undefined,
+            imageOptions: {
+                hideBackgroundDots: true,
+                imageSize: 0.4,
+                margin: 4,
+                crossOrigin: 'anonymous',
+            },
+        };
+
+        let step3AppendTarget = qrPreviewContainer;
+
+        if (frameId && frameId !== 'none' && FRAME_CONFIG[frameId]) {
+            const cfg = FRAME_CONFIG[frameId];
+            if (cfg.url && cfg.qrLeft !== undefined) {
+                try {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'frame-wrapper relative mx-auto inline-block';
+                    const holePx = STEP3_HOLE_SIZE;
+                    const totalW = holePx / (cfg.qrWidth / 100);
+                    const totalH = totalW * (cfg.frameHeight / cfg.frameWidth);
+                    wrapper.style.width = totalW + 'px';
+                    wrapper.style.height = totalH + 'px';
+                    const img = document.createElement('img');
+                    if (frameId === 'review-us') {
+                        img.src = await getReviewUsFrameUrl();
+                    } else {
+                        img.src = cfg.themable
+                            ? await getThemedFrameUrl(cfg.url, primaryColor, secondaryColor)
+                            : cfg.url;
+                    }
+                    img.alt = 'Frame';
+                    img.className = 'frame-img w-full h-full object-contain block';
+                    const qrInFrame = document.createElement('div');
+                    qrInFrame.className = 'qr-in-frame absolute flex items-center justify-center';
+                    qrInFrame.style.left = cfg.qrLeft + '%';
+                    qrInFrame.style.top = cfg.qrTop + '%';
+                    qrInFrame.style.width = cfg.qrWidth + '%';
+                    qrInFrame.style.height = cfg.qrHeight + '%';
+                    wrapper.appendChild(img);
+                    wrapper.appendChild(qrInFrame);
+                    qrPreviewContainer.innerHTML = '';
+                    qrPreviewContainer.appendChild(wrapper);
+                    step3AppendTarget = qrInFrame;
+                } catch (frameError) {
+                    console.error('Error creating frame:', frameError);
+                    // Fallback: create QR without frame if frame fails
+                    qrPreviewContainer.innerHTML = '';
+                    step3AppendTarget = qrPreviewContainer;
+                }
+            }
+        } else {
+            qrPreviewContainer.innerHTML = '';
+        }
+
+        const qrCodeStyling = new window.QRCodeStyling(options);
+        qrCodeStyling.append(step3AppendTarget);
+
+        window.step3QrInstance = qrCodeStyling;
+        console.log('Step 3 QR instance created successfully');
+    } catch (error) {
+        console.error('Error generating Step 3 QR code:', error);
+        const qrPreviewContainer = document.getElementById('qr-preview');
+        if (qrPreviewContainer) {
+            qrPreviewContainer.innerHTML = '<p class="text-red-500">Failed to generate QR code. Please try again.</p>';
+        }
+        // Ensure download buttons are enabled even on error
+        const downloadPngBtn = document.getElementById('download-png-btn');
+        const downloadSvgBtn = document.getElementById('download-svg-btn');
+        if (downloadPngBtn) downloadPngBtn.disabled = false;
+        if (downloadSvgBtn) downloadSvgBtn.disabled = false;
     }
-
-    const qrCodeStyling = new window.QRCodeStyling(options);
-    qrCodeStyling.append(step3AppendTarget);
-
-    window.step3QrInstance = qrCodeStyling;
 }
 
 function showErrorInStep2(message) {
@@ -5093,65 +5301,107 @@ async function downloadQR(format) {
         return;
     }
 
-    const frameId = document.getElementById('selected_frame')?.value || 'none';
-    const hasFrame = frameId && frameId !== 'none' && FRAME_CONFIG[frameId] && FRAME_CONFIG[frameId].qrLeft !== undefined;
+    try {
+        const frameId = document.getElementById('selected_frame')?.value || 'none';
+        const hasFrame = frameId && frameId !== 'none' && FRAME_CONFIG[frameId] && FRAME_CONFIG[frameId].qrLeft !== undefined;
 
-    // When a frame is selected, download composite (frame + QR) as PNG
-    if (hasFrame && window.step3QrInstance) {
-        const cfg = FRAME_CONFIG[frameId];
-        const primaryColor = document.getElementById('primary_color')?.value || '#000000';
-        const secondaryColor = document.getElementById('secondary_color')?.value || '#FFFFFF';
-        const frameUrl = frameId === 'review-us'
-            ? await getReviewUsFrameUrl()
-            : (cfg.themable
-                ? await getThemedFrameUrl(cfg.url, primaryColor, secondaryColor)
-                : cfg.url);
-
-        const holePx = 300;
-        const qrSize = Math.round(220 * holePx / 260);
-        const totalW = Math.round(holePx / (cfg.qrWidth / 100));
-        const totalH = Math.round(totalW * (cfg.frameHeight / cfg.frameWidth));
-        const holeLeft = totalW * (cfg.qrLeft / 100);
-        const holeTop = totalH * (cfg.qrTop / 100);
-        const holeWidth = totalW * (cfg.qrWidth / 100);
-        const holeHeight = totalH * (cfg.qrHeight / 100);
-        const qrX = holeLeft + (holeWidth - qrSize) / 2;
-        const qrY = holeTop + (holeHeight - qrSize) / 2;
-
-        const canvas = document.createElement('canvas');
-        canvas.width = totalW;
-        canvas.height = totalH;
-        const ctx = canvas.getContext('2d');
-
-        const frameImg = new Image();
-        frameImg.crossOrigin = 'anonymous';
-        frameImg.onload = function() {
-            ctx.drawImage(frameImg, 0, 0, totalW, totalH);
-            const qrCanvas = document.querySelector('#qr-preview canvas');
-            if (qrCanvas) {
-                ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+        // When a frame is selected, download composite (frame + QR) as PNG
+        if (hasFrame && window.step3QrInstance) {
+            const cfg = FRAME_CONFIG[frameId];
+            const primaryColor = document.getElementById('primary_color')?.value || '#000000';
+            const secondaryColor = document.getElementById('secondary_color')?.value || '#FFFFFF';
+            let frameUrl;
+            try {
+                frameUrl = frameId === 'review-us'
+                    ? await getReviewUsFrameUrl()
+                    : (cfg.themable
+                        ? await getThemedFrameUrl(cfg.url, primaryColor, secondaryColor)
+                        : cfg.url);
+            } catch (frameUrlError) {
+                console.error('Error getting frame URL:', frameUrlError);
+                // Fallback to QR only download
+                if (window.step3QrInstance) {
+                    window.step3QrInstance.download({ name: `qr-code-${qrCodeId}`, extension: 'png' });
+                } else {
+                    window.location.href = `/qr-codes/${qrCodeId}/download/png`;
+                }
+                return;
             }
-            const link = document.createElement('a');
-            link.download = `qr-code-${qrCodeId}.png`;
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-        };
-        frameImg.onerror = function() {
-            window.step3QrInstance.download({ name: `qr-code-${qrCodeId}`, extension: 'png' });
-        };
-        frameImg.src = frameUrl;
-        return;
-    }
 
-    // No frame: download only QR
-    if (window.step3QrInstance) {
-        const fileName = `qr-code-${qrCodeId}`;
-        if (format === 'png') {
-            window.step3QrInstance.download({ name: fileName, extension: 'png' });
-        } else if (format === 'svg') {
-            window.step3QrInstance.download({ name: fileName, extension: 'svg' });
+            const holePx = 300;
+            const qrSize = Math.round(220 * holePx / 260);
+            const totalW = Math.round(holePx / (cfg.qrWidth / 100));
+            const totalH = Math.round(totalW * (cfg.frameHeight / cfg.frameWidth));
+            const holeLeft = totalW * (cfg.qrLeft / 100);
+            const holeTop = totalH * (cfg.qrTop / 100);
+            const holeWidth = totalW * (cfg.qrWidth / 100);
+            const holeHeight = totalH * (cfg.qrHeight / 100);
+            const qrX = holeLeft + (holeWidth - qrSize) / 2;
+            const qrY = holeTop + (holeHeight - qrSize) / 2;
+
+            const canvas = document.createElement('canvas');
+            canvas.width = totalW;
+            canvas.height = totalH;
+            const ctx = canvas.getContext('2d');
+
+            const frameImg = new Image();
+            frameImg.crossOrigin = 'anonymous';
+            frameImg.onload = function() {
+                try {
+                    ctx.drawImage(frameImg, 0, 0, totalW, totalH);
+                    const qrCanvas = document.querySelector('#qr-preview canvas');
+                    if (qrCanvas) {
+                        ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+                    }
+                    const link = document.createElement('a');
+                    link.download = `qr-code-${qrCodeId}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                } catch (drawError) {
+                    console.error('Error drawing frame composite:', drawError);
+                    // Fallback to QR only download
+                    if (window.step3QrInstance) {
+                        window.step3QrInstance.download({ name: `qr-code-${qrCodeId}`, extension: 'png' });
+                    } else {
+                        window.location.href = `/qr-codes/${qrCodeId}/download/png`;
+                    }
+                }
+            };
+            frameImg.onerror = function() {
+                console.error('Error loading frame image');
+                // Fallback to QR only download
+                if (window.step3QrInstance) {
+                    window.step3QrInstance.download({ name: `qr-code-${qrCodeId}`, extension: 'png' });
+                } else {
+                    window.location.href = `/qr-codes/${qrCodeId}/download/png`;
+                }
+            };
+            frameImg.src = frameUrl;
+            return;
         }
-    } else {
+
+        // No frame: download only QR
+        if (window.step3QrInstance) {
+            const fileName = `qr-code-${qrCodeId}`;
+            try {
+                if (format === 'png') {
+                    window.step3QrInstance.download({ name: fileName, extension: 'png' });
+                } else if (format === 'svg') {
+                    window.step3QrInstance.download({ name: fileName, extension: 'svg' });
+                }
+            } catch (downloadError) {
+                console.error('Error downloading QR code:', downloadError);
+                // Fallback to server-side download
+                window.location.href = `/qr-codes/${qrCodeId}/download/${format}`;
+            }
+        } else {
+            console.warn('Step 3 QR instance not found, using server-side download');
+            window.location.href = `/qr-codes/${qrCodeId}/download/${format}`;
+        }
+    } catch (error) {
+        console.error('Error in downloadQR:', error);
+        alert('Failed to download QR code. Please try again or use the server-side download.');
+        // Fallback to server-side download
         window.location.href = `/qr-codes/${qrCodeId}/download/${format}`;
     }
 }

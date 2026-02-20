@@ -38,6 +38,7 @@ Route::get('/phone/{id}', [QrCodeController::class, 'showPhonePage'])->name('qr-
 Route::get('/menu/{id}', [QrCodeController::class, 'showMenuPage'])->name('qr-codes.menu-page');
 Route::get('/business-card/{id}', [QrCodeController::class, 'showBusinessCardPage'])->name('qr-codes.business-card-page');
 Route::get('/vcard/{id}', [QrCodeController::class, 'showPersonalVCardPage'])->name('qr-codes.personal-vcard-page');
+Route::get('/event/{id}', [QrCodeController::class, 'showEventPage'])->name('qr-codes.event-page');
 
 // Dashboard Routes
 Route::middleware(['auth'])->group(function () {

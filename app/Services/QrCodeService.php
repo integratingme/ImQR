@@ -144,23 +144,14 @@ class QrCodeService
     }
 
     /**
-     * Generate event QR content (vCard or URL format)
+     * Generate event QR content (URL to event page)
      */
     protected function generateEventContent(array $data): string
     {
-        // For events, we'll return a JSON string that can be parsed by a landing page
-        return json_encode([
-            'type' => 'event',
-            'event_name' => $data['event_name'] ?? '',
-            'company_name' => $data['company_name'] ?? '',
-            'description' => $data['description'] ?? '',
-            'date' => $data['date'] ?? '',
-            'time' => $data['time'] ?? '',
-            'location' => $data['location'] ?? '',
-            'amenities' => $data['amenities'] ?? [],
-            'dress_code_color' => $data['dress_code_color'] ?? '',
-            'contact' => $data['contact'] ?? '',
-        ]);
+        if (isset($data['event_page_url']) && !empty($data['event_page_url'])) {
+            return $data['event_page_url'];
+        }
+        return url('/event/preview');
     }
 
     /**
@@ -520,18 +511,6 @@ class QrCodeService
                 'url' => 'frames/standard-border.svg',
                 'qrLeft' => 5, 'qrTop' => 4, 'qrWidth' => 90, 'qrHeight' => 72,
                 'frameWidth' => 400, 'frameHeight' => 500,
-                'themable' => true
-            ],
-            'thick-border' => [
-                'url' => 'frames/thick-border.svg',
-                'qrLeft' => 5, 'qrTop' => 4, 'qrWidth' => 90, 'qrHeight' => 72,
-                'frameWidth' => 400, 'frameHeight' => 500,
-                'themable' => true
-            ],
-            'speech-bubble' => [
-                'url' => 'frames/speech-bubble.svg',
-                'qrLeft' => 5, 'qrTop' => 3.85, 'qrWidth' => 90, 'qrHeight' => 69.2,
-                'frameWidth' => 400, 'frameHeight' => 520,
                 'themable' => true
             ],
             'menu-qr' => [
