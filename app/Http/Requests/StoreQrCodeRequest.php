@@ -25,7 +25,7 @@ class StoreQrCodeRequest extends FormRequest
         $type = $this->input('type');
 
         $baseRules = [
-            'type' => 'required|in:url,email,text,pdf,menu,coupon,event,app,location,wifi,phone,mp3,business_card,personal_vcard',
+            'type' => 'required|in:url,email,text,pdf,menu,coupon,event,app,location,wifi,phone,business_card,personal_vcard',
             'name' => 'required|string|max:255',
             'primary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
             'secondary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
@@ -37,9 +37,13 @@ class StoreQrCodeRequest extends FormRequest
             'review_frame_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
             'review_frame_text_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
             'review_frame_logo' => 'nullable|image|mimes:jpeg,png,jpg|mimetypes:image/jpeg,image/png|image_signature|max:2048', // Review-us frame custom icon, JPG/PNG only
-            // Honeypot – must be empty (bots often fill these)
-            'hp_url' => 'nullable|string|max:0',
-            'hp_comment' => 'nullable|string|max:0',
+            // Honeypot fields – must be empty (bots often fill these)
+            // Using realistic field names to trick bots
+            'second_email' => 'nullable|string|max:0',
+            'alternate_phone' => 'nullable|string|max:0',
+            'company_website' => 'nullable|string|max:0',
+            // JavaScript token - must be present and valid (populated only on real submit)
+            'form_token' => 'required|string|min:10',
             // reCAPTCHA v3 token (validated when recaptcha is enabled)
             'recaptcha_token' => config('services.recaptcha.enabled')
                 ? ['required', 'string', new RecaptchaRule()]
@@ -59,7 +63,11 @@ class StoreQrCodeRequest extends FormRequest
                 'text' => 'required|string|max:500',
             ],
             'pdf' => [
-                'pdf_file' => 'required|file|mimes:pdf|mimetypes:application/pdf|pdf_signature|max:5120', // 5MB, PDF only
+                // PDF is required on initial creation (POST), but optional on update (PUT)
+                // because the file was already uploaded in the first pass
+                'pdf_file' => $this->isMethod('PUT')
+                    ? 'nullable|file|mimes:pdf|mimetypes:application/pdf|pdf_signature|max:5120'
+                    : 'required|file|mimes:pdf|mimetypes:application/pdf|pdf_signature|max:5120', // 5MB, PDF only
             ],
             'menu' => [
                 'menu_file' => 'nullable|file|mimes:pdf|mimetypes:application/pdf|pdf_signature|max:5120', // 5MB, PDF only
@@ -118,11 +126,16 @@ class StoreQrCodeRequest extends FormRequest
                 'amenities.*' => 'string|max:100',
                 'dress_code_color' => 'nullable|string|max:50',
                 'contact' => 'nullable|string|max:255',
+                'event_primary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+                'event_secondary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+                'event_font_family' => 'nullable|string|max:100',
             ],
             'app' => [
                 'app_image' => 'nullable|image|mimes:jpeg,png,jpg|mimetypes:image/jpeg,image/png|image_signature|max:5120',
                 'app_name' => 'nullable|string|max:255',
                 'app_description' => 'nullable|string|max:1000',
+                'app_rating' => 'nullable|numeric|min:0|max:5',
+                'app_review_count' => 'nullable|string|max:50',
                 'app_primary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
                 'app_secondary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
                 'app_button_text' => 'nullable|string|max:255',
@@ -136,6 +149,8 @@ class StoreQrCodeRequest extends FormRequest
                 'play_store_link' => ['nullable', 'url', 'max:2048', 'regex:/^https:\/\/play\.google\.com\/store\/apps\//'],
                 'app_store_button_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
                 'app_store_button_text_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+                'app_languages' => 'nullable|array',
+                'app_languages.*' => 'string|in:en,de,hr,fr,es,it,nl,pt,pl,tr,ru,ja,zh',
             ],
             'location' => [
                 'address' => 'nullable|string|max:500',
@@ -153,11 +168,6 @@ class StoreQrCodeRequest extends FormRequest
                 'phone_number' => 'required|string|max:50',
                 'phone_background_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
                 'phone_font_family' => 'nullable|string|max:100',
-            ],
-            'mp3' => [
-                'mp3_file' => 'required|file|mimes:mp3,m4a,audio/mpeg,audio/mp3,audio/m4a,audio/x-m4a|audio_signature|max:20480', // 20MB
-                'song_name' => 'required|string|max:255',
-                'artist_name' => 'required|string|max:255',
             ],
             'business_card' => [
                 'business_card_company_name' => 'required|string|max:255',
@@ -305,19 +315,16 @@ class StoreQrCodeRequest extends FormRequest
             'password.required_unless' => 'Password is required for encrypted networks.',
             'address.required' => 'Please enter an address.',
             'phone_number.required' => 'Please enter a phone number.',
-            'mp3_file.required' => 'Please upload an audio file.',
-            'mp3_file.mimes' => 'Only audio files are allowed (MP3, M4A formats).',
-            'mp3_file.audio_signature' => 'The file is not a valid audio file (invalid file signature). Only MP3 and M4A are allowed.',
-            'mp3_file.max' => 'Audio file cannot exceed 20MB.',
-            'song_name.required' => 'Please enter a song name.',
-            'artist_name.required' => 'Please enter an artist name.',
             'menu_content.required' => 'Please add at least one menu section, or upload a PDF, or enter a menu URL.',
             'menu_url.regex' => 'Menu URL must start with https://',
             'website_url.regex' => 'Website URL must start with https://',
             'app_store_link.regex' => 'App Store Link must start with https://apps.apple.com/',
             'play_store_link.regex' => 'Google Play Store Link must start with https://play.google.com/store/apps/',
-            'hp_url.max' => 'An error occurred while submitting the form. Please try again later.',
-            'hp_comment.max' => 'An error occurred while submitting the form. Please try again later.',
+            'second_email.max' => 'An error occurred while submitting the form. Please try again later.',
+            'alternate_phone.max' => 'An error occurred while submitting the form. Please try again later.',
+            'company_website.max' => 'An error occurred while submitting the form. Please try again later.',
+            'form_token.required' => 'An error occurred while submitting the form. Please try again later.',
+            'form_token.min' => 'An error occurred while submitting the form. Please try again later.',
             'recaptcha_token.required' => 'Please complete the security check and try again.',
         ];
     }

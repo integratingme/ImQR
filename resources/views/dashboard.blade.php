@@ -1,25 +1,95 @@
 @extends('layouts.app')
 
-@section('title', 'QR Code History')
+@section('title', 'Dashboard — QR Code Generator')
 
 @section('content')
 <div class="min-h-[60vh] bg-gradient-to-b from-dark-50/50 to-white">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14">
-        {{-- Header --}}
+
+        {{-- Welcome & Plan Status --}}
         <header class="mb-10">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 class="text-3xl md:text-4xl font-bold text-dark-600 tracking-tight">Your QR codes</h1>
-                    <p class="mt-1.5 text-dark-300 text-lg">View, download or remove your generated QR codes</p>
+                    <h1 class="text-3xl md:text-4xl font-bold text-dark-600 tracking-tight">Welcome, {{ $user->name ?? 'User' }}</h1>
+                    <p class="mt-1.5 text-dark-300 text-lg">{{ $user->email ?? $user->phone }}</p>
                 </div>
-                <a href="{{ route('qr-codes.index') }}" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-medium text-white bg-primary-500 hover:bg-primary-600 shadow-md hover:shadow-lg transition-all duration-200 shrink-0">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                    </svg>
-                    Create new
-                </a>
+                <div class="flex items-center gap-3">
+                    @if($user->isPremium())
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary-100 text-primary-700 font-medium text-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3l3.057-3L12 3l3.943-3L19 3l2 7-4 4v7l-5-2-5 2v-7l-4-4 2-7z"/>
+                            </svg>
+                            Premium
+                        </span>
+                        <form action="{{ route('dashboard.update-plan') }}" method="POST" class="inline">
+                            @csrf
+                            <input type="hidden" name="plan" value="free">
+                            <button type="submit" class="px-3 py-1.5 rounded-full bg-gray-100 text-gray-500 font-medium text-sm hover:bg-gray-200 transition-colors">
+                                Downgrade to Free
+                            </button>
+                        </form>
+                    @else
+                        <span class="px-3 py-1.5 rounded-full bg-gray-100 text-gray-600 font-medium text-sm">
+                            Free Plan
+                        </span>
+                        <form action="{{ route('dashboard.update-plan') }}" method="POST" class="inline">
+                            @csrf
+                            <input type="hidden" name="plan" value="premium">
+                            <button type="submit" class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-gradient-to-r from-primary-600 to-primary-500 text-white font-medium text-sm hover:from-primary-700 hover:to-primary-600 shadow-sm hover:shadow transition-all">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3l3.057-3L12 3l3.943-3L19 3l2 7-4 4v7l-5-2-5 2v-7l-4-4 2-7z"/>
+                                </svg>
+                                Upgrade to Premium
+                            </button>
+                        </form>
+                    @endif
+                </div>
             </div>
         </header>
+
+        {{-- Stats Cards --}}
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+            <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-primary-50 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-bold text-dark-500">{{ $stats['total_qr_codes'] }}</p>
+                        <p class="text-sm text-dark-300">QR Codes</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-bold text-dark-500">{{ $stats['total_scans'] }}</p>
+                        <p class="text-sm text-dark-300">Total Scans</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-bold text-dark-500">{{ $stats['dynamic_codes'] }}</p>
+                        <p class="text-sm text-dark-300">Dynamic QR Codes</p>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         @if(session('success'))
             <div class="mb-8 flex items-center gap-3 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200/80 text-emerald-800 shadow-sm">
@@ -50,13 +120,21 @@
 
         {{-- Type filter --}}
         <div class="mb-8">
-            <p class="text-sm font-medium text-dark-400 mb-3">Filter by type</p>
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+                <p class="text-sm font-medium text-dark-400">Filter by type</p>
+                <a href="{{ route('qr-codes.index') }}" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-medium text-white bg-primary-500 hover:bg-primary-600 shadow-md hover:shadow-lg transition-all duration-200 shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Create new
+                </a>
+            </div>
             <div class="flex flex-wrap gap-2">
-                <a href="{{ route('qr-codes.history') }}" class="inline-flex items-center px-4 py-2 rounded-xl text-sm font-medium transition-colors {{ !$currentType ? 'bg-primary-500 text-white shadow-sm' : 'bg-white border border-dark-200 text-dark-600 hover:bg-dark-50' }}">
+                <a href="{{ route('dashboard') }}" class="inline-flex items-center px-4 py-2 rounded-xl text-sm font-medium transition-colors {{ !$currentType ? 'bg-primary-500 text-white shadow-sm' : 'bg-white border border-dark-200 text-dark-600 hover:bg-dark-50' }}">
                     All
                 </a>
                 @foreach($historyTypes as $t)
-                    <a href="{{ route('qr-codes.history', ['type' => $t]) }}" class="inline-flex items-center px-4 py-2 rounded-xl text-sm font-medium transition-colors {{ $currentType === $t ? 'bg-primary-500 text-white shadow-sm' : 'bg-white border border-dark-200 text-dark-600 hover:bg-dark-50' }}">
+                    <a href="{{ route('dashboard', ['type' => $t]) }}" class="inline-flex items-center px-4 py-2 rounded-xl text-sm font-medium transition-colors {{ $currentType === $t ? 'bg-primary-500 text-white shadow-sm' : 'bg-white border border-dark-200 text-dark-600 hover:bg-dark-50' }}">
                         {{ $typeNames[$t] ?? ucfirst($t) }}
                     </a>
                 @endforeach
@@ -67,9 +145,9 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                 @foreach($qrCodes as $qrCode)
                     <article class="group relative bg-white rounded-2xl border border-dark-100 shadow-sm hover:shadow-xl hover:border-dark-200/60 transition-all duration-300 overflow-hidden">
-                        {{-- QR preview area – tall enough for frames (e.g. review-us), no aspect lock --}}
+                        {{-- QR preview area --}}
                         <div class="p-5 pb-4">
-                            <div class="min-h-[320px] h-[440px] max-w-[360px] w-full mx-auto rounded-2xl bg-dark-50/80 p-3 flex items-center justify-center ring-1 ring-dark-100/50 overflow-hidden" 
+                            <div class="min-h-[320px] h-[440px] max-w-[360px] w-full mx-auto rounded-2xl bg-dark-50/80 p-3 flex items-center justify-center ring-1 ring-dark-100/50 overflow-hidden"
                                  id="qr-preview-{{ $qrCode->id }}"
                                  data-qr-id="{{ $qrCode->id }}"
                                  data-qr-type="{{ $qrCode->type }}"
@@ -120,19 +198,16 @@
                                     {{ $page['label'] }}
                                 </a>
                             @else
-                                {{-- Placeholder so PNG/SVG row stays at same position when there is no View page --}}
                                 <div class="w-full py-2.5 rounded-xl invisible pointer-events-none select-none" aria-hidden="true">View page</div>
                             @endif
-                            @auth
-                                @if(auth()->user()->isPremium() && $qrCode->user_id == auth()->id())
-                                    <a href="{{ route('qr-codes.edit', $qrCode->id) }}" class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-medium text-primary-600 bg-primary-50 hover:bg-primary-100 border border-primary-200 transition-colors">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                        </svg>
-                                        Edit
-                                    </a>
-                                @endif
-                            @endauth
+                            @if($user->isPremium() && $qrCode->user_id == auth()->id())
+                                <a href="{{ route('qr-codes.edit', $qrCode->id) }}" class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-medium text-primary-600 bg-primary-50 hover:bg-primary-100 border border-primary-200 transition-colors">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                    </svg>
+                                    Edit
+                                </a>
+                            @endif
                             <div class="flex gap-2">
                                 <a href="{{ route('qr-codes.download', ['id' => $qrCode->id, 'format' => 'png']) }}" class="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-medium text-white bg-primary-500 hover:bg-primary-600 shadow-sm transition-colors">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -179,7 +254,7 @@
                     <h2 class="text-xl font-semibold text-dark-600 mb-2">No {{ $typeNames[$currentType] ?? $currentType }} QR codes</h2>
                     <p class="text-dark-300 mb-8">You don't have any QR codes of this type yet. Try another filter or create one.</p>
                     <div class="flex flex-wrap items-center justify-center gap-3">
-                        <a href="{{ route('qr-codes.history') }}" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-medium text-dark-600 bg-white border border-dark-200 hover:bg-dark-50">Show all</a>
+                        <a href="{{ route('dashboard') }}" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-medium text-dark-600 bg-white border border-dark-200 hover:bg-dark-50">Show all</a>
                         <a href="{{ route('qr-codes.index') }}" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-medium text-white bg-primary-500 hover:bg-primary-600 shadow-md hover:shadow-lg transition-all">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
@@ -208,10 +283,10 @@
 // Base URL for frame SVGs (ensure trailing slash)
 var BASE_URL = '{{ rtrim(url("/"), "/") }}/';
 
-// Frame configuration (same as in create.blade.php)
+// Frame configuration
 var FRAME_CONFIG = @json($frameConfig);
 
-// Wait for QRCodeStyling (set by app.js / qr-preview.js which loads as deferred module)
+// Wait for QRCodeStyling
 function waitForQRCodeStyling(callback, maxWaitMs) {
     maxWaitMs = maxWaitMs || 4000;
     var start = Date.now();
@@ -231,7 +306,6 @@ function waitForQRCodeStyling(callback, maxWaitMs) {
     check();
 }
 
-// Helper: normalize hex color
 function normalizeHexColor(val) {
     if (!val || typeof val !== 'string') return '#000000';
     val = val.trim().replace(/^#/, '');
@@ -240,7 +314,6 @@ function normalizeHexColor(val) {
     return '#000000';
 }
 
-// Helper: escape SVG text
 function escapeSvgText(s) {
     if (s == null) return '';
     return String(s)
@@ -250,7 +323,6 @@ function escapeSvgText(s) {
         .replace(/"/g, '&quot;');
 }
 
-// Get themed frame URL
 async function getThemedFrameUrl(svgPath, primaryHex, secondaryHex) {
     var primary = normalizeHexColor(primaryHex);
     var secondary = normalizeHexColor(secondaryHex);
@@ -261,36 +333,33 @@ async function getThemedFrameUrl(svgPath, primaryHex, secondaryHex) {
     return URL.createObjectURL(blob);
 }
 
-// Get review-us frame with custom config
 async function getReviewUsFrameUrl(config) {
     var svgPath = FRAME_CONFIG['review-us'] && FRAME_CONFIG['review-us'].url;
     if (!svgPath) return '';
     var res = await fetch(BASE_URL + svgPath);
     let svg = await res.text();
-    
+
     const frameColor = normalizeHexColor(config.color || '#84BD00');
     const textColor = normalizeHexColor(config.text_color || '#000000');
-    
+
     svg = svg.replace(/fill="#84BD00"/, 'fill="' + frameColor + '"');
     svg = svg.replace(/(<text[^>]*?)fill="#000000"([^>]*>)/g, '$1fill="' + textColor + '"$2');
-    
+
     const line1 = config.line1 || 'your';
     const line2 = config.line2 || 'text';
     const line3 = config.line3 || 'here';
-    
+
     svg = svg.replace(/>your<\/text>/, '>' + escapeSvgText(line1) + '</text>');
     svg = svg.replace(/>text<\/text>/, '>' + escapeSvgText(line2) + '</text>');
     svg = svg.replace(/>here<\/text>/, '>' + escapeSvgText(line3) + '</text>');
-    
-    // Handle icon
+
     const iconValue = config.icon || 'default';
     const iconGroupRegex = /<g transform="translate\(100 480\)">[\s\S]*?<\/g>/;
-    
+
     if (iconValue === 'custom' && config.logo_url) {
         const iconReplacement = '<image x="100" y="480" width="200" height="80" href="' + config.logo_url.replace(/"/g, '&quot;') + '" preserveAspectRatio="xMidYMid meet"/>';
         svg = svg.replace(iconGroupRegex, iconReplacement);
     } else if (iconValue !== 'default' && iconValue !== 'custom') {
-        // Predefined icon URL
         try {
             const iconRes = await fetch(iconValue);
             const iconSvgText = await iconRes.text();
@@ -301,12 +370,11 @@ async function getReviewUsFrameUrl(config) {
             console.warn('Could not load icon', e);
         }
     }
-    
+
     const blob = new Blob([svg], { type: 'image/svg+xml' });
     return URL.createObjectURL(blob);
 }
 
-// Render QR code with customization (QRCodeStylingClass = window.QRCodeStyling from app.js)
 async function renderQRCode(container, QRCodeStylingClass) {
     var QRS = QRCodeStylingClass || window.QRCodeStyling;
     var qrId = container.dataset.qrId;
@@ -314,7 +382,7 @@ async function renderQRCode(container, QRCodeStylingClass) {
     const qrData = JSON.parse(container.dataset.qrData || '{}');
     const colors = JSON.parse(container.dataset.qrColors || '{}');
     const customization = JSON.parse(container.dataset.qrCustomization || '{}');
-    
+
     let primaryColor = normalizeHexColor(colors.primary || '#000000');
     let secondaryColor = normalizeHexColor(colors.secondary || '#FFFFFF');
     // Ensure contrast: if pattern and background are same (e.g. both black), QR would be invisible
@@ -327,8 +395,7 @@ async function renderQRCode(container, QRCodeStylingClass) {
     const cornerDotStyle = customization.corner_dot_style || 'square';
     const frameId = customization.frame || 'none';
     const logoUrl = customization.logo_url || '';
-    
-    // Build QR content based on type
+
     let qrContent = '';
     switch (qrType) {
         case 'text':
@@ -370,18 +437,13 @@ async function renderQRCode(container, QRCodeStylingClass) {
         }
         case 'email': {
             const email = qrData.email || '';
-            if (!email) {
-                qrContent = '';
-                break;
-            }
+            if (!email) { qrContent = ''; break; }
             let mailtoUrl = 'mailto:' + email;
             const subject = qrData.subject || '';
             const message = qrData.message || '';
             if (subject || message) {
                 mailtoUrl += '?';
-                if (subject) {
-                    mailtoUrl += 'subject=' + encodeURIComponent(subject);
-                }
+                if (subject) mailtoUrl += 'subject=' + encodeURIComponent(subject);
                 if (message) {
                     if (subject) mailtoUrl += '&';
                     mailtoUrl += 'body=' + encodeURIComponent(message);
@@ -392,64 +454,40 @@ async function renderQRCode(container, QRCodeStylingClass) {
         }
         case 'wifi': {
             const ssid = qrData.ssid || '';
-            if (!ssid) {
-                qrContent = '';
-                break;
-            }
+            if (!ssid) { qrContent = ''; break; }
             const password = qrData.password || '';
             const encryption = qrData.encryption || 'WPA2';
-            
-            // Escape special characters in SSID and password (semicolons, colons, backslashes, commas)
             function escapeWifiString(str) {
-                return str.replace(/\\/g, '\\\\')
-                          .replace(/;/g, '\\;')
-                          .replace(/:/g, '\\:')
-                          .replace(/,/g, '\\,');
+                return str.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/:/g, '\\:').replace(/,/g, '\\,');
             }
-            
             let wifiString = 'WIFI:';
-            
-            // Only add encryption type if not "nopass"
-            if (encryption !== 'nopass') {
-                wifiString += 'T:' + encryption + ';';
-            }
-            
-            // SSID is always required
+            if (encryption !== 'nopass') wifiString += 'T:' + encryption + ';';
             wifiString += 'S:' + escapeWifiString(ssid) + ';';
-            
-            // Only add password if encryption is not "nopass" and password is provided
-            if (encryption !== 'nopass' && password) {
-                wifiString += 'P:' + escapeWifiString(password) + ';';
-            }
-            
-            // End with semicolon
+            if (encryption !== 'nopass' && password) wifiString += 'P:' + escapeWifiString(password) + ';';
             wifiString += ';';
-            
             qrContent = wifiString;
             break;
         }
         default:
             qrContent = qrData.url || '';
     }
-    
+
     if (!qrContent) {
         container.innerHTML = '<div class="text-xs text-dark-400">No QR data</div>';
         return;
     }
-    
-    // Map pattern/corner types to QRCodeStyling format
+
     const dotsTypeMap = { square: 'square', circle: 'dots', rounded: 'rounded' };
     const cornersSquareTypeMap = { square: 'square', rounded: 'rounded', 'extra-rounded': 'extra-rounded' };
     const cornersDotTypeMap = { square: 'square', circle: 'dot', rounded: 'rounded' };
-    
+
     const dotsType = dotsTypeMap[pattern] || 'square';
     const cornersSquareType = cornersSquareTypeMap[cornerStyle] || 'square';
     const cornersDotType = cornersDotTypeMap[cornerDotStyle] || 'square';
-    
-    // Calculate QR size based on frame (larger so preview is clear)
+
     var HISTORY_QR_SIZE = 200;
     var qrSize = (frameId && frameId !== 'none') ? 165 : HISTORY_QR_SIZE;
-    
+
     const options = {
         width: qrSize,
         height: qrSize,
@@ -469,22 +507,21 @@ async function renderQRCode(container, QRCodeStylingClass) {
             crossOrigin: 'anonymous',
         },
     };
-    
+
     container.innerHTML = '';
-    
-    // If frame is selected, create frame wrapper
+
     if (frameId && frameId !== 'none' && FRAME_CONFIG[frameId]) {
         const cfg = FRAME_CONFIG[frameId];
         if (cfg && cfg.url) {
             const wrapper = document.createElement('div');
             wrapper.className = 'frame-wrapper relative mx-auto inline-block';
-            
+
             const holePx = HISTORY_QR_SIZE;
             const totalW = holePx / (cfg.qrWidth / 100);
             const totalH = totalW * (cfg.frameHeight / cfg.frameWidth);
             wrapper.style.width = totalW + 'px';
             wrapper.style.height = totalH + 'px';
-            
+
             const img = document.createElement('img');
             if (frameId === 'review-us') {
                 img.src = await getReviewUsFrameUrl(customization.review_us_config || {});
@@ -495,22 +532,21 @@ async function renderQRCode(container, QRCodeStylingClass) {
             }
             img.alt = 'Frame';
             img.className = 'frame-img w-full h-full object-contain block';
-            
+
             const qrInFrame = document.createElement('div');
             qrInFrame.className = 'qr-in-frame absolute flex items-center justify-center';
             qrInFrame.style.left = cfg.qrLeft + '%';
             qrInFrame.style.top = cfg.qrTop + '%';
             qrInFrame.style.width = cfg.qrWidth + '%';
             qrInFrame.style.height = cfg.qrHeight + '%';
-            
+
             wrapper.appendChild(img);
             wrapper.appendChild(qrInFrame);
             container.appendChild(wrapper);
-            
+
             var qrCodeStyling = new QRS(options);
             qrCodeStyling.append(qrInFrame);
-            
-            // Scale wrapper to fit container so full frame is visible
+
             setTimeout(function() {
                 var cw = container.clientWidth;
                 var ch = container.clientHeight;
@@ -524,13 +560,11 @@ async function renderQRCode(container, QRCodeStylingClass) {
             }, 80);
         }
     } else {
-        // No frame - render QR directly
         var qrCodeStyling = new QRS(options);
         qrCodeStyling.append(container);
     }
 }
 
-// Render all QR codes after DOM and app.js (QRCodeStyling) are ready
 document.addEventListener('DOMContentLoaded', function() {
     waitForQRCodeStyling(function(QRCodeStylingClass) {
         var containers = document.querySelectorAll('[data-qr-id]');

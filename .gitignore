@@ -21,6 +21,8 @@ Icon?
 .env.backup
 .env.production
 .env.testing
+docs/firebase.env
+COMMIT_MESSAGE.txt
 
 # Editor / IDE files & temp
 *~
@@ -94,26 +96,78 @@ public/uploads/*
 /.env.local
 /.env.development.local
 
-# Tool caches
+# =====================
+# Laravel secrets & security
+# =====================
+.env.vault
+.env.*.decrypted
+/storage/oauth-private.key
+/storage/oauth-public.key
+/app/Http/Controllers/.env*
+.git-credentials
+
+# =====================
+# IDE & Editor generated files
+# =====================
+.DS_Store/*
+.env.dusk.local
+.env.testing.local
+.nova-settings.json
+.vscode/launch.json
+
+# =====================
+# Build artifacts & cache
+# =====================
 /vendor-bin
 /rector-cache
 /psalm-cache
 /.phpstan-cache
 .php-cs-fixer.cache
 
-# Local databases (do not commit data)
-/*.db
+# =====================
+# Composer & dependency security
+# =====================
+composer.lock
+vendor/bin/*
+
+# =====================
+# Node/npm build artifacts
+# =====================
+node_modules/
+dist/
+build/
+.next/
+.nuxt/
+out/
+
+# =====================
+# Database & SQLite specific
+# =====================
+*.db
 *.sqlite
 *.sqlite3
 database/*.db*
 database/dev.sqlite
 
-# Extra credentials & tokens
-.git-credentials
+# =====================
+# AWS & Cloud credentials
+# =====================
+.aws/
+.aws/credentials
+.aws/config
+AWS_*.txt
+
+# =====================
+# Third-party API keys in code
+# =====================
+.env.*.local
+config/services.php~
 .token*
 .apikey*
 
-# Additional user uploads / private storage
+# =====================
+# User upload directories (critical for public)
+# =====================
 /public/user-uploads/*
 /public/media/*
 /storage/uploads/*

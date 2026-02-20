@@ -186,18 +186,6 @@
             </div>
         </a>
 
-        <!-- MP3 QR Code -->
-        <a href="{{ route('qr-codes.create', 'mp3') }}" class="card card-hover group">
-            <div class="text-center">
-                <div class="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-emerald-200 transition-colors">
-                    <svg class="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
-                    </svg>
-                </div>
-                <h3 class="text-lg font-semibold text-dark-500 mb-2">Audio</h3>
-                <p class="text-sm text-dark-300">MP3, M4A files</p>
-            </div>
-        </a>
     </div>
 
     <!-- Features Section -->

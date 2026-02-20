@@ -14,7 +14,7 @@ class QrCodeService
     /**
      * Generate QR code based on type and data
      */
-    public function generate(string $type, array $data, ?array $colors = null, ?array $customization = null): QrCode
+    public function generate(string $type, array $data, ?array $colors = null, ?array $customization = null, ?int $userId = null): QrCode
     {
         // Generate QR code content based on type
         $qrContent = $this->generateQrContent($type, $data);
@@ -31,6 +31,7 @@ class QrCodeService
             'data' => $data,
             'colors' => $colors ?? ['primary' => '#000000', 'secondary' => '#FFFFFF'],
             'customization' => $customization ?? $this->getDefaultCustomization(),
+            'user_id' => $userId,
         ]);
 
         // Generate and save QR code image
@@ -70,7 +71,6 @@ class QrCodeService
             'phone' => $this->generatePhoneContent($data),
             'business_card' => $this->generateBusinessCardContent($data),
             'personal_vcard' => $this->generatePersonalVCardContent($data),
-            'mp3' => $data['mp3_url'] ?? '',
             default => '',
         };
     }
@@ -144,23 +144,14 @@ class QrCodeService
     }
 
     /**
-     * Generate event QR content (vCard or URL format)
+     * Generate event QR content (URL to event page)
      */
     protected function generateEventContent(array $data): string
     {
-        // For events, we'll return a JSON string that can be parsed by a landing page
-        return json_encode([
-            'type' => 'event',
-            'event_name' => $data['event_name'] ?? '',
-            'company_name' => $data['company_name'] ?? '',
-            'description' => $data['description'] ?? '',
-            'date' => $data['date'] ?? '',
-            'time' => $data['time'] ?? '',
-            'location' => $data['location'] ?? '',
-            'amenities' => $data['amenities'] ?? [],
-            'dress_code_color' => $data['dress_code_color'] ?? '',
-            'contact' => $data['contact'] ?? '',
-        ]);
+        if (isset($data['event_page_url']) && !empty($data['event_page_url'])) {
+            return $data['event_page_url'];
+        }
+        return url('/event/preview');
     }
 
     /**
@@ -337,7 +328,6 @@ class QrCodeService
     private const EXTENSION_WHITELIST = [
         'pdf' => ['pdf'],
         'image' => ['jpg', 'jpeg', 'png'],
-        'audio' => ['mp3', 'm4a'],
     ];
 
     /**
@@ -373,8 +363,6 @@ class QrCodeService
             $allowed = self::EXTENSION_WHITELIST['image'];
         } elseif ($fileType === 'pdf' || $fileType === 'menu') {
             $allowed = self::EXTENSION_WHITELIST['pdf'];
-        } elseif ($fileType === 'audio' || $fileType === 'mp3_file') {
-            $allowed = self::EXTENSION_WHITELIST['audio'];
         } else {
             $allowed = self::EXTENSION_WHITELIST['image'];
         }
@@ -523,18 +511,6 @@ class QrCodeService
                 'url' => 'frames/standard-border.svg',
                 'qrLeft' => 5, 'qrTop' => 4, 'qrWidth' => 90, 'qrHeight' => 72,
                 'frameWidth' => 400, 'frameHeight' => 500,
-                'themable' => true
-            ],
-            'thick-border' => [
-                'url' => 'frames/thick-border.svg',
-                'qrLeft' => 5, 'qrTop' => 4, 'qrWidth' => 90, 'qrHeight' => 72,
-                'frameWidth' => 400, 'frameHeight' => 500,
-                'themable' => true
-            ],
-            'speech-bubble' => [
-                'url' => 'frames/speech-bubble.svg',
-                'qrLeft' => 5, 'qrTop' => 3.85, 'qrWidth' => 90, 'qrHeight' => 69.2,
-                'frameWidth' => 400, 'frameHeight' => 520,
                 'themable' => true
             ],
             'menu-qr' => [

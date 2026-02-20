@@ -66,7 +66,7 @@
         <div class="spinner"></div>
         <h1>Preparing your QR code...</h1>
         <p>Your download will start automatically.</p>
-        <a href="{{ route('qr-codes.history') }}" class="back-link">Back to History</a>
+        <a href="{{ auth()->check() ? route('dashboard') : route('qr-codes.history') }}" class="back-link">Back to {{ auth()->check() ? 'Dashboard' : 'History' }}</a>
     </div>
     
     <div id="qr-container"></div>
@@ -87,18 +87,6 @@
                 url: '{{ asset("frames/standard-border.svg") }}',
                 qrLeft: 5, qrTop: 4, qrWidth: 90, qrHeight: 72,
                 frameWidth: 400, frameHeight: 500,
-                themable: true
-            },
-            'thick-border': {
-                url: '{{ asset("frames/thick-border.svg") }}',
-                qrLeft: 5, qrTop: 4, qrWidth: 90, qrHeight: 72,
-                frameWidth: 400, frameHeight: 500,
-                themable: true
-            },
-            'speech-bubble': {
-                url: '{{ asset("frames/speech-bubble.svg") }}',
-                qrLeft: 5, qrTop: 3.85, qrWidth: 90, qrHeight: 69.2,
-                frameWidth: 400, frameHeight: 520,
                 themable: true
             },
             'menu-qr': {

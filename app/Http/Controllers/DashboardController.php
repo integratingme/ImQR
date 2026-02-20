@@ -1,0 +1,86 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\QrCode;
+use App\Services\QrCodeService;
+use Illuminate\Http\Request;
+
+class DashboardController extends Controller
+{
+    protected QrCodeService $qrCodeService;
+
+    public function __construct(QrCodeService $qrCodeService)
+    {
+        $this->qrCodeService = $qrCodeService;
+    }
+
+    /**
+     * Show the user dashboard with full QR code history.
+     */
+    public function index(Request $request)
+    {
+        $user = $request->user();
+
+        $historyTypes = ['url', 'email', 'text', 'coupon', 'pdf', 'app', 'phone', 'menu', 'location', 'wifi', 'event', 'business_card', 'personal_vcard'];
+        $typeFilter = $request->get('type');
+
+        // Statistics (from all user codes, unfiltered)
+        $allCodes = QrCode::where('user_id', $user->id)->get();
+        $stats = [
+            'total_qr_codes' => $allCodes->count(),
+            'total_scans' => $allCodes->sum('scan_count'),
+            'dynamic_codes' => $allCodes->where('is_dynamic', true)->count(),
+        ];
+
+        // Filtered & paginated QR codes for the grid
+        $query = QrCode::where('user_id', $user->id)
+            ->whereIn('type', $historyTypes)
+            ->latest();
+
+        if ($typeFilter && in_array($typeFilter, $historyTypes)) {
+            $query->where('type', $typeFilter);
+        }
+
+        $qrCodes = $query->paginate(12)->withQueryString();
+
+        // Frame configuration for QR preview rendering
+        $frameConfig = [];
+        foreach (['standard-border', 'menu-qr', 'location', 'wifi', 'chat', 'coupon', 'review-us'] as $frameId) {
+            $frameConfig[$frameId] = $this->qrCodeService->getFrameConfig($frameId);
+        }
+
+        return view('dashboard', [
+            'user' => $user,
+            'qrCodes' => $qrCodes,
+            'stats' => $stats,
+            'historyTypes' => $historyTypes,
+            'currentType' => $typeFilter,
+            'frameConfig' => $frameConfig,
+        ]);
+    }
+
+    /**
+     * Switch the current user's plan.
+     */
+    public function updatePlan(Request $request)
+    {
+        $request->validate([
+            'plan' => 'required|in:free,premium',
+        ]);
+
+        $user = $request->user();
+        $plan = $request->input('plan');
+
+        $user->plan = $plan;
+        $user->plan_expires_at = $plan === 'premium' ? now()->addYear() : null;
+        $user->save();
+
+        $message = $plan === 'premium'
+            ? 'Congratulations! You have been upgraded to Premium.'
+            : 'You have been downgraded to the Free plan.';
+
+        return redirect()->route('dashboard')->with('success', $message);
+    }
+}
+
