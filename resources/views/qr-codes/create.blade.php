@@ -204,6 +204,15 @@ window.recaptchaSiteKey = @json($recaptchaSiteKey);
     top: 70%;
     transform: translateY(-50%);
 }
+/* Honeypot fields - hidden using CSS class (harder for bots to detect) */
+.honeypot-field {
+    display: none;
+    height: 0;
+    overflow: hidden;
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+}
 </style>
 <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
     <!-- Progress Steps -->
@@ -246,10 +255,21 @@ window.recaptchaSiteKey = @json($recaptchaSiteKey);
         <input type="hidden" name="type" value="{{ $type }}">
 
         {{-- Honeypot fields – invisible to users, bots often fill these --}}
-        <div style="display: none; position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden;">
-            <input type="text" name="hp_url" value="" autocomplete="off" tabindex="-1" disabled>
-            <input type="text" name="hp_comment" value="" autocomplete="off" tabindex="-1" disabled>
+        {{-- Using realistic field names and CSS class for better bot detection --}}
+        <div class="honeypot-field">
+            <label for="secondary-email">Leave this empty</label>
+            <input type="text" name="second_email" id="secondary-email" value="" tabindex="-1" autocomplete="off">
         </div>
+        <div class="honeypot-field">
+            <label for="alternate-phone">Leave this empty</label>
+            <input type="text" name="alternate_phone" id="alternate-phone" value="" tabindex="-1" autocomplete="off">
+        </div>
+        <div class="honeypot-field">
+            <label for="company-website">Leave this empty</label>
+            <input type="text" name="company_website" id="company-website" value="" tabindex="-1" autocomplete="off">
+        </div>
+        {{-- JavaScript token field - populated only on submit --}}
+        <input type="hidden" name="form_token" id="form-token" value="">
 
         <!-- Step 1: Setup Info -->
         <div id="step-1" class="step-content">
@@ -4796,6 +4816,13 @@ async function generateQRCode() {
     if (secondaryColorInput && secondaryColorHex) {
         secondaryColorInput.value = normalizeHexColor(secondaryColorHex.value);
     }
+    
+    // Populate honeypot token field only on submit (bots won't do this)
+    const formTokenField = document.getElementById('form-token');
+    if (formTokenField) {
+        formTokenField.value = Date.now().toString(36) + Math.random().toString(36).substr(2);
+    }
+    
     const formData = new FormData(document.getElementById('qr-form'));
     const recaptchaToken = await getRecaptchaToken();
     if (recaptchaToken) formData.append('recaptcha_token', recaptchaToken);

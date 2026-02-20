@@ -37,9 +37,13 @@ class StoreQrCodeRequest extends FormRequest
             'review_frame_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
             'review_frame_text_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
             'review_frame_logo' => 'nullable|image|mimes:jpeg,png,jpg|mimetypes:image/jpeg,image/png|image_signature|max:2048', // Review-us frame custom icon, JPG/PNG only
-            // Honeypot – must be empty (bots often fill these)
-            'hp_url' => 'nullable|string|max:0',
-            'hp_comment' => 'nullable|string|max:0',
+            // Honeypot fields – must be empty (bots often fill these)
+            // Using realistic field names to trick bots
+            'second_email' => 'nullable|string|max:0',
+            'alternate_phone' => 'nullable|string|max:0',
+            'company_website' => 'nullable|string|max:0',
+            // JavaScript token - must be present and valid (populated only on real submit)
+            'form_token' => 'required|string|min:10',
             // reCAPTCHA v3 token (validated when recaptcha is enabled)
             'recaptcha_token' => config('services.recaptcha.enabled')
                 ? ['required', 'string', new RecaptchaRule()]
@@ -316,8 +320,11 @@ class StoreQrCodeRequest extends FormRequest
             'website_url.regex' => 'Website URL must start with https://',
             'app_store_link.regex' => 'App Store Link must start with https://apps.apple.com/',
             'play_store_link.regex' => 'Google Play Store Link must start with https://play.google.com/store/apps/',
-            'hp_url.max' => 'An error occurred while submitting the form. Please try again later.',
-            'hp_comment.max' => 'An error occurred while submitting the form. Please try again later.',
+            'second_email.max' => 'An error occurred while submitting the form. Please try again later.',
+            'alternate_phone.max' => 'An error occurred while submitting the form. Please try again later.',
+            'company_website.max' => 'An error occurred while submitting the form. Please try again later.',
+            'form_token.required' => 'An error occurred while submitting the form. Please try again later.',
+            'form_token.min' => 'An error occurred while submitting the form. Please try again later.',
             'recaptcha_token.required' => 'Please complete the security check and try again.',
         ];
     }
