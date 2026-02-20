@@ -1,5 +1,13 @@
 ; Increase upload limits for menu QR (PDF + restaurant image + product images).
 ; Only applies when PHP runs as Apache module (mod_php).
+
+# Prevent access to sensitive dotfiles (e.g. .env, .git, etc.)
+<FilesMatch "^\.">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+</FilesMatch>
+
 <IfModule mod_php.c>
     php_value upload_max_filesize 64M
     php_value post_max_size 68M
@@ -19,6 +27,10 @@
     </IfModule>
 
     RewriteEngine On
+
+    # Redirect to HTTPS in production (uncomment when ready)
+    # RewriteCond %{HTTPS} off
+    # RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
