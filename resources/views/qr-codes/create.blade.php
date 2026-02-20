@@ -1481,33 +1481,52 @@ function updateStep1Preview() {
             const subject = document.getElementById('subject')?.value || '';
             const message = document.getElementById('message')?.value || '';
             mockupHtml = `
-                <div class="w-full h-full rounded-lg overflow-hidden flex flex-col">
-                    <!-- Email Header -->
-                    <div class="bg-gray-50 border-b border-gray-200 px-4 py-3 flex-shrink-0 mt-10">
-                        <div class="space-y-2">
-                            <div class="text-xs text-gray-600">
-                                <span class="font-medium">From:</span> <span class="text-gray-900">you</span>
-                            </div>
-                            <div class="text-xs text-gray-600">
-                                <span class="font-medium">To:</span> <span class="text-gray-900">${email || 'recipient@example.com'}</span>
-                            </div>
-                            <div class="text-xs text-gray-600">
-                                <span class="font-medium">Subject:</span> <span class="text-gray-900">${subject || 'Email Subject'}</span>
-                            </div>
+                <div class="w-full h-full bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col border border-gray-100">
+                    <div class="bg-white px-4 mt-10 py-3 flex items-center justify-between border-b border-gray-100">
+                        <div class="flex space-x-1.5">
+                            <div class="w-3 h-3 rounded-full bg-red-400"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-400"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-400"></div>
                         </div>
-                    </div>
-                    <!-- Email Body -->
-                    <div class="p-4 flex-1 overflow-y-auto">
-                        <div class="text-xs text-gray-600 mb-2">
-                            <span class="font-medium">Message:</span>
-                            <br>
-                            <br>
-                            <span class="text-gray-900">${message || 'Your message will appear here...'}</span>
+                        <div class="text-[10px] font-medium text-gray-400 uppercase tracking-widest">New Message</div>
+                        <div class="w-8"></div> </div>
+
+                    <div class="px-6 py-5 space-y-3 bg-white">
+                        <div class="flex items-center justify-between border-b border-gray-50 pb-3">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-sm">
+                                    ${email ? email[0].toUpperCase() : 'R'}
+                                </div>
+                                <div>
+                                    <div class="text-xs text-gray-400">To:</div>
+                                    <div class="text-sm font-semibold text-gray-800">${email || 'recipient@example.com'}</div>
+                                </div>
+                            </div>
+                            <div class="text-[11px] text-gray-400">Just now</div>
                         </div>
                         
+                        <div>
+                            <h2 class="text-lg font-bold text-gray-900 tracking-tight leading-tight">
+                                ${subject || 'No Subject'}
+                            </h2>
+                        </div>
+                    </div>
+
+                    <div class="px-6 py-4 flex-1 overflow-y-auto bg-white">
+                        <div class="text-sm leading-relaxed text-gray-700 whitespace-pre-line">
+                            ${message || 'Your message content will appear here...'}
+                        </div>
+                        
+                
+                    </div>
+
+                    <div class="p-4 flex items-center space-x-3">
+                        <div class="ml-4 mt-8 pt-6 border-t border-gray-50 text-xs text-gray-400">
+                            Sent from my secure workspace.
+                        </div>
                     </div>
                 </div>
-            `;
+    `;
             break;
             
         case 'text':
