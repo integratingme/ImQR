@@ -11,7 +11,7 @@
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <h1 class="text-3xl md:text-4xl font-bold text-dark-600 tracking-tight">Welcome, {{ $user->name ?? 'User' }}</h1>
-                    <p class="mt-1.5 text-dark-300 text-lg">{{ $user->email ?? $user->phone }}</p>
+                    <p class="mt-1.5 text-dark-300 text-lg">{{ $user->email }}</p>
                 </div>
                 <div class="flex items-center gap-3">
                     @if($user->isPremium())

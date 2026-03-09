@@ -34,7 +34,7 @@
                         <!-- User Dropdown -->
                         <div class="relative" x-data="{ open: false }" @click.outside="open = false">
                             <button @click="open = !open" class="flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
-                                <span class="text-dark-400 max-w-[150px] truncate">{{ auth()->user()->email ?? auth()->user()->phone }}</span>
+                                <span class="text-dark-400 max-w-[150px] truncate">{{ auth()->user()->email }}</span>
                                 @if(auth()->user()->isPremium())
                                     <span class="px-2 py-0.5 rounded bg-primary-100 text-primary-700 font-medium text-xs">Premium</span>
                                 @else
@@ -50,7 +50,7 @@
                                 class="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
                                 <div class="px-4 py-2 border-b border-gray-100">
                                     <p class="text-sm font-medium text-dark-500 truncate">{{ auth()->user()->name }}</p>
-                                    <p class="text-xs text-dark-300 truncate">{{ auth()->user()->email ?? auth()->user()->phone }}</p>
+                                    <p class="text-xs text-dark-300 truncate">{{ auth()->user()->email }}</p>
                                 </div>
                                 <a href="{{ route('dashboard') }}" class="block px-4 py-2 text-sm text-dark-500 hover:bg-gray-50 transition-colors">Dashboard</a>
                                 <div class="border-t border-gray-100 mt-1 pt-1">
@@ -94,7 +94,7 @@
                     <a href="{{ route('dashboard') }}" class="block py-2 text-dark-500 hover:text-primary-600 font-medium transition-colors">Dashboard</a>
                     <div class="pt-2 border-t border-gray-100">
                         <div class="flex items-center gap-2 py-2">
-                            <span class="text-sm text-dark-400 truncate">{{ auth()->user()->email ?? auth()->user()->phone }}</span>
+                            <span class="text-sm text-dark-400 truncate">{{ auth()->user()->email }}</span>
                             @if(auth()->user()->isPremium())
                                 <span class="px-2 py-0.5 rounded bg-primary-100 text-primary-700 font-medium text-xs">Premium</span>
                             @else
@@ -180,13 +180,6 @@
 
     <script>
     async function handleLogout() {
-        // Sign out from Firebase first (non-blocking)
-        if (window.FirebaseAuth && typeof window.FirebaseAuth.signOut === 'function') {
-            window.FirebaseAuth.signOut().catch(error => {
-                console.error('Firebase logout error:', error);
-            });
-        }
-        
         // Redirect to logout page which will handle Laravel logout
         window.location.href = '{{ route("logout") }}';
     }

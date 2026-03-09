@@ -16,29 +16,30 @@
                 <p class="text-dark-300 mt-1">Sign in to your account</p>
             </div>
 
-            <!-- Error Display -->
-            <div id="auth-error" class="hidden mb-4 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm"></div>
-
-            <!-- Loading Overlay -->
-            <div id="auth-loading" class="hidden mb-4 px-4 py-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-sm text-center">
-                <svg class="animate-spin inline-block w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                </svg>
-                Signing in...
-            </div>
+            @if ($errors->any())
+                <div class="mb-4 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+                    {{ $errors->first() }}
+                </div>
+            @endif
 
             <!-- Email/Password Form -->
-            <form id="login-form" class="space-y-4" onsubmit="return false;">
+            <form method="POST" action="{{ route('login.attempt') }}" class="space-y-4">
+                @csrf
                 <div>
                     <label for="email" class="block text-sm font-medium text-dark-500 mb-1">Email</label>
-                    <input type="email" id="email" name="email" required autocomplete="email"
-                        class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-primary-500 focus:ring-2 focus:ring-primary-200 outline-none transition-colors text-dark-500">
+                    <input type="email" id="email" name="email" required autocomplete="email" value="{{ old('email') }}"
+                        class="w-full px-4 py-2.5 rounded-lg border {{ $errors->has('email') ? 'border-red-300' : 'border-gray-300' }} focus:border-primary-500 focus:ring-2 focus:ring-primary-200 outline-none transition-colors text-dark-500">
+                    @error('email')
+                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                    @enderror
                 </div>
                 <div>
                     <label for="password" class="block text-sm font-medium text-dark-500 mb-1">Password</label>
-                    <input type="password" id="password" name="password" required autocomplete="current-password" minlength="6"
-                        class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-primary-500 focus:ring-2 focus:ring-primary-200 outline-none transition-colors text-dark-500">
+                    <input type="password" id="password" name="password" required autocomplete="current-password"
+                        class="w-full px-4 py-2.5 rounded-lg border {{ $errors->has('password') ? 'border-red-300' : 'border-gray-300' }} focus:border-primary-500 focus:ring-2 focus:ring-primary-200 outline-none transition-colors text-dark-500">
+                    @error('password')
+                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                    @enderror
                 </div>
                 <button type="submit" id="login-btn"
                     class="w-full py-2.5 px-4 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary-300">
@@ -85,73 +86,3 @@
     </div>
 </div>
 @endsection
-
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('login-form');
-    const errorEl = document.getElementById('auth-error');
-    const loadingEl = document.getElementById('auth-loading');
-    const googleBtn = document.getElementById('google-login-btn');
-
-    function showError(msg) {
-        errorEl.textContent = msg;
-        errorEl.classList.remove('hidden');
-        loadingEl.classList.add('hidden');
-    }
-
-    function showLoading(msg = 'Signing in...') {
-        loadingEl.innerHTML = `<svg class="animate-spin inline-block w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> ${msg}`;
-        loadingEl.classList.remove('hidden');
-        errorEl.classList.add('hidden');
-    }
-
-    function hideMessages() {
-        errorEl.classList.add('hidden');
-        loadingEl.classList.add('hidden');
-    }
-
-    function handleSuccess(data) {
-        loadingEl.classList.remove('hidden');
-        loadingEl.textContent = 'Success! Redirecting...';
-        window.location.href = data.redirect || '/dashboard';
-    }
-
-    // Email/Password Login
-    form.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        hideMessages();
-
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-
-        if (!email || !password) {
-            showError('Please fill in all fields.');
-            return;
-        }
-
-        showLoading('Signing in...');
-
-        try {
-            const data = await window.FirebaseAuth.signInWithEmail(email, password);
-            handleSuccess(data);
-        } catch (error) {
-            showError(window.FirebaseAuth.getErrorMessage(error));
-        }
-    });
-
-    // Google Login
-    googleBtn.addEventListener('click', async function() {
-        hideMessages();
-        showLoading('Connecting to Google...');
-
-        try {
-            const data = await window.FirebaseAuth.signInWithGoogle();
-            handleSuccess(data);
-        } catch (error) {
-            showError(window.FirebaseAuth.getErrorMessage(error));
-        }
-    });
-});
-</script>
-@endpush
