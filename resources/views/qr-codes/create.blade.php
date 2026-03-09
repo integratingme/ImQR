@@ -4937,7 +4937,13 @@ async function generateQRCode() {
             
             return true; // Success
         } else {
-            const msg = data.message || data.errors ? (typeof data.errors === 'object' ? Object.values(data.errors).flat().join(' ') : String(data.errors)) : 'Failed to generate QR code. Please check your input and try again.';
+            const msg = data.message
+                ? String(data.message)
+                : (data.errors
+                    ? (typeof data.errors === 'object'
+                        ? Object.values(data.errors).flat().join(' ')
+                        : String(data.errors))
+                    : 'Failed to generate QR code. Please check your input and try again.');
             if (currentStep === 2) {
                 showErrorInStep2(msg);
             } else {
