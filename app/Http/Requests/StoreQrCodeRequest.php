@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\FrameDesign;
 use App\Rules\RecaptchaRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -31,6 +32,7 @@ class StoreQrCodeRequest extends FormRequest
             'secondary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
             'qr_logo' => 'nullable|image|mimes:jpeg,png,jpg|mimetypes:image/jpeg,image/png|image_signature|max:2048', // Step 2 logo, JPG/PNG only
             'frame' => 'nullable|string|max:50',
+            'frame_design_id' => 'nullable|integer|exists:frame_designs,id',
             'review_frame_line1' => 'nullable|string|max:100',
             'review_frame_line2' => 'nullable|string|max:100',
             'review_frame_line3' => 'nullable|string|max:100',
@@ -231,6 +233,19 @@ class StoreQrCodeRequest extends FormRequest
                 }
                 return;
             }
+            if ($this->input('frame') === 'custom') {
+                $frameDesignId = $this->input('frame_design_id');
+                if (!$frameDesignId) {
+                    $validator->errors()->add('frame_design_id', 'Please select a custom frame design.');
+                    return;
+                }
+
+                $frame = FrameDesign::find($frameDesignId);
+                $user = $this->user();
+                if (!$frame || !$user || (!$frame->is_template && $frame->user_id !== $user->id)) {
+                    $validator->errors()->add('frame_design_id', 'The selected frame design is invalid.');
+                }
+            }
             if ($this->input('type') === 'location') {
                 $address = trim((string) $this->input('address', ''));
                 $lat = $this->input('latitude');
@@ -326,6 +341,7 @@ class StoreQrCodeRequest extends FormRequest
             'form_token.required' => 'An error occurred while submitting the form. Please try again later.',
             'form_token.min' => 'An error occurred while submitting the form. Please try again later.',
             'recaptcha_token.required' => 'Please complete the security check and try again.',
+            'frame_design_id.exists' => 'The selected frame design does not exist.',
         ];
     }
 }

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\QrCodeController;
 use App\Http\Controllers\PageController;
+use App\Http\Controllers\FrameDesignController;
 use Illuminate\Support\Facades\Route;
 
 // QR Code Routes
@@ -43,6 +44,16 @@ Route::get('/event/{id}', [QrCodeController::class, 'showEventPage'])->name('qr-
 // Dashboard Routes
 Route::middleware(['auth'])->group(function () {
     Route::post('/dashboard/update-plan', [\App\Http\Controllers\DashboardController::class, 'updatePlan'])->name('dashboard.update-plan');
+});
+
+Route::middleware(['auth'])->prefix('frames')->name('frames.')->group(function () {
+    Route::get('/editor', [FrameDesignController::class, 'editor'])->name('editor');
+    Route::get('/{frame}/edit', [FrameDesignController::class, 'edit'])->name('edit');
+    Route::get('/', [FrameDesignController::class, 'index'])->name('index');
+    Route::post('/', [FrameDesignController::class, 'store'])->name('store');
+    Route::put('/{frame}', [FrameDesignController::class, 'update'])->name('update');
+    Route::get('/{frame}', [FrameDesignController::class, 'show'])->name('show');
+    Route::delete('/{frame}', [FrameDesignController::class, 'destroy'])->name('destroy');
 });
 
 // Static Pages

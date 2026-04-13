@@ -596,6 +596,9 @@ window.recaptchaSiteKey = @json($recaptchaSiteKey);
                                     </button>
                                 </div>
                                 <input type="hidden" id="selected_frame" name="frame" value="{{ isset($qrCode) ? ($qrCode->customization['frame'] ?? 'none') : 'none' }}">
+                                <input type="hidden" id="selected_frame_design_id" name="frame_design_id" value="{{ isset($qrCode) ? ($qrCode->customization['frame_design_id'] ?? '') : '' }}">
+
+                                @include('qr-codes.forms.custom-frames-picker')
 
                                 <!-- Review-us frame options (visible only when this frame is selected) -->
                                 <div id="review-us-frame-options" class="hidden mt-4 p-4 border border-dark-200 rounded-xl bg-dark-50 space-y-4">
@@ -825,6 +828,20 @@ let qrCodeId = @json(isset($qrCode) ? $qrCode->id : null);
 let lastSubmittedFormFingerprint = null;
 let qrStylingInstance = null;
 const isGuest = {{ auth()->check() ? 'false' : 'true' }};
+const availableFrameDesigns = @json(($frameDesigns ?? collect())->map(function ($frame) {
+    return [
+        'id' => $frame->id,
+        'design_json' => $frame->design_json,
+        'svg_content' => $frame->svg_content,
+    ];
+}));
+window.customFrameDesignCache = window.customFrameDesignCache || {};
+for (const frame of availableFrameDesigns) {
+    window.customFrameDesignCache[String(frame.id)] = {
+        design_json: frame.design_json,
+        svg_content: frame.svg_content,
+    };
+}
 
 // QR code data for editing
 @if(isset($qrCode))
@@ -1367,10 +1384,47 @@ function selectFrame(button, frameValue) {
     button.classList.remove('border-dark-200');
     button.classList.add('border-primary-500');
     document.getElementById('selected_frame').value = frameValue;
+    const frameDesignInput = document.getElementById('selected_frame_design_id');
+    if (frameDesignInput && frameValue !== 'custom') {
+        frameDesignInput.value = '';
+    }
+    document.querySelectorAll('.custom-frame-option').forEach(btn => {
+        btn.classList.remove('border-primary-500');
+        btn.classList.add('border-dark-200');
+    });
     const reviewUsOpts = document.getElementById('review-us-frame-options');
     if (reviewUsOpts) {
         reviewUsOpts.classList.toggle('hidden', frameValue !== 'review-us');
     }
+    updateStep2QRPreview();
+}
+
+function selectCustomFrame(button, frameDesignId) {
+    document.querySelectorAll('.custom-frame-option').forEach(btn => {
+        btn.classList.remove('border-primary-500');
+        btn.classList.add('border-dark-200');
+    });
+    button.classList.remove('border-dark-200');
+    button.classList.add('border-primary-500');
+
+    document.querySelectorAll('.frame-option').forEach(btn => {
+        btn.classList.remove('border-primary-500', 'border-primary-600');
+        btn.classList.add('border-dark-200');
+    });
+
+    const selectedFrame = document.getElementById('selected_frame');
+    const selectedFrameDesign = document.getElementById('selected_frame_design_id');
+    if (selectedFrame) {
+        selectedFrame.value = 'custom';
+    }
+    if (selectedFrameDesign) {
+        selectedFrameDesign.value = String(frameDesignId);
+    }
+    const reviewUsOpts = document.getElementById('review-us-frame-options');
+    if (reviewUsOpts) {
+        reviewUsOpts.classList.add('hidden');
+    }
+
     updateStep2QRPreview();
 }
 
@@ -2714,6 +2768,62 @@ async function getReviewUsFrameUrl() {
     return URL.createObjectURL(blob);
 }
 
+function getSelectedCustomFrameDesign() {
+    const id = document.getElementById('selected_frame_design_id')?.value;
+    if (!id) return null;
+    return window.customFrameDesignCache?.[String(id)] || null;
+}
+
+function buildCustomFrameSvgUrl(svgContent, primaryColor, secondaryColor) {
+    if (!svgContent) return null;
+    const themed = svgContent
+        .replaceAll('#PRIMARY#', primaryColor)
+        .replaceAll('#SECONDARY#', secondaryColor);
+    return URL.createObjectURL(new Blob([themed], { type: 'image/svg+xml' }));
+}
+
+async function buildCustomFrameWrapper(qrContainer, customFrame, primaryColor, secondaryColor) {
+    if (!customFrame || (!customFrame.svg_content && !customFrame.design_json)) {
+        return null;
+    }
+
+    const designJson = customFrame.design_json || {
+        canvas_width: 400,
+        canvas_height: 500,
+        qr_zone: { x_pct: 5, y_pct: 4, w_pct: 90, h_pct: 72 }
+    };
+    const wrapper = document.createElement('div');
+    wrapper.className = 'frame-wrapper relative mx-auto';
+    wrapper.style.width = (designJson.canvas_width || 400) + 'px';
+    wrapper.style.height = (designJson.canvas_height || 500) + 'px';
+
+    if (customFrame.svg_content) {
+        const frameImg = document.createElement('img');
+        frameImg.className = 'w-full h-full block object-contain';
+        frameImg.alt = 'Custom frame';
+        frameImg.src = buildCustomFrameSvgUrl(customFrame.svg_content, primaryColor, secondaryColor);
+        wrapper.appendChild(frameImg);
+    } else if (window.renderFrameDesign) {
+        const frameCanvas = document.createElement('canvas');
+        frameCanvas.className = 'w-full h-full block';
+        await window.renderFrameDesign(frameCanvas, designJson, primaryColor, secondaryColor, null);
+        wrapper.appendChild(frameCanvas);
+    }
+
+    const zone = designJson.qr_zone || { x_pct: 5, y_pct: 4, w_pct: 90, h_pct: 72 };
+    const qrInFrame = document.createElement('div');
+    qrInFrame.className = 'qr-in-frame absolute flex items-center justify-center';
+    qrInFrame.style.left = zone.x_pct + '%';
+    qrInFrame.style.top = zone.y_pct + '%';
+    qrInFrame.style.width = zone.w_pct + '%';
+    qrInFrame.style.height = zone.h_pct + '%';
+
+    wrapper.appendChild(qrInFrame);
+    qrContainer.innerHTML = '';
+    qrContainer.appendChild(wrapper);
+    return qrInFrame;
+}
+
 // Update Step 2 QR code preview with customization using qr-code-styling
 async function updateStep2QRPreview() {
     if (currentStep !== 2) return;
@@ -2753,7 +2863,16 @@ async function updateStep2QRPreview() {
     let appendTarget = qrContainer;
     const QR_HOLE_SIZE = 260;
     const qrDisplaySize = (frameId && frameId !== 'none') ? 220 : QR_HOLE_SIZE;
-    if (frameId && frameId !== 'none' && FRAME_CONFIG[frameId]) {
+    if (frameId === 'custom') {
+        const customFrame = getSelectedCustomFrameDesign();
+        if (customFrame) {
+            const customTarget = await buildCustomFrameWrapper(qrContainer, customFrame, primaryColor, secondaryColor);
+            if (customTarget) {
+                appendTarget = customTarget;
+                qrStylingInstance = null;
+            }
+        }
+    } else if (frameId && frameId !== 'none' && FRAME_CONFIG[frameId]) {
         const cfg = FRAME_CONFIG[frameId];
         if (cfg.url && cfg.qrLeft !== undefined) {
             // Full-frame layout: frame image + QR over the "hole" (QR drawn smaller for gap)
@@ -3754,6 +3873,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (frameButton) {
                     frameButton.classList.add('border-primary-500', 'border-primary-600');
                     frameButton.classList.remove('border-dark-200');
+                }
+
+                if (frameValue === 'custom') {
+                    const selectedFrameDesignId = document.getElementById('selected_frame_design_id')?.value;
+                    if (selectedFrameDesignId) {
+                        const customBtn = document.querySelector(`.custom-frame-option[data-frame-design-id="${selectedFrameDesignId}"]`);
+                        if (customBtn) {
+                            customBtn.classList.add('border-primary-500');
+                            customBtn.classList.remove('border-dark-200');
+                        }
+                    }
                 }
                 
                 // Show review-us frame options if frame is review-us
@@ -5309,10 +5439,61 @@ async function downloadQR(format) {
 
     try {
         const frameId = document.getElementById('selected_frame')?.value || 'none';
-        const hasFrame = frameId && frameId !== 'none' && FRAME_CONFIG[frameId] && FRAME_CONFIG[frameId].qrLeft !== undefined;
+        const hasSvgFrame = frameId && frameId !== 'none' && FRAME_CONFIG[frameId] && FRAME_CONFIG[frameId].qrLeft !== undefined;
+        const hasCustomFrame = frameId === 'custom' && !!getSelectedCustomFrameDesign();
 
         // When a frame is selected, download composite (frame + QR) as PNG
-        if (hasFrame && window.step3QrInstance) {
+        if ((hasSvgFrame || hasCustomFrame) && window.step3QrInstance) {
+            if (hasCustomFrame) {
+                const customFrame = getSelectedCustomFrameDesign();
+                const primaryColor = document.getElementById('primary_color')?.value || '#000000';
+                const secondaryColor = document.getElementById('secondary_color')?.value || '#FFFFFF';
+                const qrCanvas = document.querySelector('#qr-preview canvas');
+                if (!customFrame || !qrCanvas) {
+                    window.step3QrInstance.download({ name: `qr-code-${qrCodeId}`, extension: 'png' });
+                    return;
+                }
+
+                const designJson = customFrame.design_json || {
+                    canvas_width: 400,
+                    canvas_height: 500,
+                    qr_zone: { x_pct: 5, y_pct: 4, w_pct: 90, h_pct: 72 }
+                };
+                const outputCanvas = document.createElement('canvas');
+                outputCanvas.width = designJson.canvas_width || 400;
+                outputCanvas.height = designJson.canvas_height || 500;
+                const ctx = outputCanvas.getContext('2d');
+
+                if (customFrame.svg_content) {
+                    const frameUrl = buildCustomFrameSvgUrl(customFrame.svg_content, primaryColor, secondaryColor);
+                    await new Promise((resolve, reject) => {
+                        const image = new Image();
+                        image.crossOrigin = 'anonymous';
+                        image.onload = () => {
+                            ctx.drawImage(image, 0, 0, outputCanvas.width, outputCanvas.height);
+                            resolve();
+                        };
+                        image.onerror = reject;
+                        image.src = frameUrl;
+                    });
+                } else if (window.renderFrameDesign) {
+                    await window.renderFrameDesign(outputCanvas, designJson, primaryColor, secondaryColor, null);
+                }
+
+                const zone = designJson.qr_zone || { x_pct: 5, y_pct: 4, w_pct: 90, h_pct: 72 };
+                const zoneX = (zone.x_pct / 100) * outputCanvas.width;
+                const zoneY = (zone.y_pct / 100) * outputCanvas.height;
+                const zoneW = (zone.w_pct / 100) * outputCanvas.width;
+                const zoneH = (zone.h_pct / 100) * outputCanvas.height;
+                ctx.drawImage(qrCanvas, zoneX, zoneY, zoneW, zoneH);
+
+                const link = document.createElement('a');
+                link.download = `qr-code-${qrCodeId}.png`;
+                link.href = outputCanvas.toDataURL('image/png');
+                link.click();
+                return;
+            }
+
             const cfg = FRAME_CONFIG[frameId];
             const primaryColor = document.getElementById('primary_color')?.value || '#000000';
             const secondaryColor = document.getElementById('secondary_color')?.value || '#FFFFFF';
