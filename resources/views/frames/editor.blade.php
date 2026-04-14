@@ -3,66 +3,186 @@
 @section('title', 'Frame Editor')
 
 @section('content')
-<div class="max-w-7xl mx-auto px-4 py-8">
-    <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold text-dark-500">Frame Editor</h1>
-        <a href="{{ url()->previous() }}" class="btn btn-secondary">Back</a>
+<div class="min-h-[calc(100vh-140px)] bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 py-8">
+    <div class="max-w-[1400px] mx-auto px-4">
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-semibold text-white tracking-tight">Frame Editor</h1>
+                <p class="text-sm text-slate-300 mt-1">Design QR frames with drag, drop, and live preview.</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <button
+                    id="finish-btn"
+                    type="button"
+                    class="inline-flex items-center gap-2 rounded-xl border border-emerald-500/60 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-200 hover:bg-emerald-500/20 transition"
+                >
+                    Finish
+                </button>
+                <a href="{{ url()->previous() }}" class="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-2 text-sm font-medium text-slate-100 hover:bg-slate-800 transition">
+                    <span>←</span>
+                    <span>Back</span>
+                </a>
+            </div>
+        </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <aside class="lg:col-span-3 card p-4 space-y-4">
+    <div class="max-w-[1400px] mx-auto px-4 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <aside class="lg:col-span-3 rounded-2xl border border-slate-700 bg-slate-900/80 p-4 space-y-4 shadow-2xl shadow-black/20">
             <div>
-                <label class="label" for="frame_name">Frame name</label>
-                <input id="frame_name" type="text" class="input" value="{{ $frame->name ?? 'My Frame' }}">
+                <label class="block text-xs font-semibold uppercase tracking-wide text-slate-300 mb-2" for="frame_name">Frame name</label>
+                <input id="frame_name" type="text" class="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500" value="{{ $frame->name ?? 'My Frame' }}">
             </div>
             <div>
-                <label class="label">Canvas size</label>
+                <label class="block text-xs font-semibold uppercase tracking-wide text-slate-300 mb-2">Canvas size</label>
                 <div class="grid grid-cols-2 gap-2">
-                    <input id="canvas_width" type="number" class="input" value="{{ $frame->design_json['canvas_width'] ?? 400 }}" min="100" max="1000">
-                    <input id="canvas_height" type="number" class="input" value="{{ $frame->design_json['canvas_height'] ?? 500 }}" min="100" max="1200">
+                    <input id="canvas_width" type="number" class="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500" value="{{ $frame->design_json['canvas_width'] ?? 400 }}" min="100" max="1000">
+                    <input id="canvas_height" type="number" class="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500" value="{{ $frame->design_json['canvas_height'] ?? 500 }}" min="100" max="1200">
                 </div>
             </div>
             <div>
-                <label class="label" for="canvas_bg">Background</label>
-                <input id="canvas_bg" type="color" class="h-10 w-full border border-dark-200 rounded" value="{{ $frame->design_json['background'] ?? '#ffffff' }}">
+                <label class="block text-xs font-semibold uppercase tracking-wide text-slate-300 mb-2" for="canvas_bg">Background</label>
+                <input id="canvas_bg" type="color" class="h-10 w-full rounded-xl border border-slate-700 bg-slate-950" value="{{ $frame->design_json['background'] ?? '#ffffff' }}">
+            </div>
+
+            <div class="rounded-2xl border border-slate-700 bg-slate-950/60 p-3 space-y-3">
+                <div>
+                    <h3 class="text-sm font-semibold text-slate-100">Templates</h3>
+                    <p class="text-xs text-slate-400 mt-1">Start from ready frame styles, then customize.</p>
+                </div>
+                <div id="template_categories" class="grid grid-cols-2 gap-2">
+                    <button type="button" class="template-category-btn rounded-xl border border-violet-500 bg-violet-500/10 px-3 py-2 text-xs font-semibold text-violet-300" data-template-category="minimal">Minimal</button>
+                    <button type="button" class="template-category-btn rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-800 transition" data-template-category="floral">Floral</button>
+                    <button type="button" class="template-category-btn rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-800 transition" data-template-category="luxury">Luxury</button>
+                    <button type="button" class="template-category-btn rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-800 transition" data-template-category="wedding">Wedding</button>
+                    <button type="button" class="template-category-btn rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-800 transition" data-template-category="birthday">Birthday</button>
+                    <button type="button" class="template-category-btn rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-800 transition" data-template-category="tech">Tech</button>
+                </div>
+                <div id="template_list" class="space-y-2"></div>
+            </div>
+
+            <div class="rounded-2xl border border-slate-700 bg-slate-950/60 p-3">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-sm font-semibold text-slate-100">Elements</h3>
+                    <button type="button" onclick="document.getElementById('image_layer_input').click()" class="rounded-lg border border-slate-600 px-2.5 py-1 text-xs font-medium text-slate-200 hover:bg-slate-800 transition">Upload</button>
+                </div>
+                <input id="image_layer_input" type="file" accept=".png,.jpg,.jpeg,image/png,image/jpeg" class="hidden">
+
+                <div class="mb-3">
+                    <label for="element_search" class="sr-only">Search elements</label>
+                    <input id="element_search" type="text" placeholder="Search elements" class="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500">
+                </div>
+
+                <div class="mb-3">
+                    <label for="element_region" class="block text-xs font-semibold uppercase tracking-wide text-slate-300 mb-2">Place new element in region</label>
+                    <select id="element_region" class="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500">
+                        <option value="top">Top</option>
+                        <option value="bottom">Bottom</option>
+                        <option value="left">Left</option>
+                        <option value="right">Right</option>
+                        <option value="corner-tl">Corner TL</option>
+                        <option value="corner-tr">Corner TR</option>
+                        <option value="corner-bl">Corner BL</option>
+                        <option value="corner-br">Corner BR</option>
+                        <option value="overlay">Overlay center</option>
+                        <option value="background">Background layer</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 mb-3">
+                    <button type="button" class="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800 transition">Generate</button>
+                    <button type="button" class="rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-3 py-2 text-sm font-medium text-white hover:opacity-90 transition">Search</button>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 mb-3">
+                    <button type="button" class="element-category-btn rounded-xl border border-violet-500 bg-violet-500/10 px-3 py-2 text-xs font-semibold text-violet-300" data-category="shapes">Shapes</button>
+                    <button type="button" class="element-category-btn rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-800 transition" data-category="arrows">Lines</button>
+                    <button type="button" class="element-category-btn rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-800 transition" data-category="labels">Labels</button>
+                    <button type="button" class="element-category-btn rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-800 transition" data-category="icons">Icons</button>
+                </div>
+
+                <div id="element_sections" class="max-h-80 overflow-y-auto space-y-4"></div>
             </div>
 
             <div class="space-y-2">
-                <button type="button" onclick="addTextLayer()" class="btn btn-secondary w-full">+ Add Text</button>
-                <button type="button" onclick="addRectLayer()" class="btn btn-secondary w-full">+ Add Rectangle</button>
-                <button type="button" onclick="addCircleLayer()" class="btn btn-secondary w-full">+ Add Circle</button>
-                <button type="button" onclick="document.getElementById('image_layer_input').click()" class="btn btn-secondary w-full">+ Add Image</button>
-                <input id="image_layer_input" type="file" accept=".png,.jpg,.jpeg,image/png,image/jpeg" class="hidden">
+                <button type="button" onclick="addTextLayer()" class="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm font-medium text-slate-100 hover:bg-slate-800 transition">+ Quick Text</button>
+                <button type="button" onclick="addRectLayer()" class="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm font-medium text-slate-100 hover:bg-slate-800 transition">+ Quick Rectangle</button>
+                <button type="button" onclick="addCircleLayer()" class="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm font-medium text-slate-100 hover:bg-slate-800 transition">+ Quick Circle</button>
             </div>
 
-            <button type="button" onclick="saveFrameDesign()" class="btn btn-primary w-full">Save Frame</button>
-            <div id="save_status" class="text-xs text-dark-300"></div>
+            <button id="save-btn" type="button" onclick="saveFrameDesign()" class="w-full rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition">Save Frame</button>
+            <div id="save_status" class="text-xs text-slate-300"></div>
         </aside>
 
-        <section class="lg:col-span-6 card p-4">
-            <p class="text-sm text-dark-300 mb-3">Drag layers directly on canvas. Dashed block is QR position (editable).</p>
-            <canvas id="editor_canvas" class="border border-dark-200 rounded mx-auto"></canvas>
-            <div class="mt-4 border-t border-dark-100 pt-4">
-                <p class="text-sm text-dark-300 mb-2">Renderer preview</p>
-                <canvas id="renderer_preview" class="border border-dark-200 rounded mx-auto"></canvas>
+        <section class="lg:col-span-6 rounded-2xl border border-slate-700 bg-slate-900/80 p-4 md:p-5 shadow-2xl shadow-black/20">
+            <div class="flex items-center justify-between mb-3">
+                <p class="text-sm text-slate-300">Drag layers on canvas. QR safe area is locked and centered by default.</p>
+                <div class="flex items-center gap-2">
+                    <button id="view_toggle_canvas" type="button" class="rounded-lg border border-violet-500 bg-violet-500/10 px-3 py-1.5 text-xs font-medium text-violet-300">Canvas</button>
+                    <button id="view_toggle_preview" type="button" class="rounded-lg border border-slate-600 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-800 transition">Preview</button>
+                    <button id="refresh-preview-btn" type="button" class="rounded-lg border border-slate-600 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-800 transition">Refresh Preview</button>
+                </div>
+            </div>
+            <div id="editor_canvas_panel">
+                <div id="editor_canvas_dropzone" class="overflow-x-auto pb-2 relative flex justify-center">
+                    <canvas id="editor_canvas" class="border border-slate-600 rounded-xl mx-auto"></canvas>
+                </div>
+            </div>
+            <div id="editor_preview_panel" class="hidden">
+                <div class="overflow-x-auto pb-2 flex justify-center">
+                    <canvas id="renderer_preview" class="border border-slate-600 rounded-xl mx-auto bg-white"></canvas>
+                </div>
+            </div>
+            <div class="mt-4 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2">
+                <p class="text-xs text-amber-100">
+                    Keep decorative elements outside the QR safe area for best scan reliability.
+                </p>
             </div>
         </section>
 
-        <aside class="lg:col-span-3 card p-4">
-            <h3 class="font-semibold text-dark-500 mb-3">Selected element</h3>
-            <div id="props_empty" class="text-sm text-dark-300">Select an element to edit.</div>
-            <div id="props_panel" class="hidden space-y-2">
-                <label class="label">Fill</label>
-                <input id="prop_fill" type="color" class="h-10 w-full border border-dark-200 rounded">
+        <aside class="lg:col-span-3 rounded-2xl border border-slate-700 bg-slate-900/80 p-4 space-y-3 shadow-2xl shadow-black/20">
+            <div class="rounded-2xl border border-slate-700 bg-slate-950/60 p-3">
+                <h3 class="text-sm font-semibold text-slate-100 mb-2">Warnings</h3>
+                <ul id="safety_warnings" class="space-y-1 text-xs text-slate-300">
+                    <li class="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-2 py-1 text-emerald-200">No warnings detected.</li>
+                </ul>
+            </div>
 
-                <label class="label">Opacity</label>
+            <div class="rounded-2xl border border-slate-700 bg-slate-950/60 p-3">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-sm font-semibold text-slate-100">Layers</h3>
+                    <span class="text-[11px] text-slate-400">Drag to reorder</span>
+                </div>
+                <ul id="layer-list" class="space-y-1 max-h-48 overflow-y-auto"></ul>
+            </div>
+
+            <h3 class="font-semibold text-slate-100 mb-1">Selected element</h3>
+            <div id="props_empty" class="text-sm text-slate-400">Select an element to edit.</div>
+            <div id="props_panel" class="hidden space-y-2">
+                <div id="text_props" class="hidden space-y-2">
+                    <label class="block text-xs font-semibold uppercase tracking-wide text-slate-300">Text</label>
+                    <input id="prop_text" type="text" class="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500" placeholder="Text content">
+
+                    <label class="block text-xs font-semibold uppercase tracking-wide text-slate-300">Font size</label>
+                    <input id="prop_font_size" type="number" min="8" max="200" class="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500">
+                </div>
+
+                <label class="block text-xs font-semibold uppercase tracking-wide text-slate-300">Fill</label>
+                <input id="prop_fill" type="color" class="h-10 w-full rounded-xl border border-slate-700 bg-slate-950">
+
+                <label class="block text-xs font-semibold uppercase tracking-wide text-slate-300">Stroke</label>
+                <input id="prop_stroke" type="color" class="h-10 w-full rounded-xl border border-slate-700 bg-slate-950">
+
+                <label class="block text-xs font-semibold uppercase tracking-wide text-slate-300">Stroke width</label>
+                <input id="prop_stroke_width" type="range" min="0" max="24" step="1" class="w-full">
+
+                <label class="block text-xs font-semibold uppercase tracking-wide text-slate-300">Opacity</label>
                 <input id="prop_opacity" type="range" min="0" max="1" step="0.05" class="w-full">
 
                 <div class="grid grid-cols-2 gap-2">
-                    <button type="button" onclick="moveSelectedLayerUp()" class="btn btn-secondary">Layer Up</button>
-                    <button type="button" onclick="moveSelectedLayerDown()" class="btn btn-secondary">Layer Down</button>
+                    <button type="button" onclick="moveSelectedLayerUp()" class="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm font-medium text-slate-100 hover:bg-slate-800 transition">Layer Up</button>
+                    <button type="button" onclick="moveSelectedLayerDown()" class="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm font-medium text-slate-100 hover:bg-slate-800 transition">Layer Down</button>
                 </div>
-                <button type="button" onclick="deleteSelectedLayer()" class="btn btn-outline w-full">Delete</button>
+                <button type="button" onclick="deleteSelectedLayer()" class="w-full rounded-xl border border-red-500/60 bg-red-500/10 px-3 py-2 text-sm font-medium text-red-200 hover:bg-red-500/20 transition">Delete</button>
             </div>
         </aside>
     </div>
@@ -70,419 +190,14 @@
 @endsection
 
 @push('scripts')
-<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
 <script>
-const existingFrame = @json($frame ?? null);
-const editorCanvasEl = document.getElementById('editor_canvas');
-const previewCanvasEl = document.getElementById('renderer_preview');
-const widthInput = document.getElementById('canvas_width');
-const heightInput = document.getElementById('canvas_height');
-const bgInput = document.getElementById('canvas_bg');
-let selectedObj = null;
-
-const fabricCanvas = new fabric.Canvas('editor_canvas', {
-    width: Number(widthInput.value || 400),
-    height: Number(heightInput.value || 500),
-    backgroundColor: bgInput.value || '#ffffff'
-});
-
-function createQrZoneFromPercent(zone, width, height) {
-    return new fabric.Rect({
-        left: (zone.x_pct / 100) * width,
-        top: (zone.y_pct / 100) * height,
-        width: (zone.w_pct / 100) * width,
-        height: (zone.h_pct / 100) * height,
-        fill: 'rgba(79, 70, 229, 0.08)',
-        stroke: '#4f46e5',
-        strokeDashArray: [8, 4],
-        strokeWidth: 2,
-        name: 'qr_zone'
-    });
-}
-
-function ensureQrZone() {
-    const existing = fabricCanvas.getObjects().find(obj => obj.name === 'qr_zone');
-    if (existing) return existing;
-    const zone = createQrZoneFromPercent({ x_pct: 5, y_pct: 4, w_pct: 90, h_pct: 72 }, fabricCanvas.width, fabricCanvas.height);
-    fabricCanvas.add(zone);
-    return zone;
-}
-
-function addTextLayer() {
-    const text = new fabric.Textbox('Scan me!', {
-        left: 80, top: 420, fontSize: 32, fill: '#000000'
-    });
-    fabricCanvas.add(text).setActiveObject(text);
-}
-
-function addRectLayer() {
-    const rect = new fabric.Rect({
-        left: 30, top: 30, width: 340, height: 340, fill: 'transparent', stroke: '#000000', strokeWidth: 10
-    });
-    fabricCanvas.add(rect).setActiveObject(rect);
-}
-
-function addCircleLayer() {
-    const circle = new fabric.Circle({ left: 170, top: 170, radius: 70, fill: '#cccccc' });
-    fabricCanvas.add(circle).setActiveObject(circle);
-}
-
-function addImageLayerFromDataUrl(dataUrl) {
-    fabric.Image.fromURL(dataUrl, (img) => {
-        img.set({
-            left: 80,
-            top: 80,
-            scaleX: 0.5,
-            scaleY: 0.5,
-            opacity: 1
-        });
-        fabricCanvas.add(img);
-        fabricCanvas.setActiveObject(img);
-        fabricCanvas.renderAll();
-    }, { crossOrigin: 'anonymous' });
-}
-
-function deleteSelectedLayer() {
-    const active = fabricCanvas.getActiveObject();
-    if (!active || active.name === 'qr_zone') return;
-    fabricCanvas.remove(active);
-    fabricCanvas.renderAll();
-}
-
-function moveSelectedLayerUp() {
-    const active = fabricCanvas.getActiveObject();
-    if (!active || active.name === 'qr_zone') return;
-    fabricCanvas.bringForward(active);
-    fabricCanvas.renderAll();
-    syncRendererPreview();
-}
-
-function moveSelectedLayerDown() {
-    const active = fabricCanvas.getActiveObject();
-    if (!active || active.name === 'qr_zone') return;
-    fabricCanvas.sendBackwards(active);
-    // Keep qr_zone visually on top for editing.
-    const qrZone = fabricCanvas.getObjects().find(obj => obj.name === 'qr_zone');
-    if (qrZone) {
-        fabricCanvas.bringToFront(qrZone);
-    }
-    fabricCanvas.renderAll();
-    syncRendererPreview();
-}
-
-function buildLayer(obj, zIndex) {
-    const base = {
-        id: obj.__uid || ('layer_' + zIndex),
-        z_index: zIndex,
-        opacity: obj.opacity ?? 1
-    };
-
-    if (obj.type === 'textbox' || obj.type === 'text') {
-        return {
-            ...base,
-            type: 'text',
-            x: obj.left || 0,
-            y: obj.top || 0,
-            text: obj.text || '',
-            font_size: obj.fontSize || 20,
-            font_family: obj.fontFamily || 'Arial',
-            font_weight: obj.fontWeight || 'normal',
-            color: obj.fill || '#000000',
-            text_align: obj.textAlign || 'left'
-        };
-    }
-
-    if (obj.type === 'rect') {
-        return {
-            ...base,
-            type: 'rect',
-            x: obj.left || 0,
-            y: obj.top || 0,
-            width: (obj.width || 100) * (obj.scaleX || 1),
-            height: (obj.height || 100) * (obj.scaleY || 1),
-            fill: obj.fill || 'transparent',
-            stroke: obj.stroke || null,
-            stroke_width: obj.strokeWidth || 0,
-            border_radius: obj.rx || 0
-        };
-    }
-
-    if (obj.type === 'circle') {
-        return {
-            ...base,
-            type: 'circle',
-            x: (obj.left || 0) + ((obj.radius || 40) * (obj.scaleX || 1)),
-            y: (obj.top || 0) + ((obj.radius || 40) * (obj.scaleY || 1)),
-            radius: (obj.radius || 40) * (obj.scaleX || 1),
-            fill: obj.fill || '#cccccc',
-            stroke: obj.stroke || null,
-            stroke_width: obj.strokeWidth || 0
-        };
-    }
-
-    if (obj.type === 'image') {
-        return {
-            ...base,
-            type: 'image',
-            x: obj.left || 0,
-            y: obj.top || 0,
-            width: (obj.width || 120) * (obj.scaleX || 1),
-            height: (obj.height || 120) * (obj.scaleY || 1),
-            src: obj.getSrc ? obj.getSrc() : (obj._element?.src || '')
-        };
-    }
-
-    return null;
-}
-
-function serializeDesignJson() {
-    const all = fabricCanvas.getObjects();
-    const qrObj = all.find(o => o.name === 'qr_zone');
-    const layers = all.filter(o => o.name !== 'qr_zone')
-        .map((obj, index) => buildLayer(obj, index))
-        .filter(Boolean);
-
-    return {
-        version: 1,
-        canvas_width: fabricCanvas.width,
-        canvas_height: fabricCanvas.height,
-        background: bgInput.value || '#ffffff',
-        qr_zone: {
-            x_pct: ((qrObj.left || 0) / fabricCanvas.width) * 100,
-            y_pct: ((qrObj.top || 0) / fabricCanvas.height) * 100,
-            w_pct: (((qrObj.width || 0) * (qrObj.scaleX || 1)) / fabricCanvas.width) * 100,
-            h_pct: (((qrObj.height || 0) * (qrObj.scaleY || 1)) / fabricCanvas.height) * 100
-        },
-        layers
-    };
-}
-
-function escapeXml(value) {
-    return String(value ?? '')
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&apos;');
-}
-
-function designJsonToSvg(design) {
-    const width = design.canvas_width || 400;
-    const height = design.canvas_height || 500;
-    const layers = Array.isArray(design.layers) ? [...design.layers] : [];
-    layers.sort((a, b) => (a.z_index ?? 0) - (b.z_index ?? 0));
-
-    const output = [];
-    output.push(`<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">`);
-    output.push(`<rect x="0" y="0" width="${width}" height="${height}" fill="${escapeXml(design.background || '#ffffff')}" />`);
-
-    for (const layer of layers) {
-        const opacity = layer.opacity ?? 1;
-        if (layer.type === 'rect') {
-            output.push(
-                `<rect x="${layer.x ?? 0}" y="${layer.y ?? 0}" width="${layer.width ?? 100}" height="${layer.height ?? 100}" ` +
-                `fill="${escapeXml(layer.fill || 'none')}" stroke="${escapeXml(layer.stroke || 'none')}" ` +
-                `stroke-width="${layer.stroke_width ?? 0}" rx="${layer.border_radius ?? 0}" ry="${layer.border_radius ?? 0}" opacity="${opacity}" />`
-            );
-        } else if (layer.type === 'circle') {
-            output.push(
-                `<circle cx="${layer.x ?? 0}" cy="${layer.y ?? 0}" r="${layer.radius ?? 40}" ` +
-                `fill="${escapeXml(layer.fill || 'none')}" stroke="${escapeXml(layer.stroke || 'none')}" ` +
-                `stroke-width="${layer.stroke_width ?? 0}" opacity="${opacity}" />`
-            );
-        } else if (layer.type === 'text') {
-            output.push(
-                `<text x="${layer.x ?? 0}" y="${layer.y ?? 0}" fill="${escapeXml(layer.color || '#000000')}" ` +
-                `font-family="${escapeXml(layer.font_family || 'Arial')}" font-size="${layer.font_size ?? 20}" ` +
-                `font-weight="${escapeXml(layer.font_weight || 'normal')}" text-anchor="${(layer.text_align === 'center') ? 'middle' : (layer.text_align === 'right' ? 'end' : 'start')}" ` +
-                `dominant-baseline="middle" opacity="${opacity}">${escapeXml(layer.text || '')}</text>`
-            );
-        } else if (layer.type === 'image' && layer.src) {
-            output.push(
-                `<image x="${layer.x ?? 0}" y="${layer.y ?? 0}" width="${layer.width ?? 120}" height="${layer.height ?? 120}" ` +
-                `href="${escapeXml(layer.src)}" preserveAspectRatio="xMidYMid meet" opacity="${opacity}" />`
-            );
-        }
-    }
-
-    output.push('</svg>');
-    return output.join('');
-}
-
-async function syncRendererPreview() {
-    if (!window.renderFrameDesign) return;
-    const design = serializeDesignJson();
-    await window.renderFrameDesign(previewCanvasEl, design, '#111111', '#ffffff', null);
-}
-
-function syncPropertiesPanel() {
-    const panel = document.getElementById('props_panel');
-    const empty = document.getElementById('props_empty');
-    const active = fabricCanvas.getActiveObject();
-    if (!active || active.name === 'qr_zone') {
-        panel.classList.add('hidden');
-        empty.classList.remove('hidden');
-        return;
-    }
-
-    selectedObj = active;
-    empty.classList.add('hidden');
-    panel.classList.remove('hidden');
-    document.getElementById('prop_fill').value = (active.fill && active.fill.startsWith('#')) ? active.fill : '#000000';
-    document.getElementById('prop_opacity').value = active.opacity ?? 1;
-}
-
-document.getElementById('prop_fill').addEventListener('input', (e) => {
-    if (!selectedObj) return;
-    selectedObj.set('fill', e.target.value);
-    fabricCanvas.renderAll();
-});
-
-document.getElementById('prop_opacity').addEventListener('input', (e) => {
-    if (!selectedObj) return;
-    selectedObj.set('opacity', Number(e.target.value));
-    fabricCanvas.renderAll();
-});
-
-document.getElementById('image_layer_input').addEventListener('change', (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => addImageLayerFromDataUrl(String(ev.target?.result || ''));
-    reader.readAsDataURL(file);
-    e.target.value = '';
-});
-
-fabricCanvas.on('selection:created', syncPropertiesPanel);
-fabricCanvas.on('selection:updated', syncPropertiesPanel);
-fabricCanvas.on('selection:cleared', syncPropertiesPanel);
-fabricCanvas.on('object:modified', syncRendererPreview);
-fabricCanvas.on('object:added', syncRendererPreview);
-fabricCanvas.on('object:removed', syncRendererPreview);
-
-widthInput.addEventListener('change', () => {
-    fabricCanvas.setWidth(Number(widthInput.value || 400));
-    fabricCanvas.renderAll();
-    syncRendererPreview();
-});
-
-heightInput.addEventListener('change', () => {
-    fabricCanvas.setHeight(Number(heightInput.value || 500));
-    fabricCanvas.renderAll();
-    syncRendererPreview();
-});
-
-bgInput.addEventListener('input', () => {
-    fabricCanvas.backgroundColor = bgInput.value;
-    fabricCanvas.renderAll();
-    syncRendererPreview();
-});
-
-async function saveFrameDesign() {
-    const status = document.getElementById('save_status');
-    status.textContent = 'Saving...';
-
-    const designJson = serializeDesignJson();
-    const svgContent = designJsonToSvg(designJson);
-    const thumb = previewCanvasEl.toDataURL('image/png');
-
-    const isUpdate = !!(existingFrame && existingFrame.id);
-    const endpoint = isUpdate ? `{{ url('/frames') }}/${existingFrame.id}` : '{{ route('frames.store') }}';
-    const response = await fetch(endpoint, {
-        method: isUpdate ? 'PUT' : 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-        },
-        body: JSON.stringify({
-            name: document.getElementById('frame_name').value || 'My Frame',
-            design_json: designJson,
-            svg_content: svgContent,
-            thumbnail_data_url: thumb
-        })
-    });
-
-    const data = await response.json();
-    if (response.ok && data.success) {
-        status.textContent = isUpdate ? 'Updated successfully.' : 'Saved successfully.';
-        return;
-    }
-    status.textContent = data.message || 'Save failed.';
-}
-
-function restoreFromExistingFrame() {
-    if (!existingFrame || !existingFrame.design_json) {
-        ensureQrZone();
-        syncRendererPreview();
-        return;
-    }
-
-    const design = existingFrame.design_json;
-    fabricCanvas.clear();
-    fabricCanvas.setWidth(design.canvas_width || 400);
-    fabricCanvas.setHeight(design.canvas_height || 500);
-    widthInput.value = fabricCanvas.width;
-    heightInput.value = fabricCanvas.height;
-    bgInput.value = design.background || '#ffffff';
-    fabricCanvas.backgroundColor = bgInput.value;
-
-    const zone = createQrZoneFromPercent(design.qr_zone || { x_pct: 5, y_pct: 4, w_pct: 90, h_pct: 72 }, fabricCanvas.width, fabricCanvas.height);
-    fabricCanvas.add(zone);
-
-    (design.layers || []).forEach(layer => {
-        if (layer.type === 'text') {
-            fabricCanvas.add(new fabric.Textbox(layer.text || 'Text', {
-                left: layer.x || 0,
-                top: layer.y || 0,
-                fontSize: layer.font_size || 20,
-                fill: layer.color || '#000000',
-                fontFamily: layer.font_family || 'Arial',
-                fontWeight: layer.font_weight || 'normal',
-                opacity: layer.opacity ?? 1
-            }));
-        }
-        if (layer.type === 'rect') {
-            fabricCanvas.add(new fabric.Rect({
-                left: layer.x || 0,
-                top: layer.y || 0,
-                width: layer.width || 100,
-                height: layer.height || 100,
-                fill: layer.fill || 'transparent',
-                stroke: layer.stroke || null,
-                strokeWidth: layer.stroke_width || 0,
-                opacity: layer.opacity ?? 1
-            }));
-        }
-        if (layer.type === 'circle') {
-            fabricCanvas.add(new fabric.Circle({
-                left: (layer.x || 0) - (layer.radius || 40),
-                top: (layer.y || 0) - (layer.radius || 40),
-                radius: layer.radius || 40,
-                fill: layer.fill || '#cccccc',
-                stroke: layer.stroke || null,
-                strokeWidth: layer.stroke_width || 0,
-                opacity: layer.opacity ?? 1
-            }));
-        }
-        if (layer.type === 'image' && layer.src) {
-            fabric.Image.fromURL(layer.src, (img) => {
-                img.set({
-                    left: layer.x || 0,
-                    top: layer.y || 0,
-                    scaleX: (layer.width || 120) / (img.width || 120),
-                    scaleY: (layer.height || 120) / (img.height || 120),
-                    opacity: layer.opacity ?? 1
-                });
-                fabricCanvas.add(img);
-                fabricCanvas.renderAll();
-            }, { crossOrigin: 'anonymous' });
-        }
-    });
-
-    fabricCanvas.renderAll();
-    syncRendererPreview();
-}
-
-restoreFromExistingFrame();
+window.__FRAME_EDITOR_CONFIG__ = {
+    existingFrame: @json($frame ?? null),
+    storeUrl: @json(route('frames.store')),
+    updateBaseUrl: @json(url('/frames')),
+    returnTo: @json(request()->query('return_to')),
+    returnStep: @json((int) request()->query('return_step', 2)),
+    returnFrameMode: @json(request()->query('return_frame_mode', 'custom')),
+};
 </script>
 @endpush
