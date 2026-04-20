@@ -43,6 +43,60 @@
                 <label class="block text-xs font-semibold uppercase tracking-wide text-slate-300 mb-2" for="canvas_bg">Background</label>
                 <input id="canvas_bg" type="color" class="h-10 w-full rounded-xl border border-slate-700 bg-slate-950" value="{{ $frame->design_json['background'] ?? '#ffffff' }}">
             </div>
+            <div class="rounded-2xl border border-slate-700 bg-slate-950/60 p-3 space-y-3">
+                <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-300">QR colors</h3>
+                <div>
+                    <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-300 mb-1" for="qr_primary_color">Pattern color</label>
+                    <input
+                        id="qr_primary_color"
+                        type="color"
+                        class="h-10 w-full rounded-xl border border-slate-700 bg-slate-950"
+                        value="{{ $frame->design_json['qr_primary_color'] ?? '#111111' }}"
+                    >
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-300 mb-1" for="qr_secondary_color">Background color</label>
+                    <input
+                        id="qr_secondary_color"
+                        type="color"
+                        class="h-10 w-full rounded-xl border border-slate-700 bg-slate-950"
+                        value="{{ $frame->design_json['qr_secondary_color'] ?? '#ffffff' }}"
+                    >
+                </div>
+                <p class="text-[11px] text-slate-400">Saved with frame and auto-applied in Step 2 when this custom frame is selected.</p>
+            </div>
+            <div class="rounded-2xl border border-slate-700 bg-slate-950/60 p-3 space-y-2">
+                <div class="flex items-center justify-between">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-300">Background image</p>
+                    <button
+                        id="background_image_clear"
+                        type="button"
+                        class="rounded-lg border border-slate-600 px-2.5 py-1 text-[11px] font-medium text-slate-200 hover:bg-slate-800 transition hidden"
+                    >
+                        Remove
+                    </button>
+                </div>
+                <label
+                    id="background_image_upload_btn"
+                    for="background_image_input"
+                    class="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm font-medium text-slate-100 hover:bg-slate-800 transition text-center cursor-pointer block"
+                >
+                    Upload background
+                </label>
+                <input
+                    id="background_image_input"
+                    type="file"
+                    accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
+                    class="sr-only"
+                    onchange="var label=document.getElementById('background_image_name'); if (label) { label.textContent = (this.files && this.files[0]) ? ('Selected: ' + this.files[0].name) : 'No background image selected.'; }"
+                >
+                <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-300 mt-1" for="background_image_fit">Fit mode</label>
+                <select id="background_image_fit" class="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-violet-500" disabled>
+                    <option value="cover">Cover</option>
+                    <option value="contain">Contain</option>
+                </select>
+                <p id="background_image_name" class="text-[11px] text-slate-400">No background image selected.</p>
+            </div>
 
             <div class="rounded-2xl border border-slate-700 bg-slate-950/60 p-3 space-y-3">
                 <div>

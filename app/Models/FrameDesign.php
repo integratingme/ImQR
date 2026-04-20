@@ -11,6 +11,8 @@ class FrameDesign extends Model
         'name',
         'design_json',
         'svg_content',
+        'background_image',
+        'background_image_fit',
         'thumbnail_url',
         'is_template',
     ];

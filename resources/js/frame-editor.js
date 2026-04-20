@@ -19,6 +19,8 @@ function initFrameEditor() {
     const widthInput = document.getElementById('canvas_width');
     const heightInput = document.getElementById('canvas_height');
     const bgInput = document.getElementById('canvas_bg');
+    const qrPrimaryColorInput = document.getElementById('qr_primary_color');
+    const qrSecondaryColorInput = document.getElementById('qr_secondary_color');
     const saveStatus = document.getElementById('save_status');
     const saveBtn = document.getElementById('save-btn');
     const finishBtn = document.getElementById('finish-btn');
@@ -36,6 +38,11 @@ function initFrameEditor() {
     const propFontSize = document.getElementById('prop_font_size');
     const textProps = document.getElementById('text_props');
     const imageLayerInput = document.getElementById('image_layer_input');
+    const backgroundImageInput = document.getElementById('background_image_input');
+    const backgroundImageUploadBtn = document.getElementById('background_image_upload_btn');
+    const backgroundImageClearBtn = document.getElementById('background_image_clear');
+    const backgroundImageFitSelect = document.getElementById('background_image_fit');
+    const backgroundImageName = document.getElementById('background_image_name');
     const elementSearchInput = document.getElementById('element_search');
     const elementSections = document.getElementById('element_sections');
     const elementRegionSelect = document.getElementById('element_region');
@@ -51,17 +58,33 @@ function initFrameEditor() {
     let horizontalGuide = null;
     let verticalGuide = null;
     let qrPreviewCanvasCache = null;
+    let qrZonePreviewApplyToken = 0;
     let draggedLayerId = null;
+    let canvasBackgroundImageDataUrl = null;
+    let canvasBackgroundImageFit = 'cover';
+    let canvasBackgroundImageFileName = '';
+    let backgroundImageApplyToken = 0;
+    let qrPrimaryColor = '#111111';
+    let qrSecondaryColor = '#ffffff';
+    let qrPreviewCanvasCacheKey = '';
     const SNAP_DISTANCE = 12;
     const MAX_UPLOAD_IMAGE_BYTES = 2 * 1024 * 1024;
     const ALLOWED_UPLOAD_MIME_TYPES = new Set(['image/jpeg', 'image/png']);
     const ALLOWED_UPLOAD_EXTENSIONS = new Set(['jpg', 'jpeg', 'png']);
+    const MAX_BACKGROUND_IMAGE_BYTES = 5 * 1024 * 1024;
+    const ALLOWED_BACKGROUND_IMAGE_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+    const ALLOWED_BACKGROUND_IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp']);
+    const THUMBNAIL_MAX_DATA_URL_CHARS = 240000;
 
     const fabricCanvas = new fabric.Canvas('editor_canvas', {
         width: Number(widthInput?.value || 400),
         height: Number(heightInput?.value || 500),
         backgroundColor: bgInput?.value || '#ffffff'
     });
+    qrPrimaryColor = normalizeHexColor(qrPrimaryColorInput?.value || '#111111', '#111111');
+    qrSecondaryColor = normalizeHexColor(qrSecondaryColorInput?.value || '#ffffff', '#ffffff');
+    if (qrPrimaryColorInput) qrPrimaryColorInput.value = qrPrimaryColor;
+    if (qrSecondaryColorInput) qrSecondaryColorInput.value = qrSecondaryColor;
 
     function renderDeleteControlIcon(ctx, left, top, styleOverride, fabricObject) {
         const size = 20;
@@ -158,8 +181,98 @@ function initFrameEditor() {
         }
     }
 
+    function updateBackgroundImageUiState() {
+        if (backgroundImageName) {
+            if (canvasBackgroundImageDataUrl) {
+                backgroundImageName.textContent = canvasBackgroundImageFileName
+                    ? `Selected: ${canvasBackgroundImageFileName}`
+                    : 'Background image selected.';
+                backgroundImageName.classList.remove('text-red-300');
+                backgroundImageName.classList.add('text-slate-300');
+            } else {
+                backgroundImageName.textContent = 'No background image selected.';
+                backgroundImageName.classList.remove('text-red-300');
+                backgroundImageName.classList.add('text-slate-400');
+            }
+        }
+        if (backgroundImageClearBtn) {
+            backgroundImageClearBtn.classList.toggle('hidden', !canvasBackgroundImageDataUrl);
+        }
+        if (backgroundImageFitSelect) {
+            backgroundImageFitSelect.disabled = !canvasBackgroundImageDataUrl;
+            backgroundImageFitSelect.value = canvasBackgroundImageFit;
+        }
+    }
+
+    function applyBackgroundImageFit(imageObject) {
+        const canvasWidth = fabricCanvas.getWidth();
+        const canvasHeight = fabricCanvas.getHeight();
+        const sourceWidth = imageObject.width || 1;
+        const sourceHeight = imageObject.height || 1;
+        const widthRatio = canvasWidth / sourceWidth;
+        const heightRatio = canvasHeight / sourceHeight;
+        const scale = canvasBackgroundImageFit === 'contain'
+            ? Math.min(widthRatio, heightRatio)
+            : Math.max(widthRatio, heightRatio);
+        const drawWidth = sourceWidth * scale;
+        const drawHeight = sourceHeight * scale;
+        imageObject.set({
+            left: (canvasWidth - drawWidth) / 2,
+            top: (canvasHeight - drawHeight) / 2,
+            scaleX: scale,
+            scaleY: scale,
+            selectable: false,
+            evented: false,
+        });
+        imageObject.setCoords();
+    }
+
+    async function applyCanvasBackgroundImage() {
+        const token = ++backgroundImageApplyToken;
+        fabricCanvas.setBackgroundImage(null, fabricCanvas.renderAll.bind(fabricCanvas));
+        if (!canvasBackgroundImageDataUrl) {
+            fabricCanvas.renderAll();
+            return;
+        }
+
+        await new Promise((resolve) => {
+            const imageEl = new Image();
+            imageEl.onload = () => {
+                if (token !== backgroundImageApplyToken) {
+                    resolve();
+                    return;
+                }
+                const imageObject = new fabric.Image(imageEl, {
+                    selectable: false,
+                    evented: false,
+                });
+                applyBackgroundImageFit(imageObject);
+                fabricCanvas.setBackgroundImage(imageObject, () => {
+                    ensureQrZone();
+                    fabricCanvas.requestRenderAll();
+                    resolve();
+                });
+            };
+            imageEl.onerror = () => resolve();
+            imageEl.src = canvasBackgroundImageDataUrl;
+        });
+    }
+
     function uid(prefix = 'layer') {
         return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    }
+
+    function normalizeHexColor(value, fallback = '#000000') {
+        if (typeof value !== 'string') return fallback;
+        const normalized = value.trim();
+        if (/^#[0-9a-f]{6}$/i.test(normalized)) {
+            return normalized.toLowerCase();
+        }
+        if (/^#[0-9a-f]{3}$/i.test(normalized)) {
+            const short = normalized.slice(1).toLowerCase();
+            return `#${short[0]}${short[0]}${short[1]}${short[1]}${short[2]}${short[2]}`;
+        }
+        return fallback;
     }
 
     function attachLayerMeta(object, layerType) {
@@ -176,7 +289,7 @@ function initFrameEditor() {
             top: (zone.y_pct / 100) * height,
             width: (zone.w_pct / 100) * width,
             height: (zone.h_pct / 100) * height,
-            fill: 'rgba(79, 70, 229, 0.12)',
+            fill: 'rgba(79, 70, 229, 0.03)',
             stroke: 'rgba(79, 70, 229, 0.95)',
             strokeDashArray: [8, 6],
             strokeWidth: 3,
@@ -285,6 +398,28 @@ function initFrameEditor() {
         });
     }
 
+    function syncQrZoneVisualState() {
+        const zone = fabricCanvas.getObjects().find((obj) => obj.name === 'qr_zone');
+        const label = fabricCanvas.getObjects().find((obj) => obj.name === 'qr_zone_label');
+        if (!zone) return;
+        const active = fabricCanvas.getActiveObject();
+        const isQrZoneActive = active?.name === 'qr_zone';
+
+        // Keep the helper zone unobtrusive unless user is actively editing it.
+        zone.set({
+            fill: isQrZoneActive ? 'rgba(79, 70, 229, 0.12)' : 'rgba(79, 70, 229, 0.03)',
+            stroke: isQrZoneActive ? 'rgba(79, 70, 229, 0.95)' : 'rgba(79, 70, 229, 0.35)',
+            strokeWidth: isQrZoneActive ? 3 : 1.2,
+            strokeDashArray: isQrZoneActive ? [8, 6] : [6, 8]
+        });
+        if (label) {
+            label.set({
+                visible: isQrZoneActive
+            });
+        }
+        fabricCanvas.requestRenderAll();
+    }
+
     function updateCanvasQrOverlay() {
         // Intentionally no-op: keep canvas rendering fully managed by Fabric.
     }
@@ -297,6 +432,61 @@ function initFrameEditor() {
             top: (zoneRect.top || 0) + 12,
             width: Math.max(((zoneRect.width || 0) * (zoneRect.scaleX || 1)) - 24, 140)
         });
+    }
+
+    async function syncCanvasQrZonePreviewImage() {
+        const token = ++qrZonePreviewApplyToken;
+        const zone = fabricCanvas.getObjects().find((obj) => obj.name === 'qr_zone');
+        if (!zone) {
+            return;
+        }
+
+        const primary = normalizeHexColor(qrPrimaryColor, '#111111');
+        const secondary = normalizeHexColor(qrSecondaryColor, '#ffffff');
+        const cacheKey = `${primary}|${secondary}`;
+        if (!qrPreviewCanvasCache || qrPreviewCanvasCacheKey !== cacheKey) {
+            qrPreviewCanvasCache = await buildQrPreviewCanvas(260, 260, 'https://example.com', primary, secondary);
+            qrPreviewCanvasCacheKey = cacheKey;
+        }
+        if (!qrPreviewCanvasCache || token !== qrZonePreviewApplyToken) {
+            return;
+        }
+
+        let preview = fabricCanvas.getObjects().find((obj) => obj.name === 'qr_zone_preview');
+        if (!preview) {
+            preview = new fabric.Image(qrPreviewCanvasCache, {
+                name: 'qr_zone_preview',
+                id: 'qr_zone_preview',
+                layerType: 'system',
+                selectable: false,
+                evented: false,
+                hoverCursor: 'default'
+            });
+            fabricCanvas.add(preview);
+        } else {
+            preview.setElement(qrPreviewCanvasCache);
+        }
+
+        const zoneWidth = (zone.width || 0) * (zone.scaleX || 1);
+        const zoneHeight = (zone.height || 0) * (zone.scaleY || 1);
+        const sourceWidth = preview.width || 1;
+        const sourceHeight = preview.height || 1;
+
+        preview.set({
+            left: zone.left || 0,
+            top: zone.top || 0,
+            scaleX: zoneWidth / sourceWidth,
+            scaleY: zoneHeight / sourceHeight,
+            opacity: 1,
+            visible: true
+        });
+        preview.setCoords();
+        fabricCanvas.sendToBack(preview);
+        zone.bringToFront();
+        const label = fabricCanvas.getObjects().find((obj) => obj.name === 'qr_zone_label');
+        if (label) {
+            label.bringToFront();
+        }
     }
 
     function ensureQrZone() {
@@ -313,7 +503,9 @@ function initFrameEditor() {
                 fabricCanvas.add(label);
                 fabricCanvas.bringToFront(label);
             }
+            syncQrZoneVisualState();
             updateCanvasQrOverlay();
+            void syncCanvasQrZonePreviewImage();
             return existing;
         }
         const defaultSquareZone = getDefaultSquareQrZone(fabricCanvas.width, fabricCanvas.height, 56);
@@ -323,7 +515,9 @@ function initFrameEditor() {
         fabricCanvas.add(label);
         fabricCanvas.bringToFront(zone);
         fabricCanvas.bringToFront(label);
+        syncQrZoneVisualState();
         updateCanvasQrOverlay();
+        void syncCanvasQrZonePreviewImage();
         return zone;
     }
 
@@ -362,7 +556,7 @@ function initFrameEditor() {
         if (object.type === 'rect') return 'rect';
         if (object.type === 'circle') return 'circle';
         if (object.type === 'image') return 'image';
-        if (object.type === 'polygon' || object.type === 'triangle') return 'rect';
+        if (object.type === 'polygon' || object.type === 'triangle') return 'polygon';
         return 'rect';
     }
 
@@ -652,6 +846,16 @@ function initFrameEditor() {
         fabricCanvas.clear();
         if (bgInput) bgInput.value = template.background || '#ffffff';
         fabricCanvas.backgroundColor = bgInput?.value || '#ffffff';
+        qrPrimaryColor = '#111111';
+        qrSecondaryColor = '#ffffff';
+        if (qrPrimaryColorInput) qrPrimaryColorInput.value = qrPrimaryColor;
+        if (qrSecondaryColorInput) qrSecondaryColorInput.value = qrSecondaryColor;
+        qrPreviewCanvasCache = null;
+        qrPreviewCanvasCacheKey = '';
+        canvasBackgroundImageDataUrl = null;
+        canvasBackgroundImageFit = 'cover';
+        canvasBackgroundImageFileName = '';
+        updateBackgroundImageUiState();
         ensureQrZone();
         (template.layers || []).forEach((layerDef) => {
             const layer = createTemplateLayer(layerDef);
@@ -814,6 +1018,31 @@ function initFrameEditor() {
         return { valid: true, message: '' };
     }
 
+    async function validateBackgroundImageUploadFile(file) {
+        if (!file) {
+            return { valid: false, message: 'No file selected.' };
+        }
+        if (file.size > MAX_BACKGROUND_IMAGE_BYTES) {
+            return { valid: false, message: 'Background image cannot exceed 5MB.' };
+        }
+        const extension = getFileExtension(file.name);
+        if (!ALLOWED_BACKGROUND_IMAGE_EXTENSIONS.has(extension)) {
+            return { valid: false, message: 'Only JPG, PNG, and WEBP images are allowed.' };
+        }
+        if (!ALLOWED_BACKGROUND_IMAGE_MIME_TYPES.has(file.type)) {
+            return { valid: false, message: 'Only JPG, PNG, and WEBP images are allowed.' };
+        }
+        try {
+            const header = await readFileHeaderBytes(file, 12);
+            if (!isValidImageSignature(header) && file.type !== 'image/webp') {
+                return { valid: false, message: 'The file is not a valid image (invalid file signature).' };
+            }
+        } catch (error) {
+            return { valid: false, message: 'Could not read file. Please try another image.' };
+        }
+        return { valid: true, message: '' };
+    }
+
     function renderElementCatalog(category) {
         if (!elementSections) {
             return;
@@ -937,6 +1166,41 @@ function initFrameEditor() {
             opacity: obj.opacity ?? 1
         };
 
+        const toNumericPoint = (point) => ({
+            x: Number(point?.x ?? 0),
+            y: Number(point?.y ?? 0)
+        });
+
+        const serializePolygonPoints = (object) => {
+            const rawPoints = Array.isArray(object?.points) ? object.points : [];
+            const matrix = typeof object?.calcTransformMatrix === 'function'
+                ? object.calcTransformMatrix()
+                : null;
+            const pathOffset = object?.pathOffset || { x: 0, y: 0 };
+
+            if (rawPoints.length >= 3 && matrix) {
+                return rawPoints.map((point) => {
+                    const localPoint = new fabric.Point(
+                        (point.x || 0) - (pathOffset.x || 0),
+                        (point.y || 0) - (pathOffset.y || 0)
+                    );
+                    return toNumericPoint(fabric.util.transformPoint(localPoint, matrix));
+                });
+            }
+
+            const bbox = object?.getBoundingRect?.(true, true);
+            if (!bbox || !bbox.width || !bbox.height) {
+                return [];
+            }
+
+            // Fallback triangle from object bounds when precise points are unavailable.
+            return [
+                { x: bbox.left + (bbox.width / 2), y: bbox.top },
+                { x: bbox.left + bbox.width, y: bbox.top + bbox.height },
+                { x: bbox.left, y: bbox.top + bbox.height }
+            ];
+        };
+
         if (obj.type === 'textbox' || obj.type === 'text') {
             return {
                 ...base,
@@ -1003,22 +1267,44 @@ function initFrameEditor() {
             } catch (error) {
                 src = '';
             }
-            return {
-                ...base,
-                type: 'image',
-                x: obj.left || 0,
-                y: obj.top || 0,
-                width: (obj.width || 120) * (obj.scaleX || 1),
-                height: (obj.height || 120) * (obj.scaleY || 1),
-                src
-            };
+
+            if (src) {
+                return {
+                    ...base,
+                    type: 'image',
+                    x: obj.left || 0,
+                    y: obj.top || 0,
+                    width: (obj.width || 120) * (obj.scaleX || 1),
+                    height: (obj.height || 120) * (obj.scaleY || 1),
+                    src
+                };
+            }
+
+            const points = serializePolygonPoints(obj);
+            if (points.length >= 3) {
+                return {
+                    ...base,
+                    type: 'polygon',
+                    points,
+                    fill: obj.fill || 'transparent',
+                    stroke: obj.stroke || null,
+                    stroke_width: obj.strokeWidth || 0
+                };
+            }
+
+            return null;
         }
 
         return null;
     }
 
     function serializeDesignJson() {
-        const all = fabricCanvas.getObjects().filter((o) => !isGuideObject(o) && o.name !== 'qr_zone_label');
+        const all = fabricCanvas.getObjects().filter((o) => (
+            !isGuideObject(o) &&
+            o.name !== 'qr_zone_label' &&
+            o.name !== 'qr_zone_preview' &&
+            o.name !== 'editor_background_image'
+        ));
         const qrObj = all.find((o) => o.name === 'qr_zone');
         const layers = all.filter((o) => o.name !== 'qr_zone')
             .map((obj, index) => buildLayer(obj, index))
@@ -1029,6 +1315,10 @@ function initFrameEditor() {
             canvas_width: fabricCanvas.width,
             canvas_height: fabricCanvas.height,
             background: bgInput?.value || '#ffffff',
+            qr_primary_color: normalizeHexColor(qrPrimaryColor, '#111111'),
+            qr_secondary_color: normalizeHexColor(qrSecondaryColor, '#ffffff'),
+            background_image: canvasBackgroundImageDataUrl,
+            background_image_fit: canvasBackgroundImageFit,
             qr_zone: {
                 x_pct: ((qrObj?.left || 0) / fabricCanvas.width) * 100,
                 y_pct: ((qrObj?.top || 0) / fabricCanvas.height) * 100,
@@ -1057,6 +1347,12 @@ function initFrameEditor() {
         const output = [];
         output.push(`<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">`);
         output.push(`<rect x="0" y="0" width="${width}" height="${height}" fill="${escapeXml(design.background || '#ffffff')}" />`);
+        if (design.background_image) {
+            const fitMode = design.background_image_fit === 'contain' ? 'meet' : 'slice';
+            output.push(
+                `<image x="0" y="0" width="${width}" height="${height}" href="${escapeXml(design.background_image)}" preserveAspectRatio="xMidYMid ${fitMode}" />`
+            );
+        }
 
         for (const layer of layers) {
             const opacity = layer.opacity ?? 1;
@@ -1083,6 +1379,14 @@ function initFrameEditor() {
                 output.push(
                     `<image x="${layer.x ?? 0}" y="${layer.y ?? 0}" width="${layer.width ?? 120}" height="${layer.height ?? 120}" ` +
                     `href="${escapeXml(layer.src)}" preserveAspectRatio="xMidYMid meet" opacity="${opacity}" />`
+                );
+            } else if (layer.type === 'polygon' && Array.isArray(layer.points) && layer.points.length >= 3) {
+                const pointsAttr = layer.points
+                    .map((point) => `${point.x ?? 0},${point.y ?? 0}`)
+                    .join(' ');
+                output.push(
+                    `<polygon points="${escapeXml(pointsAttr)}" fill="${escapeXml(layer.fill || 'none')}" ` +
+                    `stroke="${escapeXml(layer.stroke || 'none')}" stroke-width="${layer.stroke_width ?? 0}" opacity="${opacity}" />`
                 );
             }
         }
@@ -1124,7 +1428,15 @@ function initFrameEditor() {
         return false;
     }
 
-    async function buildQrPreviewCanvas(width = 240, height = 240, value = 'https://example.com') {
+    async function buildQrPreviewCanvas(
+        width = 240,
+        height = 240,
+        value = 'https://example.com',
+        primaryColor = '#111111',
+        secondaryColor = '#ffffff'
+    ) {
+        const resolvedPrimary = normalizeHexColor(primaryColor, '#111111');
+        const resolvedSecondary = normalizeHexColor(secondaryColor, '#ffffff');
         if (window.QRCodeStyling) {
             try {
                 const host = document.createElement('div');
@@ -1138,8 +1450,8 @@ function initFrameEditor() {
                     data: value,
                     type: 'canvas',
                     qrOptions: { errorCorrectionLevel: 'M' },
-                    dotsOptions: { color: '#0f172a', type: 'rounded' },
-                    backgroundOptions: { color: '#ffffff' }
+                    dotsOptions: { color: resolvedPrimary, type: 'rounded' },
+                    backgroundOptions: { color: resolvedSecondary }
                 });
                 qr.append(host);
                 await new Promise((resolve) => setTimeout(resolve, 60));
@@ -1163,7 +1475,7 @@ function initFrameEditor() {
         fallback.height = height;
         const ctx = fallback.getContext('2d');
         if (!ctx) return null;
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = resolvedSecondary;
         ctx.fillRect(0, 0, width, height);
         const cell = Math.max(4, Math.floor(width / 29));
         const seed = 17;
@@ -1172,7 +1484,7 @@ function initFrameEditor() {
                 const finderZone = (row < 7 && col < 7) || (row < 7 && col > 21) || (row > 21 && col < 7);
                 const on = finderZone || ((row * 31 + col * 17 + seed) % 5 === 0);
                 if (on) {
-                    ctx.fillStyle = '#111827';
+                    ctx.fillStyle = resolvedPrimary;
                     ctx.fillRect(col * cell, row * cell, cell, cell);
                 }
             }
@@ -1221,6 +1533,7 @@ function initFrameEditor() {
         const activeObjects = fabricCanvas.getObjects().filter((obj) => (
             obj.name !== 'qr_zone' &&
             obj.name !== 'qr_zone_label' &&
+            obj.name !== 'qr_zone_preview' &&
             !isGuideObject(obj)
         ));
 
@@ -1265,17 +1578,59 @@ function initFrameEditor() {
     async function syncRendererPreview() {
         if (!window.renderFrameDesign || !previewCanvasEl) return;
         const design = serializeDesignJson();
-        if (!qrPreviewCanvasCache) {
-            qrPreviewCanvasCache = await buildQrPreviewCanvas(260, 260, 'https://example.com');
+        const primary = normalizeHexColor(qrPrimaryColor, '#111111');
+        const secondary = normalizeHexColor(qrSecondaryColor, '#ffffff');
+        const cacheKey = `${primary}|${secondary}`;
+        if (!qrPreviewCanvasCache || qrPreviewCanvasCacheKey !== cacheKey) {
+            qrPreviewCanvasCache = await buildQrPreviewCanvas(260, 260, 'https://example.com', primary, secondary);
+            qrPreviewCanvasCacheKey = cacheKey;
         }
-        await window.renderFrameDesign(previewCanvasEl, design, '#111111', '#ffffff', qrPreviewCanvasCache);
+        await syncCanvasQrZonePreviewImage();
+        await window.renderFrameDesign(previewCanvasEl, design, primary, secondary, qrPreviewCanvasCache);
         syncWarnings();
+    }
+
+    function buildThumbnailDataUrl(sourceCanvas) {
+        if (!sourceCanvas) {
+            return null;
+        }
+
+        const sourceWidth = Number(sourceCanvas.width || 0);
+        const sourceHeight = Number(sourceCanvas.height || 0);
+        if (!sourceWidth || !sourceHeight) {
+            return null;
+        }
+
+        const presets = [220, 180, 150, 128];
+        for (const maxSide of presets) {
+            const scale = Math.min(1, maxSide / Math.max(sourceWidth, sourceHeight));
+            const width = Math.max(1, Math.round(sourceWidth * scale));
+            const height = Math.max(1, Math.round(sourceHeight * scale));
+
+            const thumbnailCanvas = document.createElement('canvas');
+            thumbnailCanvas.width = width;
+            thumbnailCanvas.height = height;
+            const ctx = thumbnailCanvas.getContext('2d');
+            if (!ctx) {
+                continue;
+            }
+
+            ctx.clearRect(0, 0, width, height);
+            ctx.drawImage(sourceCanvas, 0, 0, width, height);
+            const dataUrl = thumbnailCanvas.toDataURL('image/png');
+            if (dataUrl.length <= THUMBNAIL_MAX_DATA_URL_CHARS) {
+                return dataUrl;
+            }
+        }
+
+        return null;
     }
 
     function syncPropertiesPanel() {
         const panel = document.getElementById('props_panel');
         const empty = document.getElementById('props_empty');
         const active = fabricCanvas.getActiveObject();
+        syncQrZoneVisualState();
 
         if (!active || active.name === 'qr_zone' || active.name === 'qr_zone_label') {
             panel?.classList.add('hidden');
@@ -1350,7 +1705,12 @@ function initFrameEditor() {
 
     function reorderLayerToTarget(sourceId, targetId) {
         if (!sourceId || !targetId || sourceId === targetId) return;
-        const objects = fabricCanvas.getObjects().filter((obj) => !isGuideObject(obj) && obj.name !== 'qr_zone_label');
+        const objects = fabricCanvas.getObjects().filter((obj) => (
+            !isGuideObject(obj) &&
+            obj.name !== 'qr_zone_label' &&
+            obj.name !== 'qr_zone_preview' &&
+            obj.name !== 'editor_background_image'
+        ));
         const source = objects.find((obj) => obj.id === sourceId);
         const target = objects.find((obj) => obj.id === targetId);
         if (!source || !target || source.name === 'qr_zone' || target.name === 'qr_zone') return;
@@ -1369,7 +1729,12 @@ function initFrameEditor() {
     function syncLayerList() {
         if (!layerList) return;
 
-        const objects = fabricCanvas.getObjects().filter((obj) => !isGuideObject(obj) && obj.name !== 'qr_zone_label');
+        const objects = fabricCanvas.getObjects().filter((obj) => (
+            !isGuideObject(obj) &&
+            obj.name !== 'qr_zone_label' &&
+            obj.name !== 'qr_zone_preview' &&
+            obj.name !== 'editor_background_image'
+        ));
         const ordered = [...objects].reverse();
         layerList.innerHTML = '';
 
@@ -1546,6 +1911,67 @@ function initFrameEditor() {
             e.target.value = '';
         });
     }
+
+    backgroundImageInput?.addEventListener('change', async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const validation = await validateBackgroundImageUploadFile(file);
+        if (!validation.valid) {
+            e.target.value = '';
+            if (backgroundImageName) {
+                backgroundImageName.textContent = `Upload failed: ${validation.message}`;
+                backgroundImageName.classList.remove('text-slate-300', 'text-slate-400');
+                backgroundImageName.classList.add('text-red-300');
+            }
+            setUploadFeedback(validation.message, true);
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            canvasBackgroundImageDataUrl = String(ev.target?.result || '');
+            canvasBackgroundImageFileName = file.name || '';
+            updateBackgroundImageUiState();
+            applyCanvasBackgroundImage().then(() => {
+                applyCanvasLayerStyles();
+                fabricCanvas.renderAll();
+                syncRendererPreview();
+                setUploadFeedback(`Background image set: ${file.name}`, false);
+            });
+        };
+        reader.onerror = () => {
+            if (backgroundImageName) {
+                backgroundImageName.textContent = 'Upload failed: Could not read selected image.';
+                backgroundImageName.classList.remove('text-slate-300', 'text-slate-400');
+                backgroundImageName.classList.add('text-red-300');
+            }
+            setUploadFeedback('Could not read selected image.', true);
+        };
+        reader.readAsDataURL(file);
+        e.target.value = '';
+    });
+
+    backgroundImageClearBtn?.addEventListener('click', () => {
+        canvasBackgroundImageDataUrl = null;
+        canvasBackgroundImageFit = 'cover';
+        canvasBackgroundImageFileName = '';
+        updateBackgroundImageUiState();
+        applyCanvasLayerStyles();
+        applyCanvasBackgroundImage().then(() => {
+            fabricCanvas.renderAll();
+            syncRendererPreview();
+        });
+    });
+
+    backgroundImageFitSelect?.addEventListener('change', (e) => {
+        const value = e.target.value === 'contain' ? 'contain' : 'cover';
+        canvasBackgroundImageFit = value;
+        applyCanvasBackgroundImage().then(() => {
+            applyCanvasLayerStyles();
+            fabricCanvas.renderAll();
+            syncRendererPreview();
+        });
+    });
 
     function removeCenterGuides() {
         if (horizontalGuide) {
@@ -1763,8 +2189,10 @@ function initFrameEditor() {
             design.qr_zone?.h_pct ?? 56
         );
         applyCanvasLayerStyles();
-        fabricCanvas.renderAll();
-        syncRendererPreview();
+        applyCanvasBackgroundImage().then(() => {
+            fabricCanvas.renderAll();
+            syncRendererPreview();
+        });
     });
 
     heightInput?.addEventListener('change', () => {
@@ -1777,14 +2205,32 @@ function initFrameEditor() {
             design.qr_zone?.h_pct ?? 56
         );
         applyCanvasLayerStyles();
-        fabricCanvas.renderAll();
-        syncRendererPreview();
+        applyCanvasBackgroundImage().then(() => {
+            fabricCanvas.renderAll();
+            syncRendererPreview();
+        });
     });
 
     bgInput?.addEventListener('input', () => {
         fabricCanvas.backgroundColor = bgInput.value;
         applyCanvasLayerStyles();
         fabricCanvas.renderAll();
+        syncRendererPreview();
+    });
+
+    qrPrimaryColorInput?.addEventListener('input', () => {
+        qrPrimaryColor = normalizeHexColor(qrPrimaryColorInput.value, '#111111');
+        qrPrimaryColorInput.value = qrPrimaryColor;
+        qrPreviewCanvasCache = null;
+        qrPreviewCanvasCacheKey = '';
+        syncRendererPreview();
+    });
+
+    qrSecondaryColorInput?.addEventListener('input', () => {
+        qrSecondaryColor = normalizeHexColor(qrSecondaryColorInput.value, '#ffffff');
+        qrSecondaryColorInput.value = qrSecondaryColor;
+        qrPreviewCanvasCache = null;
+        qrPreviewCanvasCacheKey = '';
         syncRendererPreview();
     });
 
@@ -1850,57 +2296,74 @@ function initFrameEditor() {
         const shouldFinish = !!options.finish;
         if (!saveStatus) return;
         saveStatus.textContent = 'Saving...';
+        try {
+            const designJson = serializeDesignJson();
+            // Background image as data URL can make svg_content very large.
+            // Keep svg only for lighter cases and rely on design_json renderer otherwise.
+            const svgContent = designJson.background_image ? null : designJsonToSvg(designJson);
+            const thumb = buildThumbnailDataUrl(previewCanvasEl);
 
-        const designJson = serializeDesignJson();
-        const svgContent = designJsonToSvg(designJson);
-        const thumb = previewCanvasEl?.toDataURL('image/png') || null;
+            const currentFrameId = saveBtn?.dataset.frameId || existingFrame?.id || null;
+            const isUpdate = !!currentFrameId;
+            const endpoint = isUpdate ? `${updateBaseUrl}/${currentFrameId}` : storeUrl;
 
-        const currentFrameId = saveBtn?.dataset.frameId || existingFrame?.id || null;
-        const isUpdate = !!currentFrameId;
-        const endpoint = isUpdate ? `${updateBaseUrl}/${currentFrameId}` : storeUrl;
+            const response = await fetch(endpoint, {
+                method: isUpdate ? 'PUT' : 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: JSON.stringify({
+                    name: document.getElementById('frame_name')?.value || 'My Frame',
+                    design_json: designJson,
+                    svg_content: svgContent,
+                    thumbnail_data_url: thumb,
+                })
+            });
 
-        const response = await fetch(endpoint, {
-            method: isUpdate ? 'PUT' : 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken
-            },
-            body: JSON.stringify({
-                name: document.getElementById('frame_name')?.value || 'My Frame',
-                design_json: designJson,
-                svg_content: svgContent,
-                thumbnail_data_url: thumb
-            })
-        });
-
-        const data = await response.json();
-        if (response.ok && data.success) {
-            saveStatus.textContent = isUpdate ? 'Updated successfully.' : 'Saved successfully.';
-            const savedFrameId = data.frame_id || data.id || currentFrameId;
-            if (saveBtn && savedFrameId) {
-                saveBtn.dataset.frameId = String(savedFrameId);
+            const raw = await response.text();
+            let data = null;
+            try {
+                data = raw ? JSON.parse(raw) : null;
+            } catch (parseError) {
+                saveStatus.textContent = response.ok
+                    ? 'Save failed: unexpected server response.'
+                    : 'Save failed. Please reduce image size and try again.';
+                return null;
             }
-            if (shouldFinish && savedFrameId) {
-                const openerNotified = notifyOpenerOnFinish(savedFrameId);
-                if (openerNotified) {
-                    saveStatus.textContent = 'Saved. Returning to wizard...';
-                    setTimeout(() => {
-                        window.close();
-                    }, 120);
-                    return savedFrameId;
+
+            if (response.ok && data?.success) {
+                saveStatus.textContent = isUpdate ? 'Updated successfully.' : 'Saved successfully.';
+                const savedFrameId = data.frame_id || data.id || currentFrameId;
+                if (saveBtn && savedFrameId) {
+                    saveBtn.dataset.frameId = String(savedFrameId);
                 }
-                const redirectUrl = buildFinishRedirectUrl(savedFrameId);
-                if (redirectUrl) {
-                    window.location.href = redirectUrl;
-                    return savedFrameId;
+                if (shouldFinish && savedFrameId) {
+                    const openerNotified = notifyOpenerOnFinish(savedFrameId);
+                    if (openerNotified) {
+                        saveStatus.textContent = 'Saved. Returning to wizard...';
+                        setTimeout(() => {
+                            window.close();
+                        }, 120);
+                        return savedFrameId;
+                    }
+                    const redirectUrl = buildFinishRedirectUrl(savedFrameId);
+                    if (redirectUrl) {
+                        window.location.href = redirectUrl;
+                        return savedFrameId;
+                    }
+                    saveStatus.textContent = 'Saved successfully. Return URL is not available.';
                 }
-                saveStatus.textContent = 'Saved successfully. Return URL is not available.';
+                return savedFrameId;
             }
-            return savedFrameId;
+
+            saveStatus.textContent = data?.message || 'Save failed.';
+            return null;
+        } catch (error) {
+            saveStatus.textContent = 'Save failed due to network/server error.';
+            return null;
         }
-
-        saveStatus.textContent = data.message || 'Save failed.';
-        return null;
     }
 
     function restoreFromExistingFrame() {
@@ -1920,6 +2383,17 @@ function initFrameEditor() {
             bgInput.value = design.background || '#ffffff';
             fabricCanvas.backgroundColor = bgInput.value;
         }
+        qrPrimaryColor = normalizeHexColor(design.qr_primary_color || '#111111', '#111111');
+        qrSecondaryColor = normalizeHexColor(design.qr_secondary_color || '#ffffff', '#ffffff');
+        if (qrPrimaryColorInput) qrPrimaryColorInput.value = qrPrimaryColor;
+        if (qrSecondaryColorInput) qrSecondaryColorInput.value = qrSecondaryColor;
+        qrPreviewCanvasCache = null;
+        qrPreviewCanvasCacheKey = '';
+        canvasBackgroundImageDataUrl = design.background_image || existingFrame.background_image || null;
+        const resolvedFit = design.background_image_fit || existingFrame.background_image_fit || 'cover';
+        canvasBackgroundImageFit = resolvedFit === 'contain' ? 'contain' : 'cover';
+        canvasBackgroundImageFileName = canvasBackgroundImageDataUrl ? 'saved background image' : '';
+        updateBackgroundImageUiState();
 
         const zone = createQrZoneFromPercent(
             design.qr_zone || { x_pct: 22, y_pct: 22, w_pct: 56, h_pct: 56 },
@@ -1981,10 +2455,30 @@ function initFrameEditor() {
                     fabricCanvas.add(img);
                     fabricCanvas.renderAll();
                 }, { crossOrigin: 'anonymous' });
+            } else if (layer.type === 'polygon' && Array.isArray(layer.points) && layer.points.length >= 3) {
+                const xs = layer.points.map((point) => Number(point.x || 0));
+                const ys = layer.points.map((point) => Number(point.y || 0));
+                const minX = Math.min(...xs);
+                const minY = Math.min(...ys);
+                const normalizedPoints = layer.points.map((point) => ({
+                    x: Number(point.x || 0) - minX,
+                    y: Number(point.y || 0) - minY
+                }));
+                const polygon = attachLayerMeta(new fabric.Polygon(normalizedPoints, {
+                    left: minX,
+                    top: minY,
+                    fill: layer.fill || 'transparent',
+                    stroke: layer.stroke || null,
+                    strokeWidth: layer.stroke_width || 0,
+                    opacity: layer.opacity ?? 1
+                }), 'polygon');
+                if (layer.id) polygon.set('id', layer.id);
+                fabricCanvas.add(polygon);
             }
         });
 
         ensureQrZone();
+        applyCanvasBackgroundImage();
         fabricCanvas.renderAll();
         syncRendererPreview();
         syncLayerList();
@@ -2000,8 +2494,10 @@ function initFrameEditor() {
     window.saveFrameDesign = saveFrameDesign;
 
     restoreFromExistingFrame();
+    updateBackgroundImageUiState();
     setEditorView('canvas');
     applyCanvasLayerStyles();
+    applyCanvasBackgroundImage();
     syncLayerList();
     updateCanvasQrOverlay();
     fabricCanvas.requestRenderAll();

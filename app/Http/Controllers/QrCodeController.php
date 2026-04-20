@@ -945,6 +945,30 @@ class QrCodeController extends Controller
             $query->where('type', $typeFilter);
         }
         $qrCodes = $query->paginate(12)->withQueryString();
+
+        $customFrameDesigns = [];
+        if (auth()->check()) {
+            $customFrameIds = $qrCodes->getCollection()
+                ->map(fn ($qrCode) => (int) data_get($qrCode->customization, 'frame_design_id'))
+                ->filter(fn ($id) => $id > 0)
+                ->unique()
+                ->values();
+
+            if ($customFrameIds->isNotEmpty()) {
+                $customFrameDesigns = FrameDesign::query()
+                    ->whereIn('id', $customFrameIds)
+                    ->where(function ($query) {
+                        $query->where('is_template', true)
+                            ->orWhere('user_id', auth()->id());
+                    })
+                    ->get(['id', 'design_json', 'svg_content'])
+                    ->mapWithKeys(fn ($frame) => [(string) $frame->id => [
+                        'design_json' => $frame->design_json,
+                        'svg_content' => $frame->svg_content,
+                    ]])
+                    ->all();
+            }
+        }
         
         // Pass frame configuration to view
         $frameConfig = [];
@@ -957,6 +981,7 @@ class QrCodeController extends Controller
             'currentType' => $typeFilter,
             'historyTypes' => $historyTypes,
             'frameConfig' => $frameConfig,
+            'customFrameDesigns' => $customFrameDesigns,
         ]);
     }
 

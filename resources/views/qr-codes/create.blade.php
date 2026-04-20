@@ -13,6 +13,8 @@ window.recaptchaSiteKey = @json($recaptchaSiteKey);
 /* When a frame is selected, show full frame without clipping by rounded phone overlay */
 #phone-mockup-overlay-step2.frame-selected {
     border-radius: 0;
+    border: none !important;
+    background-color: transparent !important;
 }
 /* Coupon mockup card – interior uses secondary color, left/right semicircles use primary */
 .coupon-card {
@@ -1486,6 +1488,11 @@ async function loadCustomFrames() {
 
         updateCustomFramesEmptyState();
         syncSelectedCustomFrameCardState();
+        const selectedFrameValue = document.getElementById('selected_frame')?.value;
+        const selectedFrameDesignValue = document.getElementById('selected_frame_design_id')?.value;
+        if (selectedFrameValue === 'custom' && selectedFrameDesignValue) {
+            applyCustomFrameQrColors(selectedFrameDesignValue, { skipPreview: true });
+        }
     } catch (error) {
         console.error('Custom frames load failed:', error);
         if (loading) {
@@ -1518,6 +1525,35 @@ function selectFrame(button, frameValue) {
     updateStep2QRPreview();
 }
 
+function applyCustomFrameQrColors(frameDesignId, options = {}) {
+    if (!frameDesignId) return;
+    const frame = window.customFrameDesignCache?.[String(frameDesignId)];
+    const design = frame?.design_json;
+    if (!design) return;
+
+    const hasPrimary = typeof design.qr_primary_color === 'string' && design.qr_primary_color.trim() !== '';
+    const hasSecondary = typeof design.qr_secondary_color === 'string' && design.qr_secondary_color.trim() !== '';
+    if (!hasPrimary && !hasSecondary) return;
+
+    const normalizedPrimary = hasPrimary ? normalizeHexColor(design.qr_primary_color) : null;
+    const normalizedSecondary = hasSecondary ? normalizeHexColor(design.qr_secondary_color) : null;
+    const shouldSkipPreview = !!options.skipPreview;
+
+    const primaryColorInput = document.getElementById('primary_color');
+    const primaryColorHex = document.getElementById('primary_color_hex');
+    const secondaryColorInput = document.getElementById('secondary_color');
+    const secondaryColorHex = document.getElementById('secondary_color_hex');
+
+    if (normalizedPrimary && primaryColorInput) primaryColorInput.value = normalizedPrimary;
+    if (normalizedPrimary && primaryColorHex) primaryColorHex.value = normalizedPrimary;
+    if (normalizedSecondary && secondaryColorInput) secondaryColorInput.value = normalizedSecondary;
+    if (normalizedSecondary && secondaryColorHex) secondaryColorHex.value = normalizedSecondary;
+
+    if (!shouldSkipPreview) {
+        updateStep2QRPreview();
+    }
+}
+
 function selectCustomFrame(button, frameDesignId) {
     document.querySelectorAll('.frame-option').forEach(btn => {
         btn.classList.remove('border-primary-500', 'border-primary-600');
@@ -1538,6 +1574,7 @@ function selectCustomFrame(button, frameDesignId) {
         reviewUsOpts.classList.add('hidden');
     }
 
+    applyCustomFrameQrColors(frameDesignId, { skipPreview: true });
     updateStep2QRPreview();
 }
 
@@ -2967,17 +3004,25 @@ async function buildCustomFrameWrapper(qrContainer, customFrame, primaryColor, s
     wrapper.style.width = (designJson.canvas_width || 400) + 'px';
     wrapper.style.height = (designJson.canvas_height || 500) + 'px';
 
-    if (customFrame.svg_content) {
+    // Prefer design_json renderer so preview matches frame builder exactly.
+    if (window.renderFrameDesign && customFrame.design_json) {
+        const frameCanvas = document.createElement('canvas');
+        frameCanvas.className = 'w-full h-full block';
+        await window.renderFrameDesign(
+            frameCanvas,
+            designJson,
+            primaryColor,
+            secondaryColor,
+            null,
+            { showQrPlaceholder: false }
+        );
+        wrapper.appendChild(frameCanvas);
+    } else if (customFrame.svg_content) {
         const frameImg = document.createElement('img');
         frameImg.className = 'w-full h-full block object-contain';
         frameImg.alt = 'Custom frame';
         frameImg.src = buildCustomFrameSvgUrl(customFrame.svg_content, primaryColor, secondaryColor);
         wrapper.appendChild(frameImg);
-    } else if (window.renderFrameDesign) {
-        const frameCanvas = document.createElement('canvas');
-        frameCanvas.className = 'w-full h-full block';
-        await window.renderFrameDesign(frameCanvas, designJson, primaryColor, secondaryColor, null);
-        wrapper.appendChild(frameCanvas);
     }
 
     const zone = designJson.qr_zone || { x_pct: 5, y_pct: 4, w_pct: 90, h_pct: 72 };
@@ -4013,6 +4058,7 @@ async function applyFrameEditorReturnState() {
         if (selectedFrameInput) selectedFrameInput.value = selectedFrame;
         if (selectedFrameDesignInput) selectedFrameDesignInput.value = String(selectedFrameDesignId);
         syncSelectedCustomFrameCardState();
+        applyCustomFrameQrColors(selectedFrameDesignId, { skipPreview: true });
         updateStep2QRPreview();
     }
 
@@ -4058,6 +4104,7 @@ async function handleFrameEditorFinishedMessage(event) {
 
     await loadCustomFrames();
     syncSelectedCustomFrameCardState();
+    applyCustomFrameQrColors(payload.frameId, { skipPreview: true });
     updateStep2QRPreview();
 
     const targetStep = Number(payload.step || 2);
@@ -5746,7 +5793,17 @@ async function downloadQR(format) {
                 outputCanvas.height = designJson.canvas_height || 500;
                 const ctx = outputCanvas.getContext('2d');
 
-                if (customFrame.svg_content) {
+                // Prefer design_json renderer so downloaded output matches builder exactly.
+                if (window.renderFrameDesign && customFrame.design_json) {
+                    await window.renderFrameDesign(
+                        outputCanvas,
+                        designJson,
+                        primaryColor,
+                        secondaryColor,
+                        null,
+                        { showQrPlaceholder: false }
+                    );
+                } else if (customFrame.svg_content) {
                     const frameUrl = buildCustomFrameSvgUrl(customFrame.svg_content, primaryColor, secondaryColor);
                     await new Promise((resolve, reject) => {
                         const image = new Image();
@@ -5758,8 +5815,6 @@ async function downloadQR(format) {
                         image.onerror = reject;
                         image.src = frameUrl;
                     });
-                } else if (window.renderFrameDesign) {
-                    await window.renderFrameDesign(outputCanvas, designJson, primaryColor, secondaryColor, null);
                 }
 
                 const zone = designJson.qr_zone || { x_pct: 5, y_pct: 4, w_pct: 90, h_pct: 72 };

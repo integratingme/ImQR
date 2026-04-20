@@ -285,6 +285,7 @@ var BASE_URL = '{{ rtrim(url("/"), "/") }}/';
 
 // Frame configuration
 var FRAME_CONFIG = @json($frameConfig);
+var CUSTOM_FRAME_DESIGNS = @json($customFrameDesigns ?? []);
 
 // Wait for QRCodeStyling
 function waitForQRCodeStyling(callback, maxWaitMs) {
@@ -373,6 +374,77 @@ async function getReviewUsFrameUrl(config) {
 
     const blob = new Blob([svg], { type: 'image/svg+xml' });
     return URL.createObjectURL(blob);
+}
+
+function getCustomFrameDesign(customization) {
+    if (!customization || customization.frame !== 'custom') return null;
+    const frameDesignId = String(customization.frame_design_id || '');
+    if (!frameDesignId) return null;
+    return CUSTOM_FRAME_DESIGNS[frameDesignId] || null;
+}
+
+function buildCustomFrameSvgUrl(svgContent, primaryColor, secondaryColor) {
+    if (!svgContent) return null;
+    const themed = String(svgContent)
+        .replaceAll('#PRIMARY#', primaryColor)
+        .replaceAll('#SECONDARY#', secondaryColor);
+    return URL.createObjectURL(new Blob([themed], { type: 'image/svg+xml' }));
+}
+
+async function buildCustomFrameWrapper(container, customization, primaryColor, secondaryColor) {
+    const customFrame = getCustomFrameDesign(customization);
+    if (!customFrame || (!customFrame.svg_content && !customFrame.design_json)) {
+        return null;
+    }
+
+    const designJson = customFrame.design_json || {
+        canvas_width: 400,
+        canvas_height: 500,
+        qr_zone: { x_pct: 5, y_pct: 4, w_pct: 90, h_pct: 72 }
+    };
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'frame-wrapper relative mx-auto inline-block';
+    wrapper.style.width = (designJson.canvas_width || 400) + 'px';
+    wrapper.style.height = (designJson.canvas_height || 500) + 'px';
+
+    if (window.renderFrameDesign && customFrame.design_json) {
+        const frameCanvas = document.createElement('canvas');
+        frameCanvas.className = 'w-full h-full block';
+        await window.renderFrameDesign(frameCanvas, designJson, primaryColor, secondaryColor, null);
+        wrapper.appendChild(frameCanvas);
+    } else if (customFrame.svg_content) {
+        const frameImg = document.createElement('img');
+        frameImg.className = 'w-full h-full block object-contain';
+        frameImg.alt = 'Custom frame';
+        frameImg.src = buildCustomFrameSvgUrl(customFrame.svg_content, primaryColor, secondaryColor);
+        wrapper.appendChild(frameImg);
+    }
+
+    const zone = designJson.qr_zone || { x_pct: 5, y_pct: 4, w_pct: 90, h_pct: 72 };
+    const qrInFrame = document.createElement('div');
+    qrInFrame.className = 'qr-in-frame absolute flex items-center justify-center';
+    qrInFrame.style.left = zone.x_pct + '%';
+    qrInFrame.style.top = zone.y_pct + '%';
+    qrInFrame.style.width = zone.w_pct + '%';
+    qrInFrame.style.height = zone.h_pct + '%';
+
+    wrapper.appendChild(qrInFrame);
+    container.appendChild(wrapper);
+
+    setTimeout(function() {
+        var cw = container.clientWidth;
+        var ch = container.clientHeight;
+        var ww = designJson.canvas_width || 400;
+        var wh = designJson.canvas_height || 500;
+        if (cw > 0 && ch > 0 && (ww > cw || wh > ch)) {
+            var scale = Math.min(cw / ww, ch / wh, 1);
+            wrapper.style.transform = 'scale(' + scale + ')';
+            wrapper.style.transformOrigin = 'center center';
+        }
+    }, 80);
+
+    return { appendTarget: qrInFrame, designJson: designJson };
 }
 
 async function renderQRCode(container, QRCodeStylingClass) {
@@ -509,6 +581,21 @@ async function renderQRCode(container, QRCodeStylingClass) {
     };
 
     container.innerHTML = '';
+
+    if (frameId === 'custom') {
+        const customResult = await buildCustomFrameWrapper(container, customization, primaryColor, secondaryColor);
+        if (customResult && customResult.appendTarget) {
+            const zone = customResult.designJson?.qr_zone || { x_pct: 5, y_pct: 4, w_pct: 90, h_pct: 72 };
+            const zonePixelW = Math.max(80, ((zone.w_pct || 90) / 100) * (customResult.designJson.canvas_width || 400));
+            const zonePixelH = Math.max(80, ((zone.h_pct || 72) / 100) * (customResult.designJson.canvas_height || 500));
+            const customQrSize = Math.max(80, Math.min(220, Math.round(Math.min(zonePixelW, zonePixelH) * 0.85)));
+            options.width = customQrSize;
+            options.height = customQrSize;
+            var customQrCodeStyling = new QRS(options);
+            customQrCodeStyling.append(customResult.appendTarget);
+            return;
+        }
+    }
 
     if (frameId && frameId !== 'none' && FRAME_CONFIG[frameId]) {
         const cfg = FRAME_CONFIG[frameId];

@@ -29,7 +29,9 @@ async function drawImageLayer(ctx, layer, primaryColor, secondaryColor) {
     }
 
     const image = new Image();
-    image.crossOrigin = 'anonymous';
+    if (!String(layer.src).startsWith('data:')) {
+        image.crossOrigin = 'anonymous';
+    }
 
     await new Promise((resolve, reject) => {
         image.onload = resolve;
@@ -40,6 +42,43 @@ async function drawImageLayer(ctx, layer, primaryColor, secondaryColor) {
     ctx.globalAlpha = layer.opacity ?? 1;
     ctx.drawImage(image, layer.x ?? 0, layer.y ?? 0, layer.width ?? 120, layer.height ?? 120);
     ctx.globalAlpha = 1;
+}
+
+async function drawBackgroundImage(ctx, source, fitMode, primaryColor, secondaryColor) {
+    if (!source) {
+        return;
+    }
+
+    const image = new Image();
+    if (!String(source).startsWith('data:')) {
+        image.crossOrigin = 'anonymous';
+    }
+    await new Promise((resolve, reject) => {
+        image.onload = resolve;
+        image.onerror = reject;
+        image.src = resolveColor(source, primaryColor, secondaryColor);
+    });
+
+    const canvasWidth = ctx.canvas.width;
+    const canvasHeight = ctx.canvas.height;
+    const imageWidth = image.naturalWidth || image.width;
+    const imageHeight = image.naturalHeight || image.height;
+    if (!imageWidth || !imageHeight) {
+        return;
+    }
+
+    const widthRatio = canvasWidth / imageWidth;
+    const heightRatio = canvasHeight / imageHeight;
+    const scale = fitMode === 'contain'
+        ? Math.min(widthRatio, heightRatio)
+        : Math.max(widthRatio, heightRatio);
+
+    const drawWidth = imageWidth * scale;
+    const drawHeight = imageHeight * scale;
+    const drawX = (canvasWidth - drawWidth) / 2;
+    const drawY = (canvasHeight - drawHeight) / 2;
+
+    ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
 }
 
 function drawLayer(ctx, layer, primaryColor, secondaryColor) {
@@ -74,6 +113,25 @@ function drawLayer(ctx, layer, primaryColor, secondaryColor) {
             ctx.lineWidth = layer.stroke_width ?? 1;
             ctx.stroke();
         }
+    } else if (layer.type === 'polygon') {
+        const points = Array.isArray(layer.points) ? layer.points : [];
+        if (points.length >= 3) {
+            ctx.beginPath();
+            ctx.moveTo(points[0].x ?? 0, points[0].y ?? 0);
+            for (let i = 1; i < points.length; i += 1) {
+                ctx.lineTo(points[i].x ?? 0, points[i].y ?? 0);
+            }
+            ctx.closePath();
+            if (fill && fill !== 'none') {
+                ctx.fillStyle = fill;
+                ctx.fill();
+            }
+            if (stroke) {
+                ctx.strokeStyle = stroke;
+                ctx.lineWidth = layer.stroke_width ?? 1;
+                ctx.stroke();
+            }
+        }
     } else if (layer.type === 'text') {
         ctx.fillStyle = color || '#000000';
         const size = layer.font_size ?? 20;
@@ -88,7 +146,7 @@ function drawLayer(ctx, layer, primaryColor, secondaryColor) {
     ctx.globalAlpha = 1;
 }
 
-function drawQrZone(ctx, designJson, qrCanvas = null) {
+function drawQrZone(ctx, designJson, qrCanvas = null, showPlaceholder = false) {
     const zone = designJson?.qr_zone;
     if (!zone) {
         return;
@@ -104,6 +162,10 @@ function drawQrZone(ctx, designJson, qrCanvas = null) {
         return;
     }
 
+    if (!showPlaceholder) {
+        return;
+    }
+
     ctx.fillStyle = 'rgba(99, 102, 241, 0.08)';
     ctx.strokeStyle = 'rgba(99, 102, 241, 0.8)';
     ctx.lineWidth = 2;
@@ -113,7 +175,14 @@ function drawQrZone(ctx, designJson, qrCanvas = null) {
     ctx.setLineDash([]);
 }
 
-export async function renderFrameDesign(canvas, designJson, primaryColor = '#000000', secondaryColor = '#ffffff', qrCanvas = null) {
+export async function renderFrameDesign(
+    canvas,
+    designJson,
+    primaryColor = '#000000',
+    secondaryColor = '#ffffff',
+    qrCanvas = null,
+    options = {}
+) {
     if (!canvas || !designJson) {
         return;
     }
@@ -125,6 +194,14 @@ export async function renderFrameDesign(canvas, designJson, primaryColor = '#000
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = resolveColor(designJson.background || '#ffffff', primaryColor, secondaryColor);
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (designJson.background_image) {
+        const fitMode = designJson.background_image_fit === 'contain' ? 'contain' : 'cover';
+        try {
+            await drawBackgroundImage(ctx, designJson.background_image, fitMode, primaryColor, secondaryColor);
+        } catch (error) {
+            console.warn('Failed to draw background image:', error);
+        }
+    }
 
     const layers = Array.isArray(designJson.layers) ? [...designJson.layers] : [];
     layers.sort((a, b) => (a.z_index ?? 0) - (b.z_index ?? 0));
@@ -141,7 +218,8 @@ export async function renderFrameDesign(canvas, designJson, primaryColor = '#000
         drawLayer(ctx, layer, primaryColor, secondaryColor);
     }
 
-    drawQrZone(ctx, designJson, qrCanvas);
+    const showQrPlaceholder = !!options.showQrPlaceholder;
+    drawQrZone(ctx, designJson, qrCanvas, showQrPlaceholder);
 }
 
 window.renderFrameDesign = renderFrameDesign;
