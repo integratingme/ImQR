@@ -1,0 +1,331 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { 
+  Square, Circle, Type, QrCode, Layers, Trash2, 
+  Plus, Palette, Save, Maximize2, MousePointer2, 
+  Download, LayoutTemplate, Copy, Loader2, Check
+} from 'lucide-react';
+
+const App = () => {
+  // Mock javni template-i
+  const publicTemplates = [
+    { name: "Restoran Menu", color: "#166534", elements: [
+      { id: 't1', type: 'shape', variant: 'rect', x: 20, y: 20, w: 360, h: 460, color: '#166534', borderRadius: 15 },
+      { id: 't2', type: 'qr-frame', x: 100, y: 150, w: 200, h: 200, color: '#ffffff', borderRadius: 20 },
+      { id: 't3', type: 'text', x: 80, y: 80, text: 'SCAN FOR MENU', fontSize: 24, color: '#ffffff', fontWeight: 'bold' }
+    ]},
+    { name: "Modern Business", color: "#1e1b4b", elements: [
+      { id: 'b1', type: 'shape', variant: 'rect', x: 0, y: 0, w: 400, h: 500, color: '#1e1b4b', borderRadius: 0 },
+      { id: 'b2', type: 'qr-frame', x: 125, y: 300, w: 150, h: 150, color: '#ffffff', borderRadius: 10 },
+      { id: 'b3', type: 'text', x: 50, y: 100, text: 'CONNECT WITH US', fontSize: 32, color: '#ffffff', fontWeight: 'bold' }
+    ]}
+  ];
+
+  const [elements, setElements] = useState(publicTemplates[0].elements);
+  const [selectedId, setSelectedId] = useState(null);
+  const [activeTab, setActiveTab] = useState('templates');
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  
+  // Drag, Resize & State
+  const [interaction, setInteraction] = useState({ type: null, elementId: null, startPos: { x: 0, y: 0 }, startSize: { w: 0, h: 0 } });
+  const canvasRef = useRef(null);
+  const selectedElement = elements.find(el => el.id === selectedId);
+
+  // --- LARAVEL API INTEGRACIJA ---
+  const handleSaveToLaravel = async () => {
+    setIsSaving(true);
+    try {
+      // Ovdje Laravel API endpoint
+      const response = await fetch('/api/templates', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+        },
+        body: JSON.stringify({
+          name: "Moj QR Template",
+          elements: elements
+        })
+      });
+
+      if (response.ok) {
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 3000);
+      }
+    } catch (error) {
+      console.error("Greška pri spremanju:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // --- INTERACTION LOGIC ---
+  const handleMouseDown = (e, id, type = 'drag') => {
+    e.stopPropagation();
+    setSelectedId(id);
+    const el = elements.find(item => item.id === id);
+    const canvasRect = canvasRef.current.getBoundingClientRect();
+    
+    setInteraction({
+      type: type,
+      elementId: id,
+      startPos: { x: e.clientX, y: e.clientY, elX: el.x, elY: el.y },
+      startSize: { w: el.w, h: el.h }
+    });
+  };
+
+  const handleMouseMove = (e) => {
+    if (!interaction.type || !interaction.elementId) return;
+
+    const dx = e.clientX - interaction.startPos.x;
+    const dy = e.clientY - interaction.startPos.y;
+
+    setElements(prev => prev.map(el => {
+      if (el.id !== interaction.elementId) return el;
+
+      if (interaction.type === 'drag') {
+        return { ...el, x: Math.round(interaction.startPos.elX + dx), y: Math.round(interaction.startPos.elY + dy) };
+      }
+      
+      if (interaction.type === 'resize') {
+        return { 
+          ...el, 
+          w: Math.max(30, Math.round(interaction.startSize.w + dx)), 
+          h: Math.max(30, Math.round(interaction.startSize.h + dy)) 
+        };
+      }
+      return el;
+    }));
+  };
+
+  const handleMouseUp = () => setInteraction({ type: null, elementId: null, startPos: { x: 0, y: 0 }, startSize: { w: 0, h: 0 } });
+
+  useEffect(() => {
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [interaction]);
+
+  // --- ACTIONS ---
+  const addElement = (type, variant = null) => {
+    const newId = Date.now().toString();
+    const newEl = {
+      id: newId,
+      type, variant,
+      x: 100, y: 100,
+      w: type === 'text' ? null : 150,
+      h: type === 'text' ? null : 150,
+      color: type === 'qr-frame' ? '#ffffff' : '#4f46e5',
+      text: type === 'text' ? 'Novi Tekst' : null,
+      fontSize: type === 'text' ? 24 : null,
+      borderRadius: 10,
+      fontWeight: 'bold'
+    };
+    setElements([...elements, newEl]);
+    setSelectedId(newId);
+  };
+
+  const loadTemplate = (template) => {
+    setElements(template.elements.map(el => ({...el, id: Math.random().toString()})));
+    setSelectedId(null);
+  };
+
+  // --- RENDER ---
+  const renderElement = (el) => {
+    const isSelected = selectedId === el.id;
+    const commonStyle = {
+      position: 'absolute',
+      left: `${el.x}px`,
+      top: `${el.y}px`,
+      cursor: interaction.type === 'drag' ? 'grabbing' : 'grab',
+      border: isSelected ? '2px solid #6366f1' : '1px solid transparent',
+      zIndex: isSelected ? 50 : 10,
+      userSelect: 'none',
+      boxSizing: 'border-box'
+    };
+
+    const resizeHandle = isSelected && el.type !== 'text' && (
+      <div 
+        onMouseDown={(e) => handleMouseDown(e, el.id, 'resize')}
+        className="absolute -right-2 -bottom-2 w-4 h-4 bg-indigo-600 border-2 border-white rounded-full cursor-se-resize z-[60]"
+      />
+    );
+
+    if (el.type === 'shape') {
+      return (
+        <div key={el.id} onMouseDown={(e) => handleMouseDown(e, el.id)} style={{ 
+          ...commonStyle, width: `${el.w}px`, height: `${el.h}px`, backgroundColor: el.color,
+          borderRadius: el.variant === 'circle' ? '50%' : `${el.borderRadius}px`
+        }}>
+          {resizeHandle}
+        </div>
+      );
+    }
+
+    if (el.type === 'qr-frame') {
+      return (
+        <div key={el.id} onMouseDown={(e) => handleMouseDown(e, el.id)} className="flex flex-col items-center justify-center bg-white shadow-sm border border-gray-100" style={{ 
+          ...commonStyle, width: `${el.w}px`, height: `${el.h}px`, borderRadius: `${el.borderRadius}px`
+        }}>
+          <QrCode size={el.w * 0.6} className="text-gray-200" />
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+             <span className="bg-indigo-50 px-2 py-1 rounded text-[8px] font-bold text-indigo-400 uppercase tracking-tighter">QR Zona</span>
+          </div>
+          {resizeHandle}
+        </div>
+      );
+    }
+
+    if (el.type === 'text') {
+      return (
+        <div key={el.id} onMouseDown={(e) => handleMouseDown(e, el.id)} style={{ 
+          ...commonStyle, fontSize: `${el.fontSize}px`, color: el.color, fontWeight: el.fontWeight, whiteSpace: 'nowrap'
+        }}>
+          {el.text}
+        </div>
+      );
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-screen bg-[#0f0f0f] text-white overflow-hidden font-sans">
+      {/* Header */}
+      <header className="h-16 border-b border-white/5 bg-[#141414] flex items-center justify-between px-6 z-50">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/20"><QrCode size={24}/></div>
+          <div>
+            <h1 className="text-sm font-bold tracking-tight">QR FRAME STUDIO</h1>
+            <p className="text-[10px] text-gray-500 uppercase tracking-widest font-semibold">Laravel Integrated</p>
+          </div>
+        </div>
+
+        {selectedElement && (
+          <div className="flex items-center gap-3 bg-[#1e1e1e] p-1.5 rounded-full border border-white/10 shadow-xl animate-in fade-in zoom-in duration-200">
+             <div className="flex items-center gap-2 px-3 border-r border-white/10">
+                <input type="color" value={selectedElement.color} onChange={(e) => setElements(prev => prev.map(item => item.id === selectedId ? {...item, color: e.target.value} : item))} className="w-6 h-6 rounded-full cursor-pointer bg-transparent border-none"/>
+                <span className="text-[10px] font-mono text-gray-400">{selectedElement.color}</span>
+             </div>
+             {selectedElement.type === 'text' && (
+               <input type="number" value={selectedElement.fontSize} onChange={(e) => setElements(prev => prev.map(item => item.id === selectedId ? {...item, fontSize: parseInt(e.target.value)} : item))} className="w-12 bg-black/40 border border-white/5 rounded text-xs px-2 py-1 outline-none focus:border-indigo-500"/>
+             )}
+             <button onClick={() => setElements(elements.filter(e => e.id !== selectedId))} className="p-2 text-red-400 hover:bg-red-500/10 rounded-full transition"><Trash2 size={16}/></button>
+          </div>
+        )}
+
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={handleSaveToLaravel}
+            disabled={isSaving}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition shadow-lg ${saveSuccess ? 'bg-green-600' : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-600/20'}`}
+          >
+            {isSaving ? <Loader2 size={14} className="animate-spin"/> : saveSuccess ? <Check size={14}/> : <Save size={14}/>} 
+            {saveSuccess ? 'SPREMLJENO' : 'SPREMI U LARAVEL'}
+          </button>
+        </div>
+      </header>
+
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left Nav */}
+        <aside className="w-20 bg-[#141414] border-r border-white/5 flex flex-col items-center py-8 gap-8">
+          <button onClick={() => setActiveTab('templates')} className={`p-3 rounded-2xl transition-all ${activeTab === 'templates' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-gray-500 hover:text-gray-300'}`} title="Template-i"><LayoutTemplate size={24}/></button>
+          <button onClick={() => setActiveTab('elements')} className={`p-3 rounded-2xl transition-all ${activeTab === 'elements' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-gray-500 hover:text-gray-300'}`} title="Oblici"><Square size={24}/></button>
+          <button onClick={() => setActiveTab('text')} className={`p-3 rounded-2xl transition-all ${activeTab === 'text' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-gray-500 hover:text-gray-300'}`} title="Tekst"><Type size={24}/></button>
+          <button onClick={() => setActiveTab('qr')} className={`p-3 rounded-2xl transition-all ${activeTab === 'qr' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-gray-500 hover:text-gray-300'}`} title="QR Zona"><QrCode size={24}/></button>
+        </aside>
+
+        {/* Panel Content */}
+        <aside className="w-80 bg-[#1a1a1a] border-r border-white/5 p-6 overflow-y-auto">
+           {activeTab === 'templates' && (
+             <div className="space-y-4">
+               <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-6">Javni Template-i</h3>
+               {publicTemplates.map((t, idx) => (
+                 <div key={idx} onClick={() => loadTemplate(t)} className="group cursor-pointer bg-[#252525] border border-white/5 p-4 rounded-xl hover:border-indigo-500/50 transition-all active:scale-95">
+                    <div className="w-full h-24 rounded-lg mb-3 flex items-center justify-center text-xs font-bold" style={{backgroundColor: t.color}}>
+                       PREVIEW
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-semibold">{t.name}</span>
+                      <Plus size={16} className="text-gray-500 group-hover:text-white transition"/>
+                    </div>
+                 </div>
+               ))}
+             </div>
+           )}
+
+           {activeTab === 'elements' && (
+             <div className="space-y-6">
+               <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-6">Oblici</h3>
+               <div className="grid grid-cols-2 gap-4">
+                 <button onClick={() => addElement('shape', 'rect')} className="aspect-square bg-[#252525] rounded-xl flex flex-col items-center justify-center hover:bg-[#2d2d2d] border border-white/5 hover:border-white/10 transition group">
+                   <div className="w-10 h-10 border-2 border-indigo-400 rounded group-hover:bg-indigo-400/10 transition"></div>
+                   <span className="text-[10px] mt-3 font-bold text-gray-400 group-hover:text-white uppercase tracking-tighter">Kvadrat</span>
+                 </button>
+                 <button onClick={() => addElement('shape', 'circle')} className="aspect-square bg-[#252525] rounded-xl flex flex-col items-center justify-center hover:bg-[#2d2d2d] border border-white/5 hover:border-white/10 transition group">
+                   <div className="w-10 h-10 border-2 border-indigo-400 rounded-full group-hover:bg-indigo-400/10 transition"></div>
+                   <span className="text-[10px] mt-3 font-bold text-gray-400 group-hover:text-white uppercase tracking-tighter">Krug</span>
+                 </button>
+               </div>
+             </div>
+           )}
+
+           {activeTab === 'qr' && (
+             <div className="space-y-4">
+                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-6">QR Zona</h3>
+                <div className="bg-indigo-500/10 border border-indigo-500/20 p-4 rounded-xl mb-4">
+                  <p className="text-[11px] text-indigo-300 leading-relaxed font-medium">Postavite jedan ili više QR okvira. Ovdje će biti umetnut stvarni QR kod prilikom generisanja slike.</p>
+                </div>
+                <button onClick={() => addElement('qr-frame')} className="w-full py-8 border-2 border-dashed border-indigo-500/30 rounded-xl bg-indigo-500/5 hover:bg-indigo-500/10 flex flex-col items-center gap-3 transition-all group">
+                   <QrCode size={40} className="text-indigo-400 group-hover:scale-110 transition"/>
+                   <span className="text-xs font-bold text-indigo-300">DODAJ NOVI QR OKVIR</span>
+                </button>
+             </div>
+           )}
+
+           {activeTab === 'text' && (
+             <div className="space-y-4">
+               <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-6">Tekstualni Elementi</h3>
+               <button onClick={() => addElement('text')} className="w-full py-4 bg-[#252525] hover:bg-[#2d2d2d] border border-white/5 rounded-xl font-bold text-lg transition active:scale-95 shadow-lg">Dodaj Naslov</button>
+               <button onClick={() => addElement('text')} className="w-full py-3 bg-[#252525] hover:bg-[#2d2d2d] border border-white/5 rounded-xl text-sm font-medium text-gray-400 hover:text-white transition active:scale-95">Dodaj podnaslov</button>
+             </div>
+           )}
+        </aside>
+
+        {/* Workspace */}
+        <main className="flex-1 bg-[#111111] overflow-auto flex items-center justify-center p-12 relative" onClick={() => setSelectedId(null)}>
+          <div 
+            ref={canvasRef}
+            className="bg-white shadow-[0_40px_100px_rgba(0,0,0,0.6)] relative overflow-hidden transition-all duration-300"
+            style={{ width: '400px', height: '500px' }}
+          >
+            {elements.map(renderElement)}
+          </div>
+
+          {/* Footer Info */}
+          <div className="absolute bottom-8 right-8 flex items-center gap-6 bg-[#1a1a1a] px-6 py-3 rounded-2xl border border-white/5 shadow-2xl">
+             <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Laravel API Online</span>
+             </div>
+             <div className="w-px h-4 bg-white/10"></div>
+             <div className="flex items-center gap-4">
+                <div className="flex flex-col">
+                  <span className="text-[8px] text-gray-500 uppercase font-bold">Rezolucija</span>
+                  <span className="text-[10px] font-mono font-bold">400x500 (1x)</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[8px] text-gray-500 uppercase font-bold">Elementi</span>
+                  <span className="text-[10px] font-mono font-bold">{elements.length}</span>
+                </div>
+             </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+};
+
+export default App;

@@ -95,4 +95,12 @@ class User extends Authenticatable
     {
         return $this->hasMany(\App\Models\QrCode::class);
     }
+
+    /**
+     * Get frame designs owned by this user.
+     */
+    public function frameDesigns()
+    {
+        return $this->hasMany(\App\Models\FrameDesign::class);
+    }
 }

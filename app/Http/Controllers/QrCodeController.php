@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreQrCodeRequest;
+use App\Models\FrameDesign;
 use App\Models\QrCode;
 use App\Services\QrCodeService;
 use GuzzleHttp\TransferStats;
@@ -63,8 +64,16 @@ class QrCodeController extends Controller
 
         $reviewUsIcons = $this->getReviewUsPredefinedIcons();
         $recaptchaSiteKey = config('services.recaptcha.enabled') ? config('services.recaptcha.site_key') : null;
+        $frameDesigns = auth()->check()
+            ? FrameDesign::query()
+                ->where('is_template', true)
+                ->orWhere('user_id', auth()->id())
+                ->orderByDesc('is_template')
+                ->orderByDesc('updated_at')
+                ->get(['id', 'name', 'thumbnail_url', 'design_json', 'svg_content', 'is_template'])
+            : collect();
 
-        return view('qr-codes.create', compact('type', 'reviewUsIcons', 'recaptchaSiteKey'));
+        return view('qr-codes.create', compact('type', 'reviewUsIcons', 'recaptchaSiteKey', 'frameDesigns'));
     }
 
     /**
@@ -215,6 +224,7 @@ class QrCodeController extends Controller
             'corner_style' => $request->input('corner_style', 'square'),
             'corner_dot_style' => $request->input('corner_dot_style', 'square'),
             'frame' => $request->input('frame', 'none'),
+            'frame_design_id' => $request->input('frame') === 'custom' ? (int) $request->input('frame_design_id') : null,
             'logo_url' => $requestedLogo,
         ];
         
@@ -457,8 +467,14 @@ class QrCodeController extends Controller
         $type = $qrCode->type;
         $reviewUsIcons = $this->getReviewUsPredefinedIcons();
         $recaptchaSiteKey = config('services.recaptcha.enabled') ? config('services.recaptcha.site_key') : null;
+        $frameDesigns = FrameDesign::query()
+            ->where('is_template', true)
+            ->orWhere('user_id', auth()->id())
+            ->orderByDesc('is_template')
+            ->orderByDesc('updated_at')
+            ->get(['id', 'name', 'thumbnail_url', 'design_json', 'svg_content', 'is_template']);
 
-        return view('qr-codes.create', compact('type', 'reviewUsIcons', 'recaptchaSiteKey', 'qrCode'));
+        return view('qr-codes.create', compact('type', 'reviewUsIcons', 'recaptchaSiteKey', 'qrCode', 'frameDesigns'));
     }
 
     /**
@@ -622,6 +638,9 @@ class QrCodeController extends Controller
             'corner_style' => $request->input('corner_style', $qrCode->customization['corner_style'] ?? 'square'),
             'corner_dot_style' => $request->input('corner_dot_style', $qrCode->customization['corner_dot_style'] ?? 'square'),
             'frame' => $request->input('frame', $qrCode->customization['frame'] ?? 'none'),
+            'frame_design_id' => $request->input('frame') === 'custom'
+                ? (int) $request->input('frame_design_id')
+                : null,
             'logo_url' => $requestedLogo,
         ];
         
@@ -857,12 +876,24 @@ class QrCodeController extends Controller
     public function download($id, $format = 'png')
     {
         $qrCode = QrCode::findOrFail($id);
+        $customization = $qrCode->customization ?? [];
+        $frameDesignJson = null;
+        $frameDesignSvg = null;
+        if (($customization['frame'] ?? null) === 'custom' && !empty($customization['frame_design_id'])) {
+            $frame = FrameDesign::find($customization['frame_design_id']);
+            if ($frame) {
+                $frameDesignJson = $frame->design_json;
+                $frameDesignSvg = $frame->svg_content;
+            }
+        }
         
         // Return a download page that will generate the styled QR code client-side
         // This ensures the downloaded image matches what's shown in Step 3 and history
         return view('qr-codes.download', [
             'qrCode' => $qrCode,
             'format' => $format,
+            'frameDesignJson' => $frameDesignJson,
+            'frameDesignSvg' => $frameDesignSvg,
         ]);
     }
 
@@ -914,6 +945,30 @@ class QrCodeController extends Controller
             $query->where('type', $typeFilter);
         }
         $qrCodes = $query->paginate(12)->withQueryString();
+
+        $customFrameDesigns = [];
+        if (auth()->check()) {
+            $customFrameIds = $qrCodes->getCollection()
+                ->map(fn ($qrCode) => (int) data_get($qrCode->customization, 'frame_design_id'))
+                ->filter(fn ($id) => $id > 0)
+                ->unique()
+                ->values();
+
+            if ($customFrameIds->isNotEmpty()) {
+                $customFrameDesigns = FrameDesign::query()
+                    ->whereIn('id', $customFrameIds)
+                    ->where(function ($query) {
+                        $query->where('is_template', true)
+                            ->orWhere('user_id', auth()->id());
+                    })
+                    ->get(['id', 'design_json', 'svg_content'])
+                    ->mapWithKeys(fn ($frame) => [(string) $frame->id => [
+                        'design_json' => $frame->design_json,
+                        'svg_content' => $frame->svg_content,
+                    ]])
+                    ->all();
+            }
+        }
         
         // Pass frame configuration to view
         $frameConfig = [];
@@ -926,6 +981,7 @@ class QrCodeController extends Controller
             'currentType' => $typeFilter,
             'historyTypes' => $historyTypes,
             'frameConfig' => $frameConfig,
+            'customFrameDesigns' => $customFrameDesigns,
         ]);
     }
 

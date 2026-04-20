@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\FrameDesign;
 use App\Models\QrCode;
 use App\Services\QrCodeService;
 use Illuminate\Http\Request;
@@ -44,6 +45,27 @@ class DashboardController extends Controller
 
         $qrCodes = $query->paginate(12)->withQueryString();
 
+        $customFrameIds = $qrCodes->getCollection()
+            ->map(fn ($qrCode) => (int) data_get($qrCode->customization, 'frame_design_id'))
+            ->filter(fn ($id) => $id > 0)
+            ->unique()
+            ->values();
+        $customFrameDesigns = [];
+        if ($customFrameIds->isNotEmpty()) {
+            $customFrameDesigns = FrameDesign::query()
+                ->whereIn('id', $customFrameIds)
+                ->where(function ($query) use ($user) {
+                    $query->where('is_template', true)
+                        ->orWhere('user_id', $user->id);
+                })
+                ->get(['id', 'design_json', 'svg_content'])
+                ->mapWithKeys(fn ($frame) => [(string) $frame->id => [
+                    'design_json' => $frame->design_json,
+                    'svg_content' => $frame->svg_content,
+                ]])
+                ->all();
+        }
+
         // Frame configuration for QR preview rendering
         $frameConfig = [];
         foreach (['standard-border', 'menu-qr', 'location', 'wifi', 'chat', 'coupon', 'review-us'] as $frameId) {
@@ -57,6 +79,7 @@ class DashboardController extends Controller
             'historyTypes' => $historyTypes,
             'currentType' => $typeFilter,
             'frameConfig' => $frameConfig,
+            'customFrameDesigns' => $customFrameDesigns,
         ]);
     }
 

@@ -13,6 +13,8 @@ window.recaptchaSiteKey = @json($recaptchaSiteKey);
 /* When a frame is selected, show full frame without clipping by rounded phone overlay */
 #phone-mockup-overlay-step2.frame-selected {
     border-radius: 0;
+    border: none !important;
+    background-color: transparent !important;
 }
 /* Coupon mockup card – interior uses secondary color, left/right semicircles use primary */
 .coupon-card {
@@ -596,6 +598,9 @@ window.recaptchaSiteKey = @json($recaptchaSiteKey);
                                     </button>
                                 </div>
                                 <input type="hidden" id="selected_frame" name="frame" value="{{ isset($qrCode) ? ($qrCode->customization['frame'] ?? 'none') : 'none' }}">
+                                <input type="hidden" id="selected_frame_design_id" name="frame_design_id" value="{{ isset($qrCode) ? ($qrCode->customization['frame_design_id'] ?? '') : '' }}">
+
+                                @include('qr-codes.forms.custom-frames-picker')
 
                                 <!-- Review-us frame options (visible only when this frame is selected) -->
                                 <div id="review-us-frame-options" class="hidden mt-4 p-4 border border-dark-200 rounded-xl bg-dark-50 space-y-4">
@@ -825,6 +830,8 @@ let qrCodeId = @json(isset($qrCode) ? $qrCode->id : null);
 let lastSubmittedFormFingerprint = null;
 let qrStylingInstance = null;
 const isGuest = {{ auth()->check() ? 'false' : 'true' }};
+window.customFrameDesignCache = window.customFrameDesignCache || {};
+let justCreatedCustomFrameId = null;
 
 // QR code data for editing
 @if(isset($qrCode))
@@ -1358,6 +1365,145 @@ function clearReviewFrameLogo() {
     if (currentStep === 2) updateStep2QRPreview();
 }
 
+function syncSelectedCustomFrameCardState() {
+    const selectedFrame = document.getElementById('selected_frame')?.value;
+    const selectedFrameDesignId = document.getElementById('selected_frame_design_id')?.value;
+
+    document.querySelectorAll('.custom-frame-option').forEach((btn) => {
+        const isActive = selectedFrame === 'custom' && selectedFrameDesignId && btn.dataset.frameDesignId === String(selectedFrameDesignId);
+        btn.classList.toggle('border-primary-500', Boolean(isActive));
+        btn.classList.toggle('border-dark-200', !isActive);
+
+        const shouldShowJustCreated = Boolean(
+            isActive &&
+            justCreatedCustomFrameId &&
+            btn.dataset.frameDesignId === String(justCreatedCustomFrameId)
+        );
+        const existingBadge = btn.querySelector('.just-created-badge');
+        if (shouldShowJustCreated && !existingBadge) {
+            const badge = document.createElement('span');
+            badge.className = 'just-created-badge absolute top-1 left-1 z-10 rounded-full bg-emerald-500/90 px-2 py-0.5 text-[10px] font-semibold text-white';
+            badge.textContent = 'Just created';
+            btn.appendChild(badge);
+        } else if (!shouldShowJustCreated && existingBadge) {
+            existingBadge.remove();
+        }
+    });
+}
+
+function updateCustomFramesEmptyState() {
+    const grid = document.getElementById('custom-frames-grid');
+    const empty = document.getElementById('custom-frames-empty');
+    const loading = document.getElementById('custom-frames-loading');
+    if (!grid || !empty) return;
+
+    const hasCards = grid.querySelectorAll('.custom-frame-option').length > 0;
+    grid.classList.toggle('hidden', !hasCards);
+    empty.classList.toggle('hidden', hasCards);
+    if (loading) {
+        loading.classList.add('hidden');
+    }
+}
+
+function createCustomFrameOptionCard(frame) {
+    const card = document.createElement('div');
+    card.setAttribute('role', 'button');
+    card.setAttribute('tabindex', '0');
+    card.className = 'custom-frame-option relative border-2 border-dark-200 hover:border-primary-500 rounded-lg p-2 text-left cursor-pointer';
+    card.dataset.frameDesignId = String(frame.id);
+    card.onclick = () => selectCustomFrame(card, frame.id);
+    card.onkeydown = (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            selectCustomFrame(card, frame.id);
+        }
+    };
+
+    if (!frame.is_template) {
+        const deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
+        deleteBtn.className = 'absolute top-1 right-1 z-10 h-6 w-6 rounded-full bg-red-500 hover:bg-red-600 text-white text-xs font-bold flex items-center justify-center';
+        deleteBtn.title = 'Delete frame';
+        deleteBtn.textContent = '×';
+        deleteBtn.onclick = (event) => deleteCustomFrame(event, frame.id);
+        card.appendChild(deleteBtn);
+    }
+
+    if (frame.thumbnail_url) {
+        const image = document.createElement('img');
+        image.src = frame.thumbnail_url;
+        image.alt = frame.name || 'Custom frame';
+        image.className = 'w-full h-20 object-contain border border-dark-200 rounded';
+        card.appendChild(image);
+    } else {
+        const placeholder = document.createElement('div');
+        placeholder.className = 'w-full h-20 border border-dark-200 rounded bg-white flex items-center justify-center text-xs text-dark-400';
+        placeholder.textContent = 'No preview';
+        card.appendChild(placeholder);
+    }
+
+    const name = document.createElement('p');
+    name.className = 'mt-2 text-xs text-dark-500 truncate';
+    name.textContent = frame.name || 'Untitled frame';
+    card.appendChild(name);
+
+    if (frame.is_template) {
+        const templateLabel = document.createElement('p');
+        templateLabel.className = 'text-[10px] text-primary-600';
+        templateLabel.textContent = 'Template';
+        card.appendChild(templateLabel);
+    }
+
+    return card;
+}
+
+async function loadCustomFrames() {
+    const grid = document.getElementById('custom-frames-grid');
+    const loading = document.getElementById('custom-frames-loading');
+    const empty = document.getElementById('custom-frames-empty');
+    if (!grid || isGuest) return;
+
+    if (loading) loading.classList.remove('hidden');
+    if (empty) empty.classList.add('hidden');
+
+    try {
+        const response = await fetch('/frames', {
+            headers: { 'Accept': 'application/json' }
+        });
+        if (!response.ok) {
+            throw new Error('Failed to load custom frames');
+        }
+
+        const payload = await response.json();
+        const frames = Array.isArray(payload) ? payload : (Array.isArray(payload?.frames) ? payload.frames : []);
+        grid.innerHTML = '';
+
+        for (const frame of frames) {
+            window.customFrameDesignCache[String(frame.id)] = {
+                design_json: frame.design_json,
+                svg_content: frame.svg_content,
+            };
+            grid.appendChild(createCustomFrameOptionCard(frame));
+        }
+
+        updateCustomFramesEmptyState();
+        syncSelectedCustomFrameCardState();
+        const selectedFrameValue = document.getElementById('selected_frame')?.value;
+        const selectedFrameDesignValue = document.getElementById('selected_frame_design_id')?.value;
+        if (selectedFrameValue === 'custom' && selectedFrameDesignValue) {
+            applyCustomFrameQrColors(selectedFrameDesignValue, { skipPreview: true });
+        }
+    } catch (error) {
+        console.error('Custom frames load failed:', error);
+        if (loading) {
+            loading.textContent = 'Could not load custom frames.';
+        }
+        if (empty) {
+            empty.classList.remove('hidden');
+        }
+    }
+}
+
 // Frame selection
 function selectFrame(button, frameValue) {
     document.querySelectorAll('.frame-option').forEach(btn => {
@@ -1367,11 +1513,126 @@ function selectFrame(button, frameValue) {
     button.classList.remove('border-dark-200');
     button.classList.add('border-primary-500');
     document.getElementById('selected_frame').value = frameValue;
+    const frameDesignInput = document.getElementById('selected_frame_design_id');
+    if (frameDesignInput && frameValue !== 'custom') {
+        frameDesignInput.value = '';
+    }
+    syncSelectedCustomFrameCardState();
     const reviewUsOpts = document.getElementById('review-us-frame-options');
     if (reviewUsOpts) {
         reviewUsOpts.classList.toggle('hidden', frameValue !== 'review-us');
     }
     updateStep2QRPreview();
+}
+
+function applyCustomFrameQrColors(frameDesignId, options = {}) {
+    if (!frameDesignId) return;
+    const frame = window.customFrameDesignCache?.[String(frameDesignId)];
+    const design = frame?.design_json;
+    if (!design) return;
+
+    const hasPrimary = typeof design.qr_primary_color === 'string' && design.qr_primary_color.trim() !== '';
+    const hasSecondary = typeof design.qr_secondary_color === 'string' && design.qr_secondary_color.trim() !== '';
+    if (!hasPrimary && !hasSecondary) return;
+
+    const normalizedPrimary = hasPrimary ? normalizeHexColor(design.qr_primary_color) : null;
+    const normalizedSecondary = hasSecondary ? normalizeHexColor(design.qr_secondary_color) : null;
+    const shouldSkipPreview = !!options.skipPreview;
+
+    const primaryColorInput = document.getElementById('primary_color');
+    const primaryColorHex = document.getElementById('primary_color_hex');
+    const secondaryColorInput = document.getElementById('secondary_color');
+    const secondaryColorHex = document.getElementById('secondary_color_hex');
+
+    if (normalizedPrimary && primaryColorInput) primaryColorInput.value = normalizedPrimary;
+    if (normalizedPrimary && primaryColorHex) primaryColorHex.value = normalizedPrimary;
+    if (normalizedSecondary && secondaryColorInput) secondaryColorInput.value = normalizedSecondary;
+    if (normalizedSecondary && secondaryColorHex) secondaryColorHex.value = normalizedSecondary;
+
+    if (!shouldSkipPreview) {
+        updateStep2QRPreview();
+    }
+}
+
+function selectCustomFrame(button, frameDesignId) {
+    document.querySelectorAll('.frame-option').forEach(btn => {
+        btn.classList.remove('border-primary-500', 'border-primary-600');
+        btn.classList.add('border-dark-200');
+    });
+
+    const selectedFrame = document.getElementById('selected_frame');
+    const selectedFrameDesign = document.getElementById('selected_frame_design_id');
+    if (selectedFrame) {
+        selectedFrame.value = 'custom';
+    }
+    if (selectedFrameDesign) {
+        selectedFrameDesign.value = String(frameDesignId);
+    }
+    syncSelectedCustomFrameCardState();
+    const reviewUsOpts = document.getElementById('review-us-frame-options');
+    if (reviewUsOpts) {
+        reviewUsOpts.classList.add('hidden');
+    }
+
+    applyCustomFrameQrColors(frameDesignId, { skipPreview: true });
+    updateStep2QRPreview();
+}
+
+async function deleteCustomFrame(event, frameDesignId) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!confirm('Delete this custom frame?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/frames/${frameDesignId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            const payload = await response.json().catch(() => ({}));
+            throw new Error(payload.message || 'Delete failed');
+        }
+
+        const card = document.querySelector(`.custom-frame-option[data-frame-design-id="${frameDesignId}"]`);
+        if (card) {
+            card.remove();
+        }
+        updateCustomFramesEmptyState();
+
+        if (window.customFrameDesignCache) {
+            delete window.customFrameDesignCache[String(frameDesignId)];
+        }
+        if (justCreatedCustomFrameId === String(frameDesignId)) {
+            justCreatedCustomFrameId = null;
+        }
+
+        const selectedFrame = document.getElementById('selected_frame');
+        const selectedFrameDesign = document.getElementById('selected_frame_design_id');
+        if (selectedFrame?.value === 'custom' && selectedFrameDesign?.value === String(frameDesignId)) {
+            selectedFrame.value = 'none';
+            selectedFrameDesign.value = '';
+            const noFrameBtn = document.querySelector('.frame-option[data-frame="none"]');
+            if (noFrameBtn) {
+                document.querySelectorAll('.frame-option').forEach(btn => {
+                    btn.classList.remove('border-primary-500', 'border-primary-600');
+                    btn.classList.add('border-dark-200');
+                });
+                noFrameBtn.classList.remove('border-dark-200');
+                noFrameBtn.classList.add('border-primary-500');
+            }
+            updateStep2QRPreview();
+        }
+        syncSelectedCustomFrameCardState();
+    } catch (error) {
+        alert(error.message || 'Could not delete frame.');
+    }
 }
 
 // Corner dot style selection
@@ -2714,6 +2975,70 @@ async function getReviewUsFrameUrl() {
     return URL.createObjectURL(blob);
 }
 
+function getSelectedCustomFrameDesign() {
+    const id = document.getElementById('selected_frame_design_id')?.value;
+    if (!id) return null;
+    return window.customFrameDesignCache?.[String(id)] || null;
+}
+
+function buildCustomFrameSvgUrl(svgContent, primaryColor, secondaryColor) {
+    if (!svgContent) return null;
+    const themed = svgContent
+        .replaceAll('#PRIMARY#', primaryColor)
+        .replaceAll('#SECONDARY#', secondaryColor);
+    return URL.createObjectURL(new Blob([themed], { type: 'image/svg+xml' }));
+}
+
+async function buildCustomFrameWrapper(qrContainer, customFrame, primaryColor, secondaryColor) {
+    if (!customFrame || (!customFrame.svg_content && !customFrame.design_json)) {
+        return null;
+    }
+
+    const designJson = customFrame.design_json || {
+        canvas_width: 400,
+        canvas_height: 500,
+        qr_zone: { x_pct: 5, y_pct: 4, w_pct: 90, h_pct: 72 }
+    };
+    const wrapper = document.createElement('div');
+    wrapper.className = 'frame-wrapper relative mx-auto';
+    wrapper.style.width = (designJson.canvas_width || 400) + 'px';
+    wrapper.style.height = (designJson.canvas_height || 500) + 'px';
+
+    // Prefer design_json renderer so preview matches frame builder exactly.
+    if (window.renderFrameDesign && customFrame.design_json) {
+        const frameCanvas = document.createElement('canvas');
+        frameCanvas.className = 'w-full h-full block';
+        await window.renderFrameDesign(
+            frameCanvas,
+            designJson,
+            primaryColor,
+            secondaryColor,
+            null,
+            { showQrPlaceholder: false }
+        );
+        wrapper.appendChild(frameCanvas);
+    } else if (customFrame.svg_content) {
+        const frameImg = document.createElement('img');
+        frameImg.className = 'w-full h-full block object-contain';
+        frameImg.alt = 'Custom frame';
+        frameImg.src = buildCustomFrameSvgUrl(customFrame.svg_content, primaryColor, secondaryColor);
+        wrapper.appendChild(frameImg);
+    }
+
+    const zone = designJson.qr_zone || { x_pct: 5, y_pct: 4, w_pct: 90, h_pct: 72 };
+    const qrInFrame = document.createElement('div');
+    qrInFrame.className = 'qr-in-frame absolute flex items-center justify-center';
+    qrInFrame.style.left = zone.x_pct + '%';
+    qrInFrame.style.top = zone.y_pct + '%';
+    qrInFrame.style.width = zone.w_pct + '%';
+    qrInFrame.style.height = zone.h_pct + '%';
+
+    wrapper.appendChild(qrInFrame);
+    qrContainer.innerHTML = '';
+    qrContainer.appendChild(wrapper);
+    return qrInFrame;
+}
+
 // Update Step 2 QR code preview with customization using qr-code-styling
 async function updateStep2QRPreview() {
     if (currentStep !== 2) return;
@@ -2753,7 +3078,16 @@ async function updateStep2QRPreview() {
     let appendTarget = qrContainer;
     const QR_HOLE_SIZE = 260;
     const qrDisplaySize = (frameId && frameId !== 'none') ? 220 : QR_HOLE_SIZE;
-    if (frameId && frameId !== 'none' && FRAME_CONFIG[frameId]) {
+    if (frameId === 'custom') {
+        const customFrame = getSelectedCustomFrameDesign();
+        if (customFrame) {
+            const customTarget = await buildCustomFrameWrapper(qrContainer, customFrame, primaryColor, secondaryColor);
+            if (customTarget) {
+                appendTarget = customTarget;
+                qrStylingInstance = null;
+            }
+        }
+    } else if (frameId && frameId !== 'none' && FRAME_CONFIG[frameId]) {
         const cfg = FRAME_CONFIG[frameId];
         if (cfg.url && cfg.qrLeft !== undefined) {
             // Full-frame layout: frame image + QR over the "hole" (QR drawn smaller for gap)
@@ -3707,9 +4041,100 @@ function populateStep1Fields(type, data, files) {
     }
 }
 
+async function applyFrameEditorReturnState() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('from_frame_editor') !== '1') {
+        return;
+    }
+
+    const selectedFrame = params.get('selected_frame') || 'custom';
+    const selectedFrameDesignId = params.get('selected_frame_design_id');
+    const requestedStep = Number(params.get('step') || 2);
+
+    if (selectedFrameDesignId) {
+        justCreatedCustomFrameId = String(selectedFrameDesignId);
+        const selectedFrameInput = document.getElementById('selected_frame');
+        const selectedFrameDesignInput = document.getElementById('selected_frame_design_id');
+        if (selectedFrameInput) selectedFrameInput.value = selectedFrame;
+        if (selectedFrameDesignInput) selectedFrameDesignInput.value = String(selectedFrameDesignId);
+        syncSelectedCustomFrameCardState();
+        applyCustomFrameQrColors(selectedFrameDesignId, { skipPreview: true });
+        updateStep2QRPreview();
+    }
+
+    if (requestedStep <= 2) {
+        if (currentStep === 1) {
+            await nextStep(2);
+        } else if (currentStep === 3) {
+            prevStep(2);
+            updateStep2QRPreview();
+        }
+    } else {
+        if (currentStep === 1) {
+            await nextStep(2);
+        }
+        if (currentStep === 2) {
+            await nextStep(3);
+        }
+    }
+
+    params.delete('from_frame_editor');
+    params.delete('selected_frame');
+    params.delete('selected_frame_design_id');
+    params.delete('step');
+    const cleanQuery = params.toString();
+    const cleanUrl = `${window.location.pathname}${cleanQuery ? `?${cleanQuery}` : ''}`;
+    window.history.replaceState({}, '', cleanUrl);
+}
+
+async function handleFrameEditorFinishedMessage(event) {
+    if (event.origin !== window.location.origin) {
+        return;
+    }
+    const payload = event.data || {};
+    if (payload.type !== 'frame-editor-finished' || !payload.frameId) {
+        return;
+    }
+
+    const selectedFrameInput = document.getElementById('selected_frame');
+    const selectedFrameDesignInput = document.getElementById('selected_frame_design_id');
+    justCreatedCustomFrameId = String(payload.frameId);
+    if (selectedFrameInput) selectedFrameInput.value = payload.frameMode || 'custom';
+    if (selectedFrameDesignInput) selectedFrameDesignInput.value = String(payload.frameId);
+
+    await loadCustomFrames();
+    syncSelectedCustomFrameCardState();
+    applyCustomFrameQrColors(payload.frameId, { skipPreview: true });
+    updateStep2QRPreview();
+
+    const targetStep = Number(payload.step || 2);
+    if (targetStep <= 2) {
+        if (currentStep === 1) {
+            await nextStep(2);
+        } else if (currentStep === 3) {
+            prevStep(2);
+            updateStep2QRPreview();
+        } else {
+            updateStep2QRPreview();
+        }
+    } else {
+        if (currentStep === 1) {
+            await nextStep(2);
+        }
+        if (currentStep === 2) {
+            await nextStep(3);
+        } else if (currentStep === 3) {
+            await generateStep3CustomizedQR(window.step3MenuPageUrl || null);
+        }
+    }
+}
+
 // Setup real-time validation and preview updates when page loads
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     setupRealTimeValidation();
+    window.addEventListener('message', handleFrameEditorFinishedMessage);
+    await loadCustomFrames();
+    await applyFrameEditorReturnState();
     
     // Populate form fields if editing existing QR code
     if (qrCodeId) {
@@ -3754,6 +4179,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (frameButton) {
                     frameButton.classList.add('border-primary-500', 'border-primary-600');
                     frameButton.classList.remove('border-dark-200');
+                }
+
+                if (frameValue === 'custom') {
+                    syncSelectedCustomFrameCardState();
                 }
                 
                 // Show review-us frame options if frame is review-us
@@ -5160,7 +5589,27 @@ async function generateStep3CustomizedQR(menuPageUrl) {
 
         let step3AppendTarget = qrPreviewContainer;
 
-        if (frameId && frameId !== 'none' && FRAME_CONFIG[frameId]) {
+        if (frameId === 'custom') {
+            const customFrame = getSelectedCustomFrameDesign();
+            if (customFrame) {
+                try {
+                    const customTarget = await buildCustomFrameWrapper(qrPreviewContainer, customFrame, primaryColor, secondaryColor);
+                    if (customTarget) {
+                        step3AppendTarget = customTarget;
+                    } else {
+                        qrPreviewContainer.innerHTML = '';
+                        step3AppendTarget = qrPreviewContainer;
+                    }
+                } catch (customFrameError) {
+                    console.error('Error creating custom frame for step 3:', customFrameError);
+                    qrPreviewContainer.innerHTML = '';
+                    step3AppendTarget = qrPreviewContainer;
+                }
+            } else {
+                qrPreviewContainer.innerHTML = '';
+                step3AppendTarget = qrPreviewContainer;
+            }
+        } else if (frameId && frameId !== 'none' && FRAME_CONFIG[frameId]) {
             const cfg = FRAME_CONFIG[frameId];
             if (cfg.url && cfg.qrLeft !== undefined) {
                 try {
@@ -5265,6 +5714,16 @@ function retryGeneration() {
     generateQRCode();
 }
 
+function getRenderedStep3QrCanvas() {
+    const preview = document.getElementById('qr-preview');
+    if (!preview) return null;
+    // Prefer the QR canvas inside frame hole (custom/built-in frame case).
+    const framedQrCanvas = preview.querySelector('.qr-in-frame canvas');
+    if (framedQrCanvas) return framedQrCanvas;
+    // Fallback for no-frame mode.
+    return preview.querySelector('canvas');
+}
+
 
 let pendingDownloadFormat = null;
 let guestDownloadApproved = false;
@@ -5309,10 +5768,69 @@ async function downloadQR(format) {
 
     try {
         const frameId = document.getElementById('selected_frame')?.value || 'none';
-        const hasFrame = frameId && frameId !== 'none' && FRAME_CONFIG[frameId] && FRAME_CONFIG[frameId].qrLeft !== undefined;
+        const hasSvgFrame = frameId && frameId !== 'none' && FRAME_CONFIG[frameId] && FRAME_CONFIG[frameId].qrLeft !== undefined;
+        const hasCustomFrame = frameId === 'custom' && !!getSelectedCustomFrameDesign();
 
         // When a frame is selected, download composite (frame + QR) as PNG
-        if (hasFrame && window.step3QrInstance) {
+        if ((hasSvgFrame || hasCustomFrame) && window.step3QrInstance) {
+            if (hasCustomFrame) {
+                const customFrame = getSelectedCustomFrameDesign();
+                const primaryColor = document.getElementById('primary_color')?.value || '#000000';
+                const secondaryColor = document.getElementById('secondary_color')?.value || '#FFFFFF';
+                const qrCanvas = getRenderedStep3QrCanvas();
+                if (!customFrame || !qrCanvas) {
+                    window.step3QrInstance.download({ name: `qr-code-${qrCodeId}`, extension: 'png' });
+                    return;
+                }
+
+                const designJson = customFrame.design_json || {
+                    canvas_width: 400,
+                    canvas_height: 500,
+                    qr_zone: { x_pct: 5, y_pct: 4, w_pct: 90, h_pct: 72 }
+                };
+                const outputCanvas = document.createElement('canvas');
+                outputCanvas.width = designJson.canvas_width || 400;
+                outputCanvas.height = designJson.canvas_height || 500;
+                const ctx = outputCanvas.getContext('2d');
+
+                // Prefer design_json renderer so downloaded output matches builder exactly.
+                if (window.renderFrameDesign && customFrame.design_json) {
+                    await window.renderFrameDesign(
+                        outputCanvas,
+                        designJson,
+                        primaryColor,
+                        secondaryColor,
+                        null,
+                        { showQrPlaceholder: false }
+                    );
+                } else if (customFrame.svg_content) {
+                    const frameUrl = buildCustomFrameSvgUrl(customFrame.svg_content, primaryColor, secondaryColor);
+                    await new Promise((resolve, reject) => {
+                        const image = new Image();
+                        image.crossOrigin = 'anonymous';
+                        image.onload = () => {
+                            ctx.drawImage(image, 0, 0, outputCanvas.width, outputCanvas.height);
+                            resolve();
+                        };
+                        image.onerror = reject;
+                        image.src = frameUrl;
+                    });
+                }
+
+                const zone = designJson.qr_zone || { x_pct: 5, y_pct: 4, w_pct: 90, h_pct: 72 };
+                const zoneX = (zone.x_pct / 100) * outputCanvas.width;
+                const zoneY = (zone.y_pct / 100) * outputCanvas.height;
+                const zoneW = (zone.w_pct / 100) * outputCanvas.width;
+                const zoneH = (zone.h_pct / 100) * outputCanvas.height;
+                ctx.drawImage(qrCanvas, zoneX, zoneY, zoneW, zoneH);
+
+                const link = document.createElement('a');
+                link.download = `qr-code-${qrCodeId}.png`;
+                link.href = outputCanvas.toDataURL('image/png');
+                link.click();
+                return;
+            }
+
             const cfg = FRAME_CONFIG[frameId];
             const primaryColor = document.getElementById('primary_color')?.value || '#000000';
             const secondaryColor = document.getElementById('secondary_color')?.value || '#FFFFFF';
@@ -5355,7 +5873,7 @@ async function downloadQR(format) {
             frameImg.onload = function() {
                 try {
                     ctx.drawImage(frameImg, 0, 0, totalW, totalH);
-                    const qrCanvas = document.querySelector('#qr-preview canvas');
+                    const qrCanvas = getRenderedStep3QrCanvas();
                     if (qrCanvas) {
                         ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
                     }

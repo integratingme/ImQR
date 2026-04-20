@@ -77,6 +77,8 @@
         var qrData = @json($qrCode->data);
         var colors = @json($qrCode->colors);
         var customization = @json($qrCode->customization);
+        var frameDesignJson = @json($frameDesignJson ?? null);
+        var frameDesignSvg = @json($frameDesignSvg ?? null);
         var qrType = '{{ $qrCode->type }}';
         var format = '{{ $format }}';
         var qrId = '{{ $qrCode->id }}';
@@ -186,6 +188,74 @@
             return URL.createObjectURL(blob);
         }
 
+        function getThemedCustomFrameUrl(svgContent, primaryHex, secondaryHex) {
+            if (!svgContent) return '';
+            const primary = normalizeHexColor(primaryHex);
+            const secondary = normalizeHexColor(secondaryHex);
+            const themed = svgContent
+                .replace(/#PRIMARY#/gi, primary)
+                .replace(/#SECONDARY#/gi, secondary);
+            return URL.createObjectURL(new Blob([themed], { type: 'image/svg+xml' }));
+        }
+
+        function resolveFrameColor(value, primary, secondary) {
+            if (!value || typeof value !== 'string') return value;
+            return value.replaceAll('#PRIMARY#', primary).replaceAll('#SECONDARY#', secondary);
+        }
+
+        function renderFrameDesignFromJson(canvas, design, primary, secondary) {
+            const ctx = canvas.getContext('2d');
+            canvas.width = design.canvas_width || 400;
+            canvas.height = design.canvas_height || 500;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = resolveFrameColor(design.background || '#ffffff', primary, secondary);
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const layers = Array.isArray(design.layers) ? [...design.layers] : [];
+            layers.sort((a, b) => (a.z_index || 0) - (b.z_index || 0));
+
+            for (const layer of layers) {
+                const fill = resolveFrameColor(layer.fill, primary, secondary);
+                const stroke = resolveFrameColor(layer.stroke, primary, secondary);
+                const color = resolveFrameColor(layer.color, primary, secondary);
+                ctx.globalAlpha = layer.opacity ?? 1;
+
+                if (layer.type === 'rect') {
+                    ctx.beginPath();
+                    ctx.rect(layer.x || 0, layer.y || 0, layer.width || 100, layer.height || 100);
+                    if (fill && fill !== 'none') {
+                        ctx.fillStyle = fill;
+                        ctx.fill();
+                    }
+                    if (stroke) {
+                        ctx.strokeStyle = stroke;
+                        ctx.lineWidth = layer.stroke_width || 1;
+                        ctx.stroke();
+                    }
+                } else if (layer.type === 'circle') {
+                    ctx.beginPath();
+                    ctx.arc(layer.x || 0, layer.y || 0, layer.radius || 40, 0, Math.PI * 2);
+                    if (fill && fill !== 'none') {
+                        ctx.fillStyle = fill;
+                        ctx.fill();
+                    }
+                    if (stroke) {
+                        ctx.strokeStyle = stroke;
+                        ctx.lineWidth = layer.stroke_width || 1;
+                        ctx.stroke();
+                    }
+                } else if (layer.type === 'text') {
+                    ctx.fillStyle = color || '#000000';
+                    ctx.font = `${layer.font_weight || 'normal'} ${layer.font_size || 20}px ${layer.font_family || 'Arial'}`;
+                    ctx.textAlign = layer.text_align || 'left';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(layer.text || '', layer.x || 0, layer.y || 0);
+                }
+            }
+
+            ctx.globalAlpha = 1;
+        }
+
         async function generateAndDownload() {
             if (!QRCodeStyling) {
                 alert('QR code library failed to load. Please check your connection and try again.');
@@ -248,7 +318,69 @@
             const container = document.getElementById('qr-container');
             container.innerHTML = '';
 
-            if (frameId && frameId !== 'none' && FRAME_CONFIG[frameId]) {
+            if (frameId === 'custom' && (frameDesignSvg || frameDesignJson)) {
+                const qrCodeStyling = new QRCodeStyling({
+                    width: 1000,
+                    height: 1000,
+                    type: 'canvas',
+                    data: qrContent,
+                    margin: 0,
+                    qrOptions: { errorCorrectionLevel: 'H' },
+                    dotsOptions: { color: primaryColor, type: dotsType },
+                    backgroundOptions: { color: secondaryColor },
+                    cornersSquareOptions: { type: cornersSquareType, color: primaryColor },
+                    cornersDotOptions: { type: cornersDotType, color: primaryColor },
+                    image: logoUrl || undefined,
+                    imageOptions: {
+                        hideBackgroundDots: true,
+                        imageSize: 0.4,
+                        margin: 4,
+                        crossOrigin: 'anonymous',
+                    },
+                });
+                qrCodeStyling.append(container);
+                await new Promise(resolve => setTimeout(resolve, 500));
+                const qrCanvas = container.querySelector('canvas');
+                if (!qrCanvas) {
+                    throw new Error('QR canvas render failed');
+                }
+
+                const output = document.createElement('canvas');
+                const baseDesign = frameDesignJson || { canvas_width: 400, canvas_height: 500, qr_zone: { x_pct: 5, y_pct: 4, w_pct: 90, h_pct: 72 } };
+                output.width = baseDesign.canvas_width || 400;
+                output.height = baseDesign.canvas_height || 500;
+                const outCtx = output.getContext('2d');
+
+                if (frameDesignSvg) {
+                    const frameUrl = getThemedCustomFrameUrl(frameDesignSvg, primaryColor, secondaryColor);
+                    await new Promise((resolve, reject) => {
+                        const frameImg = new Image();
+                        frameImg.crossOrigin = 'anonymous';
+                        frameImg.onload = () => {
+                            outCtx.drawImage(frameImg, 0, 0, output.width, output.height);
+                            resolve();
+                        };
+                        frameImg.onerror = reject;
+                        frameImg.src = frameUrl;
+                    });
+                } else {
+                    renderFrameDesignFromJson(output, baseDesign, primaryColor, secondaryColor);
+                }
+
+                const zone = baseDesign.qr_zone || { x_pct: 5, y_pct: 4, w_pct: 90, h_pct: 72 };
+                const x = (zone.x_pct / 100) * output.width;
+                const y = (zone.y_pct / 100) * output.height;
+                const w = (zone.w_pct / 100) * output.width;
+                const h = (zone.h_pct / 100) * output.height;
+                output.getContext('2d').drawImage(qrCanvas, x, y, w, h);
+
+                const url = output.toDataURL('image/png');
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `qr-code-${qrId}.png`;
+                a.click();
+                return;
+            } else if (frameId && frameId !== 'none' && FRAME_CONFIG[frameId]) {
                 const cfg = FRAME_CONFIG[frameId];
                 if (cfg && cfg.url) {
                     const wrapper = document.createElement('div');
