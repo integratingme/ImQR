@@ -1467,7 +1467,7 @@ async function loadCustomFrames() {
     if (empty) empty.classList.add('hidden');
 
     try {
-        const response = await fetch('/frames', {
+        const response = await fetch('{{ route('frames.index') }}', {
             headers: { 'Accept': 'application/json' }
         });
         if (!response.ok) {

@@ -248,7 +248,7 @@
 window.__FRAME_EDITOR_CONFIG__ = {
     existingFrame: @json($frame ?? null),
     storeUrl: @json(route('frames.store')),
-    updateBaseUrl: @json(url('/frames')),
+    updateBaseUrl: @json(url('/frame-designs')),
     returnTo: @json(request()->query('return_to')),
     returnStep: @json((int) request()->query('return_step', 2)),
     returnFrameMode: @json(request()->query('return_frame_mode', 'custom')),
