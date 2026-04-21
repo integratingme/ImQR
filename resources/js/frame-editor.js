@@ -8,8 +8,8 @@ function initFrameEditor() {
 
     const config = window.__FRAME_EDITOR_CONFIG__ || {};
     const existingFrame = config.existingFrame || null;
-    const storeUrl = config.storeUrl || '/frames';
-    const updateBaseUrl = config.updateBaseUrl || '/frames';
+    const storeUrl = config.storeUrl || '/frame-designs';
+    const updateBaseUrl = config.updateBaseUrl || '/frame-designs';
     const returnTo = config.returnTo || '';
     const returnStep = Number(config.returnStep || 3);
     const returnFrameMode = config.returnFrameMode || 'custom';
@@ -1626,6 +1626,21 @@ function initFrameEditor() {
         return null;
     }
 
+    function hasHeavyImagePayload(designJson) {
+        if (!designJson || typeof designJson !== 'object') {
+            return false;
+        }
+        if (typeof designJson.background_image === 'string' && designJson.background_image.startsWith('data:')) {
+            return true;
+        }
+        const layers = Array.isArray(designJson.layers) ? designJson.layers : [];
+        return layers.some((layer) => (
+            layer?.type === 'image' &&
+            typeof layer.src === 'string' &&
+            layer.src.startsWith('data:')
+        ));
+    }
+
     function syncPropertiesPanel() {
         const panel = document.getElementById('props_panel');
         const empty = document.getElementById('props_empty');
@@ -2292,44 +2307,66 @@ function initFrameEditor() {
         });
     }
 
+    async function postFrameDesignPayload(endpoint, isUpdate, csrfToken, payload) {
+        return fetch(endpoint, {
+            method: isUpdate ? 'PUT' : 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrfToken
+            },
+            body: JSON.stringify(payload)
+        });
+    }
+
     async function saveFrameDesign(options = {}) {
         const shouldFinish = !!options.finish;
         if (!saveStatus) return;
         saveStatus.textContent = 'Saving...';
         try {
             const designJson = serializeDesignJson();
-            // Background image as data URL can make svg_content very large.
-            // Keep svg only for lighter cases and rely on design_json renderer otherwise.
-            const svgContent = designJson.background_image ? null : designJsonToSvg(designJson);
-            const thumb = buildThumbnailDataUrl(previewCanvasEl);
+            const designJsonSerialized = JSON.stringify(designJson);
+            const hasImagePayload = hasHeavyImagePayload(designJson);
+
+            // Avoid huge payloads on stricter servers (e.g. client_max_body_size).
+            // For heavier frames rely on design_json renderer and skip optional blobs.
+            const svgContent = hasImagePayload ? null : designJsonToSvg(designJson);
+            const thumb = (hasImagePayload || designJsonSerialized.length > 700000)
+                ? null
+                : buildThumbnailDataUrl(previewCanvasEl);
 
             const currentFrameId = saveBtn?.dataset.frameId || existingFrame?.id || null;
             const isUpdate = !!currentFrameId;
             const endpoint = isUpdate ? `${updateBaseUrl}/${currentFrameId}` : storeUrl;
-
-            const response = await fetch(endpoint, {
-                method: isUpdate ? 'PUT' : 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken
-                },
-                body: JSON.stringify({
-                    name: document.getElementById('frame_name')?.value || 'My Frame',
-                    design_json: designJson,
-                    svg_content: svgContent,
-                    thumbnail_data_url: thumb,
-                })
+            const basePayload = {
+                name: document.getElementById('frame_name')?.value || 'My Frame',
+                design_json: designJson,
+            };
+            let response = await postFrameDesignPayload(endpoint, isUpdate, csrfToken, {
+                ...basePayload,
+                svg_content: svgContent,
+                thumbnail_data_url: thumb,
             });
+
+            // Some production proxies enforce tight payload limits.
+            // Retry with minimum required payload so Finish works like predefined frames.
+            if (response.status === 413) {
+                saveStatus.textContent = 'Payload too large, retrying without thumbnail...';
+                response = await postFrameDesignPayload(endpoint, isUpdate, csrfToken, basePayload);
+            }
 
             const raw = await response.text();
             let data = null;
             try {
                 data = raw ? JSON.parse(raw) : null;
             } catch (parseError) {
-                saveStatus.textContent = response.ok
-                    ? 'Save failed: unexpected server response.'
-                    : 'Save failed. Please reduce image size and try again.';
+                if (response.status === 413) {
+                    saveStatus.textContent = 'Save failed: payload too large for server.';
+                } else {
+                    saveStatus.textContent = response.ok
+                        ? 'Save failed: unexpected server response.'
+                        : 'Save failed. Please reduce image size and try again.';
+                }
                 return null;
             }
 

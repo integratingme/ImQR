@@ -49,6 +49,9 @@ Route::middleware(['auth'])->group(function () {
 Route::middleware(['auth'])->prefix('frames')->name('frames.')->group(function () {
     Route::get('/editor', [FrameDesignController::class, 'editor'])->name('editor');
     Route::get('/{frame}/edit', [FrameDesignController::class, 'edit'])->name('edit');
+});
+
+Route::middleware(['auth'])->prefix('frame-designs')->name('frames.')->group(function () {
     Route::get('/', [FrameDesignController::class, 'index'])->name('index');
     Route::post('/', [FrameDesignController::class, 'store'])->name('store');
     Route::put('/{frame}', [FrameDesignController::class, 'update'])->name('update');
