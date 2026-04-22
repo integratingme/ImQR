@@ -99,6 +99,45 @@ class FrameDesignControllerTest extends TestCase
         $response->assertOk()->assertJsonPath('id', $template->id);
     }
 
+    public function test_user_can_delete_all_own_custom_frames_only(): void
+    {
+        $user = User::factory()->create();
+        $other = User::factory()->create();
+
+        $ownedFrame = FrameDesign::create([
+            'user_id' => $user->id,
+            'name' => 'Owned frame',
+            'design_json' => $this->validDesignJson(),
+            'is_template' => false,
+        ]);
+
+        $templateFrame = FrameDesign::create([
+            'user_id' => null,
+            'name' => 'Template frame',
+            'design_json' => $this->validDesignJson(),
+            'is_template' => true,
+        ]);
+
+        $otherUsersFrame = FrameDesign::create([
+            'user_id' => $other->id,
+            'name' => 'Other frame',
+            'design_json' => $this->validDesignJson(),
+            'is_template' => false,
+        ]);
+
+        $response = $this->actingAs($user)->deleteJson(route('frames.destroy-all'));
+
+        $response->assertOk()
+            ->assertJson([
+                'success' => true,
+            ])
+            ->assertJsonPath('deleted_count', 1);
+
+        $this->assertDatabaseMissing('frame_designs', ['id' => $ownedFrame->id]);
+        $this->assertDatabaseHas('frame_designs', ['id' => $templateFrame->id]);
+        $this->assertDatabaseHas('frame_designs', ['id' => $otherUsersFrame->id]);
+    }
+
     private function validDesignJson(): array
     {
         return [
