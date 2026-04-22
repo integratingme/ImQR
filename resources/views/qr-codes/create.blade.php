@@ -832,6 +832,7 @@ let lastSubmittedFormFingerprint = null;
 let qrStylingInstance = null;
 const isGuest = {{ auth()->check() ? 'false' : 'true' }};
 window.customFrameDesignCache = window.customFrameDesignCache || {};
+window.customFramePreviewCache = window.customFramePreviewCache || {};
 let justCreatedCustomFrameId = null;
 const frameDestroyUrlTemplate = @json(route('frames.destroy', ['frame' => '__FRAME_ID__']));
 const frameDestroyAllUrl = @json(route('frames.destroy-all'));
@@ -1480,9 +1481,10 @@ function createCustomFrameOptionCard(frame) {
         card.appendChild(image);
     } else {
         const placeholder = document.createElement('div');
-        placeholder.className = 'w-full h-20 border border-dark-200 rounded bg-white flex items-center justify-center text-xs text-dark-400';
+        placeholder.className = 'custom-frame-placeholder w-full h-20 border border-dark-200 rounded bg-white flex items-center justify-center text-xs text-dark-400';
         placeholder.textContent = 'No preview';
         card.appendChild(placeholder);
+        void hydrateCustomFramePreview(card, frame);
     }
 
     const name = document.createElement('p');
@@ -1498,6 +1500,59 @@ function createCustomFrameOptionCard(frame) {
     }
 
     return card;
+}
+
+async function hydrateCustomFramePreview(card, frame) {
+    if (!card || !frame || frame.thumbnail_url) return;
+    if (!window.renderFrameDesign || !frame.design_json) return;
+
+    const frameId = String(frame.id || '');
+    const cachedPreview = frameId ? window.customFramePreviewCache?.[frameId] : null;
+    if (cachedPreview) {
+        replaceCardPlaceholderWithImage(card, cachedPreview, frame.name);
+        return;
+    }
+
+    try {
+        const design = frame.design_json;
+        const sourceW = Math.max(1, Number(design.canvas_width) || 400);
+        const sourceH = Math.max(1, Number(design.canvas_height) || 500);
+        const targetW = 240;
+        const targetH = 160;
+        const scale = Math.min(targetW / sourceW, targetH / sourceH);
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(sourceW * scale));
+        canvas.height = Math.max(1, Math.round(sourceH * scale));
+
+        await window.renderFrameDesign(
+            canvas,
+            design,
+            normalizeHexColor(design.qr_primary_color || '#111111', '#111111'),
+            normalizeHexColor(design.qr_secondary_color || '#ffffff', '#ffffff'),
+            null,
+            { showQrPlaceholder: true }
+        );
+
+        const generated = canvas.toDataURL('image/png');
+        if (frameId) {
+            window.customFramePreviewCache[frameId] = generated;
+        }
+        replaceCardPlaceholderWithImage(card, generated, frame.name);
+    } catch (error) {
+        console.warn('Could not generate custom frame preview thumbnail', error);
+    }
+}
+
+function replaceCardPlaceholderWithImage(card, src, altName) {
+    if (!card || !src) return;
+    const placeholder = card.querySelector('.custom-frame-placeholder');
+    if (!placeholder) return;
+
+    const image = document.createElement('img');
+    image.src = src;
+    image.alt = altName || 'Custom frame';
+    image.className = 'w-full h-20 object-contain border border-dark-200 rounded';
+    placeholder.replaceWith(image);
 }
 
 async function loadCustomFrames() {
@@ -1521,6 +1576,7 @@ async function loadCustomFrames() {
         const frames = Array.isArray(payload) ? payload : (Array.isArray(payload?.frames) ? payload.frames : []);
         grid.innerHTML = '';
         window.customFrameDesignCache = {};
+        window.customFramePreviewCache = {};
 
         for (const frame of frames) {
             window.customFrameDesignCache[String(frame.id)] = {
