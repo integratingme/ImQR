@@ -3141,7 +3141,7 @@ function getFittedFrameSize(frameWidth, frameHeight, maxWidth, maxHeight) {
     };
 }
 
-async function buildCustomFrameWrapper(qrContainer, customFrame, primaryColor, secondaryColor) {
+async function buildCustomFrameWrapper(qrContainer, customFrame, primaryColor, secondaryColor, options = {}) {
     if (!customFrame || (!customFrame.svg_content && !customFrame.design_json)) {
         return null;
     }
@@ -3155,16 +3155,23 @@ async function buildCustomFrameWrapper(qrContainer, customFrame, primaryColor, s
     wrapper.className = 'frame-wrapper relative mx-auto';
     const canvasWidth = Math.max(1, Number(designJson.canvas_width) || 400);
     const canvasHeight = Math.max(1, Number(designJson.canvas_height) || 500);
-    const availableSize = getElementInnerSize(qrContainer);
-    const fallbackWidth = Math.min(canvasWidth, 260);
-    const fallbackHeight = Math.min(canvasHeight, 260);
-    const maxWidth = availableSize.width || fallbackWidth;
-    const maxHeight = availableSize.height || fallbackHeight;
-    const fitted = getFittedFrameSize(canvasWidth, canvasHeight, maxWidth, maxHeight);
-    wrapper.style.width = fitted.width + 'px';
-    wrapper.style.height = fitted.height + 'px';
-    wrapper.style.maxWidth = '100%';
-    wrapper.style.maxHeight = '100%';
+    const shouldFitToContainer = options.fitToContainer !== false;
+
+    if (shouldFitToContainer) {
+        const availableSize = getElementInnerSize(qrContainer);
+        const fallbackWidth = Math.min(canvasWidth, 260);
+        const fallbackHeight = Math.min(canvasHeight, 260);
+        const maxWidth = availableSize.width || fallbackWidth;
+        const maxHeight = availableSize.height || fallbackHeight;
+        const fitted = getFittedFrameSize(canvasWidth, canvasHeight, maxWidth, maxHeight);
+        wrapper.style.width = fitted.width + 'px';
+        wrapper.style.height = fitted.height + 'px';
+        wrapper.style.maxWidth = '100%';
+        wrapper.style.maxHeight = '100%';
+    } else {
+        wrapper.style.width = canvasWidth + 'px';
+        wrapper.style.height = canvasHeight + 'px';
+    }
 
     // Prefer design_json renderer so preview matches frame builder exactly.
     if (window.renderFrameDesign && customFrame.design_json) {
@@ -5763,7 +5770,13 @@ async function generateStep3CustomizedQR(menuPageUrl) {
             const customFrame = getSelectedCustomFrameDesign();
             if (customFrame) {
                 try {
-                    const customTarget = await buildCustomFrameWrapper(qrPreviewContainer, customFrame, primaryColor, secondaryColor);
+                    const customTarget = await buildCustomFrameWrapper(
+                        qrPreviewContainer,
+                        customFrame,
+                        primaryColor,
+                        secondaryColor,
+                        { fitToContainer: false }
+                    );
                     if (customTarget) {
                         step3AppendTarget = customTarget;
                     } else {
