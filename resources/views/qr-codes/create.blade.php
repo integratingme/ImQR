@@ -10,11 +10,12 @@ window.recaptchaSiteKey = @json($recaptchaSiteKey);
 </script>
 @endif
 <style>
-/* When a frame is selected, show full frame without clipping by rounded phone overlay */
+/* Keep framed preview clipped to phone shape, with rounded top corners */
 #phone-mockup-overlay-step2.frame-selected {
-    border-radius: 0;
+    border-radius: 4rem 4rem 2.75rem 2.75rem;
     border: none !important;
     background-color: transparent !important;
+    overflow: hidden;
 }
 /* Coupon mockup card – interior uses secondary color, left/right semicircles use primary */
 .coupon-card {
@@ -600,11 +601,9 @@ window.recaptchaSiteKey = @json($recaptchaSiteKey);
                                 <input type="hidden" id="selected_frame" name="frame" value="{{ isset($qrCode) ? ($qrCode->customization['frame'] ?? 'none') : 'none' }}">
                                 <input type="hidden" id="selected_frame_design_id" name="frame_design_id" value="{{ isset($qrCode) ? ($qrCode->customization['frame_design_id'] ?? '') : '' }}">
 
-                                @include('qr-codes.forms.custom-frames-picker')
-
                                 <!-- Review-us frame options (visible only when this frame is selected) -->
-                                <div id="review-us-frame-options" class="hidden mt-4 p-4 border border-dark-200 rounded-xl bg-dark-50 space-y-4">
-                                    <p class="text-sm font-medium text-dark-600">Customize Review us frame</p>
+                                <div id="review-us-frame-options" class="hidden mt-4 space-y-4 rounded-2xl border border-primary-100 bg-primary-50/40 p-4 shadow-sm">
+                                    <p class="text-sm font-semibold tracking-tight text-dark-600">Customize Review us frame</p>
                                     <div class="flex flex-wrap items-center gap-6">
                                         <div>
                                             <label for="review_frame_color" class="block text-xs font-medium text-dark-500 mb-1">Frame color</label>
@@ -674,6 +673,8 @@ window.recaptchaSiteKey = @json($recaptchaSiteKey);
                                         </div>
                                     </div>
                                 </div>
+
+                                @include('qr-codes.forms.custom-frames-picker')
                             </div>
                         </div>
 
@@ -832,6 +833,8 @@ let qrStylingInstance = null;
 const isGuest = {{ auth()->check() ? 'false' : 'true' }};
 window.customFrameDesignCache = window.customFrameDesignCache || {};
 let justCreatedCustomFrameId = null;
+const frameDestroyUrlTemplate = @json(route('frames.destroy', ['frame' => '__FRAME_ID__']));
+const frameDestroyAllUrl = @json(route('frames.destroy-all'));
 
 // QR code data for editing
 @if(isset($qrCode))
@@ -1403,6 +1406,45 @@ function updateCustomFramesEmptyState() {
     if (loading) {
         loading.classList.add('hidden');
     }
+    updateCustomFramesDeleteAllButtonState();
+}
+
+function updateCustomFramesDeleteAllButtonState() {
+    const grid = document.getElementById('custom-frames-grid');
+    const deleteAllBtn = document.getElementById('custom-frames-delete-all-btn');
+    if (!grid || !deleteAllBtn) return;
+
+    const ownedFramesCount = grid.querySelectorAll('.custom-frame-option[data-is-template="0"]').length;
+    deleteAllBtn.classList.toggle('hidden', ownedFramesCount === 0);
+}
+
+function switchToNoFrameSelection() {
+    const selectedFrame = document.getElementById('selected_frame');
+    const selectedFrameDesign = document.getElementById('selected_frame_design_id');
+    if (selectedFrame) {
+        selectedFrame.value = 'none';
+    }
+    if (selectedFrameDesign) {
+        selectedFrameDesign.value = '';
+    }
+
+    const noFrameBtn = document.querySelector('.frame-option[data-frame="none"]');
+    if (noFrameBtn) {
+        document.querySelectorAll('.frame-option').forEach(btn => {
+            btn.classList.remove('border-primary-500', 'border-primary-600');
+            btn.classList.add('border-dark-200');
+        });
+        noFrameBtn.classList.remove('border-dark-200');
+        noFrameBtn.classList.add('border-primary-500');
+    }
+
+    const reviewUsOpts = document.getElementById('review-us-frame-options');
+    if (reviewUsOpts) {
+        reviewUsOpts.classList.add('hidden');
+    }
+
+    syncSelectedCustomFrameCardState();
+    updateStep2QRPreview();
 }
 
 function createCustomFrameOptionCard(frame) {
@@ -1411,6 +1453,7 @@ function createCustomFrameOptionCard(frame) {
     card.setAttribute('tabindex', '0');
     card.className = 'custom-frame-option relative border-2 border-dark-200 hover:border-primary-500 rounded-lg p-2 text-left cursor-pointer';
     card.dataset.frameDesignId = String(frame.id);
+    card.dataset.isTemplate = frame.is_template ? '1' : '0';
     card.onclick = () => selectCustomFrame(card, frame.id);
     card.onkeydown = (event) => {
         if (event.key === 'Enter' || event.key === ' ') {
@@ -1477,6 +1520,7 @@ async function loadCustomFrames() {
         const payload = await response.json();
         const frames = Array.isArray(payload) ? payload : (Array.isArray(payload?.frames) ? payload.frames : []);
         grid.innerHTML = '';
+        window.customFrameDesignCache = {};
 
         for (const frame of frames) {
             window.customFrameDesignCache[String(frame.id)] = {
@@ -1587,7 +1631,8 @@ async function deleteCustomFrame(event, frameDesignId) {
     }
 
     try {
-        const response = await fetch(`/frames/${frameDesignId}`, {
+        const destroyUrl = frameDestroyUrlTemplate.replace('__FRAME_ID__', encodeURIComponent(String(frameDesignId)));
+        const response = await fetch(destroyUrl, {
             method: 'DELETE',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -1616,22 +1661,49 @@ async function deleteCustomFrame(event, frameDesignId) {
         const selectedFrame = document.getElementById('selected_frame');
         const selectedFrameDesign = document.getElementById('selected_frame_design_id');
         if (selectedFrame?.value === 'custom' && selectedFrameDesign?.value === String(frameDesignId)) {
-            selectedFrame.value = 'none';
-            selectedFrameDesign.value = '';
-            const noFrameBtn = document.querySelector('.frame-option[data-frame="none"]');
-            if (noFrameBtn) {
-                document.querySelectorAll('.frame-option').forEach(btn => {
-                    btn.classList.remove('border-primary-500', 'border-primary-600');
-                    btn.classList.add('border-dark-200');
-                });
-                noFrameBtn.classList.remove('border-dark-200');
-                noFrameBtn.classList.add('border-primary-500');
-            }
-            updateStep2QRPreview();
+            switchToNoFrameSelection();
         }
         syncSelectedCustomFrameCardState();
     } catch (error) {
         alert(error.message || 'Could not delete frame.');
+    }
+}
+
+async function deleteAllCustomFrames() {
+    const deleteAllBtn = document.getElementById('custom-frames-delete-all-btn');
+    if (!deleteAllBtn) return;
+
+    if (!confirm('Delete all custom frames you created? This cannot be undone.')) {
+        return;
+    }
+
+    const originalLabel = deleteAllBtn.textContent;
+    deleteAllBtn.disabled = true;
+    deleteAllBtn.textContent = 'Deleting...';
+
+    try {
+        const response = await fetch(frameDestroyAllUrl, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            const payload = await response.json().catch(() => ({}));
+            throw new Error(payload.message || 'Bulk delete failed');
+        }
+
+        justCreatedCustomFrameId = null;
+        switchToNoFrameSelection();
+        await loadCustomFrames();
+    } catch (error) {
+        alert(error.message || 'Could not delete all custom frames.');
+    } finally {
+        deleteAllBtn.disabled = false;
+        deleteAllBtn.textContent = originalLabel;
+        updateCustomFramesDeleteAllButtonState();
     }
 }
 
@@ -2989,6 +3061,30 @@ function buildCustomFrameSvgUrl(svgContent, primaryColor, secondaryColor) {
     return URL.createObjectURL(new Blob([themed], { type: 'image/svg+xml' }));
 }
 
+function getElementInnerSize(element) {
+    if (!element) return { width: 0, height: 0 };
+    const styles = window.getComputedStyle(element);
+    const horizontalPadding = (parseFloat(styles.paddingLeft) || 0) + (parseFloat(styles.paddingRight) || 0);
+    const verticalPadding = (parseFloat(styles.paddingTop) || 0) + (parseFloat(styles.paddingBottom) || 0);
+    return {
+        width: Math.max(0, element.clientWidth - horizontalPadding),
+        height: Math.max(0, element.clientHeight - verticalPadding),
+    };
+}
+
+function getFittedFrameSize(frameWidth, frameHeight, maxWidth, maxHeight) {
+    const safeFrameWidth = Math.max(1, Number(frameWidth) || 1);
+    const safeFrameHeight = Math.max(1, Number(frameHeight) || 1);
+    const safeMaxWidth = Math.max(1, Number(maxWidth) || safeFrameWidth);
+    const safeMaxHeight = Math.max(1, Number(maxHeight) || safeFrameHeight);
+    const fitScale = Math.min(safeMaxWidth / safeFrameWidth, safeMaxHeight / safeFrameHeight);
+    const resolvedScale = Number.isFinite(fitScale) && fitScale > 0 ? fitScale : 1;
+    return {
+        width: Math.max(1, Math.round(safeFrameWidth * resolvedScale)),
+        height: Math.max(1, Math.round(safeFrameHeight * resolvedScale)),
+    };
+}
+
 async function buildCustomFrameWrapper(qrContainer, customFrame, primaryColor, secondaryColor) {
     if (!customFrame || (!customFrame.svg_content && !customFrame.design_json)) {
         return null;
@@ -3001,8 +3097,18 @@ async function buildCustomFrameWrapper(qrContainer, customFrame, primaryColor, s
     };
     const wrapper = document.createElement('div');
     wrapper.className = 'frame-wrapper relative mx-auto';
-    wrapper.style.width = (designJson.canvas_width || 400) + 'px';
-    wrapper.style.height = (designJson.canvas_height || 500) + 'px';
+    const canvasWidth = Math.max(1, Number(designJson.canvas_width) || 400);
+    const canvasHeight = Math.max(1, Number(designJson.canvas_height) || 500);
+    const availableSize = getElementInnerSize(qrContainer);
+    const fallbackWidth = Math.min(canvasWidth, 260);
+    const fallbackHeight = Math.min(canvasHeight, 260);
+    const maxWidth = availableSize.width || fallbackWidth;
+    const maxHeight = availableSize.height || fallbackHeight;
+    const fitted = getFittedFrameSize(canvasWidth, canvasHeight, maxWidth, maxHeight);
+    wrapper.style.width = fitted.width + 'px';
+    wrapper.style.height = fitted.height + 'px';
+    wrapper.style.maxWidth = '100%';
+    wrapper.style.maxHeight = '100%';
 
     // Prefer design_json renderer so preview matches frame builder exactly.
     if (window.renderFrameDesign && customFrame.design_json) {
@@ -3096,8 +3202,16 @@ async function updateStep2QRPreview() {
             const holePx = QR_HOLE_SIZE;
             const totalW = holePx / (cfg.qrWidth / 100);
             const totalH = totalW * (cfg.frameHeight / cfg.frameWidth);
-            wrapper.style.width = totalW + 'px';
-            wrapper.style.height = totalH + 'px';
+            const availableSize = getElementInnerSize(qrContainer);
+            const fallbackWidth = Math.min(totalW, 260);
+            const fallbackHeight = Math.min(totalH, 260);
+            const maxWidth = availableSize.width || fallbackWidth;
+            const maxHeight = availableSize.height || fallbackHeight;
+            const fitted = getFittedFrameSize(totalW, totalH, maxWidth, maxHeight);
+            wrapper.style.width = fitted.width + 'px';
+            wrapper.style.height = fitted.height + 'px';
+            wrapper.style.maxWidth = '100%';
+            wrapper.style.maxHeight = '100%';
             const img = document.createElement('img');
             if (frameId === 'review-us') {
                 img.src = await getReviewUsFrameUrl();

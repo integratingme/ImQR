@@ -136,6 +136,36 @@ class FrameDesignController extends Controller
         ]);
     }
 
+    public function destroyAll(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if (!$user) {
+            abort(401);
+        }
+
+        $frames = FrameDesign::query()
+            ->where('user_id', $user->id)
+            ->where('is_template', false)
+            ->get(['id', 'thumbnail_url']);
+
+        foreach ($frames as $frame) {
+            if ($frame->thumbnail_url) {
+                $this->deleteThumbnailFromUrl($frame->thumbnail_url);
+            }
+        }
+
+        FrameDesign::query()
+            ->where('user_id', $user->id)
+            ->where('is_template', false)
+            ->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'All custom frames deleted.',
+            'deleted_count' => $frames->count(),
+        ]);
+    }
+
     private function storeThumbnailFromDataUrl(string $dataUrl): ?string
     {
         if (!preg_match('/^data:image\/png;base64,/', $dataUrl)) {

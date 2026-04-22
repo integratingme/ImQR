@@ -54,6 +54,7 @@ Route::middleware(['auth'])->prefix('frames')->name('frames.')->group(function (
 Route::middleware(['auth'])->prefix('frame-designs')->name('frames.')->group(function () {
     Route::get('/', [FrameDesignController::class, 'index'])->name('index');
     Route::post('/', [FrameDesignController::class, 'store'])->name('store');
+    Route::delete('/', [FrameDesignController::class, 'destroyAll'])->name('destroy-all');
     Route::put('/{frame}', [FrameDesignController::class, 'update'])->name('update');
     Route::get('/{frame}', [FrameDesignController::class, 'show'])->name('show');
     Route::delete('/{frame}', [FrameDesignController::class, 'destroy'])->name('destroy');
