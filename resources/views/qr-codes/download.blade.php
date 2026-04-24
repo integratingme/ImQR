@@ -266,6 +266,11 @@
             const pattern = customization.pattern || 'square';
             const cornerStyle = customization.corner_style || 'square';
             const cornerDotStyle = customization.corner_dot_style || 'square';
+            const patternColorMode = customization.pattern_color_mode === 'gradient' ? 'gradient' : 'solid';
+            const patternColorStart = normalizeHexColor(customization.pattern_color_start || primaryColor);
+            const patternColorEnd = normalizeHexColor(customization.pattern_color_end || secondaryColor);
+            const cornerColor = normalizeHexColor(customization.corner_color || primaryColor);
+            const cornerDotColor = normalizeHexColor(customization.corner_dot_color || cornerColor);
             const frameId = customization.frame || 'none';
             const logoUrl = customization.logo_url || '';
 
@@ -304,13 +309,44 @@
                     qrContent = qrData.url || '';
             }
 
-            const dotsTypeMap = { square: 'square', circle: 'dots', rounded: 'rounded' };
-            const cornersSquareTypeMap = { square: 'square', rounded: 'rounded', 'extra-rounded': 'extra-rounded' };
-            const cornersDotTypeMap = { square: 'square', circle: 'dot', rounded: 'rounded' };
+            const dotsTypeMap = {
+                square: 'square',
+                circle: 'dots',
+                dots: 'dots',
+                rounded: 'rounded',
+                'extra-rounded': 'extra-rounded',
+                classy: 'classy',
+                'classy-rounded': 'classy-rounded'
+            };
+            const cornersSquareTypeMap = { square: 'square', rounded: 'rounded', 'extra-rounded': 'extra-rounded', leaf: 'extra-rounded' };
+            const cornersDotTypeMap = {
+                square: 'square',
+                circle: 'dot',
+                rounded: 'rounded',
+                diamond: 'dot',
+                star: 'dot',
+                heart: 'dot'
+            };
 
             const dotsType = dotsTypeMap[pattern] || 'square';
             const cornersSquareType = cornersSquareTypeMap[cornerStyle] || 'square';
             const cornersDotType = cornersDotTypeMap[cornerDotStyle] || 'square';
+            const cornersDotColor = (cornerDotStyle === 'diamond' || cornerDotStyle === 'star' || cornerDotStyle === 'heart')
+                ? 'transparent'
+                : cornerDotColor;
+            const dotsOptions = { type: dotsType };
+            if (patternColorMode === 'gradient') {
+                dotsOptions.gradient = {
+                    type: 'linear',
+                    rotation: Math.PI / 4,
+                    colorStops: [
+                        { offset: 0, color: patternColorStart },
+                        { offset: 1, color: patternColorEnd },
+                    ],
+                };
+            } else {
+                dotsOptions.color = patternColorStart;
+            }
 
             const DOWNLOAD_SIZE = 1000;
             const qrSize = (frameId && frameId !== 'none') ? 850 : DOWNLOAD_SIZE;
@@ -326,10 +362,10 @@
                     data: qrContent,
                     margin: 0,
                     qrOptions: { errorCorrectionLevel: 'H' },
-                    dotsOptions: { color: primaryColor, type: dotsType },
+                    dotsOptions,
                     backgroundOptions: { color: secondaryColor },
-                    cornersSquareOptions: { type: cornersSquareType, color: primaryColor },
-                    cornersDotOptions: { type: cornersDotType, color: primaryColor },
+                    cornersSquareOptions: { type: cornersSquareType, color: cornerColor },
+                    cornersDotOptions: { type: cornersDotType, color: cornersDotColor },
                     image: logoUrl || undefined,
                     imageOptions: {
                         hideBackgroundDots: true,
@@ -431,10 +467,10 @@
                         data: qrContent,
                         margin: 0,
                         qrOptions: { errorCorrectionLevel: 'H' },
-                        dotsOptions: { color: primaryColor, type: dotsType },
+                        dotsOptions,
                         backgroundOptions: { color: secondaryColor },
-                        cornersSquareOptions: { type: cornersSquareType, color: primaryColor },
-                        cornersDotOptions: { type: cornersDotType, color: primaryColor },
+                        cornersSquareOptions: { type: cornersSquareType, color: cornerColor },
+                        cornersDotOptions: { type: cornersDotType, color: cornersDotColor },
                         image: logoUrl || undefined,
                         imageOptions: {
                             hideBackgroundDots: true,
@@ -502,10 +538,10 @@
                     data: qrContent,
                     margin: 0,
                     qrOptions: { errorCorrectionLevel: 'H' },
-                    dotsOptions: { color: primaryColor, type: dotsType },
+                    dotsOptions,
                     backgroundOptions: { color: secondaryColor },
-                    cornersSquareOptions: { type: cornersSquareType, color: primaryColor },
-                    cornersDotOptions: { type: cornersDotType, color: primaryColor },
+                    cornersSquareOptions: { type: cornersSquareType, color: cornerColor },
+                    cornersDotOptions: { type: cornersDotType, color: cornersDotColor },
                     image: logoUrl || undefined,
                     imageOptions: {
                         hideBackgroundDots: true,

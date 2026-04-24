@@ -219,12 +219,23 @@ class QrCodeController extends Controller
             }
         }
 
+        $requestedFrameDesignId = $request->input('frame_design_id');
+        $resolvedFrameDesignId = null;
+        if ($request->input('frame') === 'custom' && is_numeric($requestedFrameDesignId) && (int) $requestedFrameDesignId > 0) {
+            $resolvedFrameDesignId = (int) $requestedFrameDesignId;
+        }
+
         $customization = [
             'pattern' => $request->input('pattern', 'square'),
             'corner_style' => $request->input('corner_style', 'square'),
             'corner_dot_style' => $request->input('corner_dot_style', 'square'),
+            'pattern_color_mode' => $request->input('pattern_color_mode', 'solid'),
+            'pattern_color_start' => $request->input('pattern_color_start', $colors['primary'] ?? '#000000'),
+            'pattern_color_end' => $request->input('pattern_color_end', $colors['secondary'] ?? '#FFFFFF'),
+            'corner_color' => $request->input('corner_color', $colors['primary'] ?? '#000000'),
+            'corner_dot_color' => $request->input('corner_dot_color', $colors['primary'] ?? '#000000'),
             'frame' => $request->input('frame', 'none'),
-            'frame_design_id' => $request->input('frame') === 'custom' ? (int) $request->input('frame_design_id') : null,
+            'frame_design_id' => $resolvedFrameDesignId,
             'logo_url' => $requestedLogo,
         ];
         
@@ -633,14 +644,29 @@ class QrCodeController extends Controller
             'primary' => $validated['primary_color'] ?? $qrCode->colors['primary'] ?? '#000000',
             'secondary' => $validated['secondary_color'] ?? $qrCode->colors['secondary'] ?? '#FFFFFF',
         ];
+        $requestedFrameDesignId = $request->input('frame_design_id');
+        $existingFrameDesignId = data_get($qrCode->customization, 'frame_design_id');
+        $resolvedFrameDesignId = null;
+        if ($request->input('frame') === 'custom') {
+            if (is_numeric($requestedFrameDesignId) && (int) $requestedFrameDesignId > 0) {
+                $resolvedFrameDesignId = (int) $requestedFrameDesignId;
+            } elseif (is_numeric($existingFrameDesignId) && (int) $existingFrameDesignId > 0) {
+                // Keep existing custom frame when frontend didn't post the ID again.
+                $resolvedFrameDesignId = (int) $existingFrameDesignId;
+            }
+        }
+
         $customization = [
             'pattern' => $request->input('pattern', $qrCode->customization['pattern'] ?? 'square'),
             'corner_style' => $request->input('corner_style', $qrCode->customization['corner_style'] ?? 'square'),
             'corner_dot_style' => $request->input('corner_dot_style', $qrCode->customization['corner_dot_style'] ?? 'square'),
+            'pattern_color_mode' => $request->input('pattern_color_mode', $qrCode->customization['pattern_color_mode'] ?? 'solid'),
+            'pattern_color_start' => $request->input('pattern_color_start', $qrCode->customization['pattern_color_start'] ?? ($colors['primary'] ?? '#000000')),
+            'pattern_color_end' => $request->input('pattern_color_end', $qrCode->customization['pattern_color_end'] ?? ($colors['secondary'] ?? '#FFFFFF')),
+            'corner_color' => $request->input('corner_color', $qrCode->customization['corner_color'] ?? ($colors['primary'] ?? '#000000')),
+            'corner_dot_color' => $request->input('corner_dot_color', $qrCode->customization['corner_dot_color'] ?? ($colors['primary'] ?? '#000000')),
             'frame' => $request->input('frame', $qrCode->customization['frame'] ?? 'none'),
-            'frame_design_id' => $request->input('frame') === 'custom'
-                ? (int) $request->input('frame_design_id')
-                : null,
+            'frame_design_id' => $resolvedFrameDesignId,
             'logo_url' => $requestedLogo,
         ];
         
@@ -863,6 +889,11 @@ class QrCodeController extends Controller
             'pattern' => $request->input('pattern', 'square'),
             'corner_style' => $request->input('corner_style', 'square'),
             'corner_dot_style' => $request->input('corner_dot_style', 'square'),
+            'pattern_color_mode' => $request->input('pattern_color_mode', 'solid'),
+            'pattern_color_start' => $request->input('pattern_color_start', $colors['primary'] ?? '#000000'),
+            'pattern_color_end' => $request->input('pattern_color_end', $colors['secondary'] ?? '#FFFFFF'),
+            'corner_color' => $request->input('corner_color', $colors['primary'] ?? '#000000'),
+            'corner_dot_color' => $request->input('corner_dot_color', $colors['primary'] ?? '#000000'),
         ];
 
         $preview = $this->qrCodeService->getPreview($type, $data, $colors, $customization);

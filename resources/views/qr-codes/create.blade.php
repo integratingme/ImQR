@@ -17,6 +17,26 @@ window.recaptchaSiteKey = @json($recaptchaSiteKey);
     background-color: transparent !important;
     overflow: hidden;
 }
+
+/* True circular color pickers (including inner swatch) */
+.color-picker-circle {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    padding: 0;
+    overflow: hidden;
+}
+.color-picker-circle::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+.color-picker-circle::-webkit-color-swatch {
+    border: none;
+    border-radius: 9999px;
+}
+.color-picker-circle::-moz-color-swatch {
+    border: none;
+    border-radius: 9999px;
+}
 /* Coupon mockup card – interior uses secondary color, left/right semicircles use primary */
 .coupon-card {
     background: var(--coupon-card-bg, white);
@@ -439,7 +459,7 @@ window.recaptchaSiteKey = @json($recaptchaSiteKey);
                             <div class="mb-6">
                                 <label class="label">Pattern Style</label>
                                 <p class="text-sm text-dark-300 mb-4">Choose the pattern style for QR code modules.</p>
-                                <div class="grid grid-cols-3 gap-3">
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                                     <button type="button" class="pattern-option border-2 border-primary-500 rounded-lg p-4 hover:border-primary-600 transition-colors" data-pattern="square" onclick="selectPattern(this, 'square')">
                                         <div class="w-full h-20 bg-white rounded border-2 border-dark-200 flex items-center justify-center">
                                             <div class="grid grid-cols-3 gap-1">
@@ -464,7 +484,7 @@ window.recaptchaSiteKey = @json($recaptchaSiteKey);
                                                 <div class="w-4 h-4 bg-black rounded-full"></div>
                                         </div>
                                         </div>
-                                        <p class="text-xs text-center mt-2 text-dark-400">Circle</p>
+                                        <p class="text-xs text-center mt-2 text-dark-400">Dots</p>
                                     </button>
                                     <button type="button" class="pattern-option border-2 border-dark-200 rounded-lg p-4 hover:border-primary-400 transition-colors" data-pattern="rounded" onclick="selectPattern(this, 'rounded')">
                                         <div class="w-full h-20 bg-white rounded border-2 border-dark-200 flex items-center justify-center">
@@ -479,6 +499,76 @@ window.recaptchaSiteKey = @json($recaptchaSiteKey);
                                         </div>
                                         <p class="text-xs text-center mt-2 text-dark-400">Rounded</p>
                                     </button>
+                                    <button type="button" class="pattern-option border-2 border-dark-200 rounded-lg p-4 hover:border-primary-400 transition-colors" data-pattern="extra-rounded" onclick="selectPattern(this, 'extra-rounded')">
+                                        <div class="w-full h-20 bg-white rounded border-2 border-dark-200 flex items-center justify-center">
+                                            <div class="grid grid-cols-3 gap-1">
+                                                <div class="w-4 h-4 bg-black rounded-xl"></div>
+                                                <div class="w-4 h-4 bg-black rounded-xl"></div>
+                                                <div class="w-4 h-4 bg-black rounded-xl"></div>
+                                                <div class="w-4 h-4 bg-black rounded-xl"></div>
+                                                <div class="w-4 h-4 bg-black rounded-xl"></div>
+                                                <div class="w-4 h-4 bg-black rounded-xl"></div>
+                                            </div>
+                                        </div>
+                                        <p class="text-xs text-center mt-2 text-dark-400">Extra Rounded</p>
+                                    </button>
+                                    <button type="button" class="pattern-option border-2 border-dark-200 rounded-lg p-4 hover:border-primary-400 transition-colors" data-pattern="classy" onclick="selectPattern(this, 'classy')">
+                                        <div class="w-full h-20 bg-white rounded border-2 border-dark-200 flex items-center justify-center">
+                                            <div class="grid grid-cols-3 gap-1">
+                                                <div class="w-4 h-4 bg-black rounded-tl-sm rounded-br-sm"></div>
+                                                <div class="w-4 h-4 bg-black rounded-tr-sm rounded-bl-sm"></div>
+                                                <div class="w-4 h-4 bg-black rounded-tl-sm rounded-br-sm"></div>
+                                                <div class="w-4 h-4 bg-black rounded-tr-sm rounded-bl-sm"></div>
+                                                <div class="w-4 h-4 bg-black rounded-tl-sm rounded-br-sm"></div>
+                                                <div class="w-4 h-4 bg-black rounded-tr-sm rounded-bl-sm"></div>
+                                            </div>
+                                        </div>
+                                        <p class="text-xs text-center mt-2 text-dark-400">Classy</p>
+                                    </button>
+                                    <button type="button" class="pattern-option border-2 border-dark-200 rounded-lg p-4 hover:border-primary-400 transition-colors" data-pattern="classy-rounded" onclick="selectPattern(this, 'classy-rounded')">
+                                        <div class="w-full h-20 bg-white rounded border-2 border-dark-200 flex items-center justify-center">
+                                            <div class="grid grid-cols-3 gap-1">
+                                                <div class="w-4 h-4 bg-black rounded-lg"></div>
+                                                <div class="w-4 h-4 bg-black rounded-xl"></div>
+                                                <div class="w-4 h-4 bg-black rounded-lg"></div>
+                                                <div class="w-4 h-4 bg-black rounded-xl"></div>
+                                                <div class="w-4 h-4 bg-black rounded-lg"></div>
+                                                <div class="w-4 h-4 bg-black rounded-xl"></div>
+                                            </div>
+                                        </div>
+                                        <p class="text-xs text-center mt-2 text-dark-400">Classy Rounded</p>
+                                    </button>
+                                </div>
+                                <div class="mt-4 rounded-xl border border-dark-100 bg-dark-50/30 p-3">
+                                    <div class="flex flex-wrap items-end gap-4">
+                                        <div>
+                                            <label for="pattern_color_mode" class="text-xs text-dark-300 mb-1 block">Pattern color mode</label>
+                                            <select id="pattern_color_mode" name="pattern_color_mode" class="input h-10 min-w-[170px] text-sm">
+                                                <option value="solid" {{ isset($qrCode) && (($qrCode->customization['pattern_color_mode'] ?? 'solid') === 'solid') ? 'selected' : '' }}>Solid</option>
+                                                <option value="gradient" {{ isset($qrCode) && (($qrCode->customization['pattern_color_mode'] ?? 'solid') === 'gradient') ? 'selected' : '' }}>Gradient</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label for="pattern_color_start" class="text-xs text-dark-300 mb-1 block">Color 1</label>
+                                            <input
+                                                type="color"
+                                                id="pattern_color_start"
+                                                name="pattern_color_start"
+                                                value="{{ isset($qrCode) ? ($qrCode->customization['pattern_color_start'] ?? ($qrCode->colors['primary'] ?? '#000000')) : '#000000' }}"
+                                                class="color-picker-circle h-10 w-10 rounded-full border-2 border-dark-200 p-0 cursor-pointer"
+                                            >
+                                        </div>
+                                        <div id="pattern-color-end-wrap">
+                                            <label for="pattern_color_end" class="text-xs text-dark-300 mb-1 block">Color 2</label>
+                                            <input
+                                                type="color"
+                                                id="pattern_color_end"
+                                                name="pattern_color_end"
+                                                value="{{ isset($qrCode) ? ($qrCode->customization['pattern_color_end'] ?? ($qrCode->colors['secondary'] ?? '#FFFFFF')) : '#FFFFFF' }}"
+                                                class="color-picker-circle h-10 w-10 rounded-full border-2 border-dark-200 p-0 cursor-pointer"
+                                            >
+                                        </div>
+                                    </div>
                                 </div>
                                 <input type="hidden" id="selected_pattern" name="pattern" value="{{ isset($qrCode) ? ($qrCode->customization['pattern'] ?? 'square') : 'square' }}">
                             </div>
@@ -518,6 +608,26 @@ window.recaptchaSiteKey = @json($recaptchaSiteKey);
                                         </div>
                                         <p class="text-xs text-center mt-2 text-dark-400">Extra Rounded</p>
                                     </button>
+                                    <button type="button" class="corner-option border-2 border-dark-200 rounded-lg p-4 hover:border-primary-400 transition-colors" data-corner="leaf" onclick="selectCorner(this, 'leaf')">
+                                        <div class="w-full h-20 bg-white rounded border-2 border-dark-200 flex items-center justify-center">
+                                            <div class="relative w-16 h-16">
+                                                <div class="absolute top-0 left-0 w-6 h-6 border-4 border-black rounded-[10px_10px_0_10px]"></div>
+                                                <div class="absolute top-0 right-0 w-6 h-6 border-4 border-black rounded-[10px_10px_10px_0]"></div>
+                                                <div class="absolute bottom-0 left-0 w-6 h-6 border-4 border-black rounded-[10px_0_10px_10px]"></div>
+                                            </div>
+                                        </div>
+                                        <p class="text-xs text-center mt-2 text-dark-400">Leaf</p>
+                                    </button>
+                                </div>
+                                <div class="mt-4 rounded-xl border border-dark-100 bg-dark-50/30 p-3">
+                                    <label for="corner_color" class="text-xs text-dark-300 mb-1 block">Corner color</label>
+                                    <input
+                                        type="color"
+                                        id="corner_color"
+                                        name="corner_color"
+                                        value="{{ isset($qrCode) ? ($qrCode->customization['corner_color'] ?? ($qrCode->colors['primary'] ?? '#000000')) : '#000000' }}"
+                                        class="color-picker-circle h-10 w-10 rounded-full border-2 border-dark-200 p-0 cursor-pointer"
+                                    >
                                 </div>
                                 <input type="hidden" id="selected_corner" name="corner_style" value="{{ isset($qrCode) ? ($qrCode->customization['corner_style'] ?? 'square') : 'square' }}">
                             </div>
@@ -557,6 +667,40 @@ window.recaptchaSiteKey = @json($recaptchaSiteKey);
                                         </div>
                                         <p class="text-xs text-center mt-2 text-dark-400">Rounded</p>
                                     </button>
+                                    <button type="button" class="corner-dot-option border-2 border-dark-200 rounded-lg p-4 hover:border-primary-400 transition-colors" data-corner-dot="diamond" onclick="selectCornerDot(this, 'diamond')">
+                                        <div class="w-full h-20 bg-white rounded border-2 border-dark-200 flex items-center justify-center">
+                                            <svg width="28" height="28" viewBox="0 0 32 32" fill="currentColor" class="text-dark-600">
+                                                <path d="M16 0L32 16L16 32L0 16L16 0Z"></path>
+                                            </svg>
+                                        </div>
+                                        <p class="text-xs text-center mt-2 text-dark-400">Diamond</p>
+                                    </button>
+                                    <button type="button" class="corner-dot-option border-2 border-dark-200 rounded-lg p-4 hover:border-primary-400 transition-colors" data-corner-dot="star" onclick="selectCornerDot(this, 'star')">
+                                        <div class="w-full h-20 bg-white rounded border-2 border-dark-200 flex items-center justify-center">
+                                            <svg width="28" height="28" viewBox="0 0 32 32" fill="currentColor" class="text-dark-600">
+                                                <path d="M16 0L20 12L32 12L22 20L26 32L16 24L6 32L10 20L0 12L12 12L16 0Z"></path>
+                                            </svg>
+                                        </div>
+                                        <p class="text-xs text-center mt-2 text-dark-400">Star</p>
+                                    </button>
+                                    <button type="button" class="corner-dot-option border-2 border-dark-200 rounded-lg p-4 hover:border-primary-400 transition-colors" data-corner-dot="heart" onclick="selectCornerDot(this, 'heart')">
+                                        <div class="w-full h-20 bg-white rounded border-2 border-dark-200 flex items-center justify-center">
+                                            <svg width="28" height="28" viewBox="0 0 32 32" fill="currentColor" class="text-dark-600">
+                                                <path d="M16 28C16 28 2 20 2 10C2 4 8 2 12 2C15 2 16 4 16 4C16 4 17 2 20 2C24 2 30 4 30 10C30 20 16 28 16 28Z"></path>
+                                            </svg>
+                                        </div>
+                                        <p class="text-xs text-center mt-2 text-dark-400">Heart</p>
+                                    </button>
+                                </div>
+                                <div class="mt-4 rounded-xl border border-dark-100 bg-dark-50/30 p-3">
+                                    <label for="corner_dot_color" class="text-xs text-dark-300 mb-1 block">Corner dot color</label>
+                                    <input
+                                        type="color"
+                                        id="corner_dot_color"
+                                        name="corner_dot_color"
+                                        value="{{ isset($qrCode) ? ($qrCode->customization['corner_dot_color'] ?? ($qrCode->colors['primary'] ?? '#000000')) : '#000000' }}"
+                                        class="color-picker-circle h-10 w-10 rounded-full border-2 border-dark-200 p-0 cursor-pointer"
+                                    >
                                 </div>
                                 <input type="hidden" id="selected_corner_dot" name="corner_dot_style" value="{{ isset($qrCode) ? ($qrCode->customization['corner_dot_style'] ?? 'square') : 'square' }}">
                             </div>
@@ -834,6 +978,7 @@ const isGuest = {{ auth()->check() ? 'false' : 'true' }};
 window.customFrameDesignCache = window.customFrameDesignCache || {};
 window.customFramePreviewCache = window.customFramePreviewCache || {};
 let justCreatedCustomFrameId = null;
+let customFramesLoadPromise = null;
 const frameDestroyUrlTemplate = @json(route('frames.destroy', ['frame' => '__FRAME_ID__']));
 const frameDestroyAllUrl = @json(route('frames.destroy-all'));
 
@@ -1101,6 +1246,26 @@ function normalizeHexColor(val) {
     }
     if (!/^[0-9A-Fa-f]{6}$/.test(hex)) return '#000000';
     return '#' + hex;
+}
+
+function getStep2StyleColors() {
+    const primaryColor = normalizeHexColor(document.getElementById('primary_color')?.value || '#000000');
+    const secondaryColor = normalizeHexColor(document.getElementById('secondary_color')?.value || '#FFFFFF');
+    const patternColorMode = document.getElementById('pattern_color_mode')?.value === 'gradient' ? 'gradient' : 'solid';
+    const patternColorStart = normalizeHexColor(document.getElementById('pattern_color_start')?.value || primaryColor);
+    const patternColorEnd = normalizeHexColor(document.getElementById('pattern_color_end')?.value || secondaryColor);
+    const cornerColor = normalizeHexColor(document.getElementById('corner_color')?.value || primaryColor);
+    const cornerDotColor = normalizeHexColor(document.getElementById('corner_dot_color')?.value || cornerColor);
+
+    return {
+        primaryColor,
+        secondaryColor,
+        patternColorMode,
+        patternColorStart,
+        patternColorEnd,
+        cornerColor,
+        cornerDotColor,
+    };
 }
 
 // Color picker sync for Step 2 (only named inputs primary_color, secondary_color are submitted)
@@ -1556,6 +1721,11 @@ function replaceCardPlaceholderWithImage(card, src, altName) {
 }
 
 async function loadCustomFrames() {
+    if (customFramesLoadPromise) {
+        return customFramesLoadPromise;
+    }
+
+    customFramesLoadPromise = (async () => {
     const grid = document.getElementById('custom-frames-grid');
     const loading = document.getElementById('custom-frames-loading');
     const empty = document.getElementById('custom-frames-empty');
@@ -1602,6 +1772,13 @@ async function loadCustomFrames() {
             empty.classList.remove('hidden');
         }
     }
+    })();
+
+    try {
+        await customFramesLoadPromise;
+    } finally {
+        customFramesLoadPromise = null;
+    }
 }
 
 // Frame selection
@@ -1643,11 +1820,19 @@ function applyCustomFrameQrColors(frameDesignId, options = {}) {
     const primaryColorHex = document.getElementById('primary_color_hex');
     const secondaryColorInput = document.getElementById('secondary_color');
     const secondaryColorHex = document.getElementById('secondary_color_hex');
+    const patternColorStartInput = document.getElementById('pattern_color_start');
+    const patternColorEndInput = document.getElementById('pattern_color_end');
+    const cornerColorInput = document.getElementById('corner_color');
+    const cornerDotColorInput = document.getElementById('corner_dot_color');
 
     if (normalizedPrimary && primaryColorInput) primaryColorInput.value = normalizedPrimary;
     if (normalizedPrimary && primaryColorHex) primaryColorHex.value = normalizedPrimary;
     if (normalizedSecondary && secondaryColorInput) secondaryColorInput.value = normalizedSecondary;
     if (normalizedSecondary && secondaryColorHex) secondaryColorHex.value = normalizedSecondary;
+    if (normalizedPrimary && patternColorStartInput) patternColorStartInput.value = normalizedPrimary;
+    if (normalizedSecondary && patternColorEndInput) patternColorEndInput.value = normalizedSecondary;
+    if (normalizedPrimary && cornerColorInput) cornerColorInput.value = normalizedPrimary;
+    if (normalizedPrimary && cornerDotColorInput) cornerDotColorInput.value = normalizedPrimary;
 
     if (!shouldSkipPreview) {
         updateStep2QRPreview();
@@ -1780,6 +1965,364 @@ function selectCornerDot(button, cornerDotValue) {
     
     // Update QR code preview
     updateStep2QRPreview();
+}
+
+const CUSTOM_CORNER_DOT_SHAPES = {
+    diamond: 'M16 0L32 16L16 32L0 16L16 0Z',
+    star: 'M16 0L20 12L32 12L22 20L26 32L16 24L6 32L10 20L0 12L12 12L16 0Z',
+    heart: 'M16 28C16 28 2 20 2 10C2 4 8 2 12 2C15 2 16 4 16 4C16 4 17 2 20 2C24 2 30 4 30 10C30 20 16 28 16 28Z',
+};
+
+const CUSTOM_CORNER_DOT_VISUAL_OFFSET = {
+    diamond: { x: 0, y: 0 },
+    star: { x: 0, y: 0.8 },
+    heart: { x: 0, y: 1.4 },
+};
+
+function isCustomCornerDotStyle(style) {
+    return Object.prototype.hasOwnProperty.call(CUSTOM_CORNER_DOT_SHAPES, style);
+}
+
+function isCustomCornerStyle(style) {
+    return style === 'leaf';
+}
+
+function resolveCornersSquareType(style) {
+    const cornersSquareTypeMap = {
+        square: 'square',
+        rounded: 'rounded',
+        'extra-rounded': 'extra-rounded',
+        leaf: 'square',
+    };
+
+    return cornersSquareTypeMap[style] || 'square';
+}
+
+function resolveCornersSquareColor(style, color) {
+    return isCustomCornerStyle(style) ? 'transparent' : color;
+}
+
+function resolveCornersDotType(style) {
+    const cornersDotTypeMap = {
+        square: 'square',
+        circle: 'dot',
+        rounded: 'rounded',
+    };
+
+    if (isCustomCornerDotStyle(style)) {
+        return 'dot';
+    }
+
+    return cornersDotTypeMap[style] || 'dot';
+}
+
+function resolveCornersDotColor(style, color) {
+    const selectedCornerStyle = document.getElementById('selected_corner')?.value || 'square';
+    if (isCustomCornerDotStyle(style) || isCustomCornerStyle(selectedCornerStyle)) {
+        return 'transparent';
+    }
+
+    return color;
+}
+
+function getCanvasColorDistance(a, b) {
+    return Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) + Math.abs(a[2] - b[2]);
+}
+
+function detectFinderCenters(canvasEl) {
+    if (!canvasEl || canvasEl.tagName !== 'CANVAS') return null;
+
+    const ctx = canvasEl.getContext('2d', { willReadFrequently: true });
+    if (!ctx) return null;
+
+    const width = canvasEl.width;
+    const height = canvasEl.height;
+    if (!width || !height) return null;
+
+    const image = ctx.getImageData(0, 0, width, height);
+    const pixels = image.data;
+
+    const step = Math.max(1, Math.floor(Math.min(width, height) / 64));
+    const bins = new Map();
+    for (let y = 0; y < height; y += step) {
+        for (let x = 0; x < width; x += step) {
+            const idx = (y * width + x) * 4;
+            const a = pixels[idx + 3];
+            if (a < 10) continue;
+            const r = pixels[idx];
+            const g = pixels[idx + 1];
+            const b = pixels[idx + 2];
+            const key = `${Math.round(r / 16)}-${Math.round(g / 16)}-${Math.round(b / 16)}`;
+            bins.set(key, (bins.get(key) || 0) + 1);
+        }
+    }
+
+    let dominantKey = null;
+    let dominantCount = -1;
+    bins.forEach((count, key) => {
+        if (count > dominantCount) {
+            dominantCount = count;
+            dominantKey = key;
+        }
+    });
+    if (!dominantKey) return null;
+
+    const dominant = dominantKey.split('-').map(v => Number(v) * 16);
+
+    function isForeground(x, y) {
+        if (x < 0 || y < 0 || x >= width || y >= height) return false;
+        const idx = (y * width + x) * 4;
+        const a = pixels[idx + 3];
+        if (a < 20) return false;
+        const color = [pixels[idx], pixels[idx + 1], pixels[idx + 2]];
+        return getCanvasColorDistance(color, dominant) > 70;
+    }
+
+    function findSeed(minX, maxX, minY, maxY, xStep, yStep) {
+        for (let y = minY; yStep > 0 ? y <= maxY : y >= maxY; y += yStep) {
+            for (let x = minX; xStep > 0 ? x <= maxX : x >= maxX; x += xStep) {
+                if (isForeground(x, y)) return { x, y };
+            }
+        }
+        return null;
+    }
+
+    function getComponentBounds(seed) {
+        const visited = new Uint8Array(width * height);
+        const queue = [seed];
+        visited[seed.y * width + seed.x] = 1;
+        let minX = seed.x;
+        let maxX = seed.x;
+        let minY = seed.y;
+        let maxY = seed.y;
+
+        while (queue.length) {
+            const point = queue.pop();
+            const neighbors = [
+                { x: point.x + 1, y: point.y },
+                { x: point.x - 1, y: point.y },
+                { x: point.x, y: point.y + 1 },
+                { x: point.x, y: point.y - 1 },
+            ];
+
+            neighbors.forEach((n) => {
+                if (n.x < 0 || n.y < 0 || n.x >= width || n.y >= height) return;
+                const key = n.y * width + n.x;
+                if (visited[key]) return;
+                if (!isForeground(n.x, n.y)) return;
+                visited[key] = 1;
+                queue.push(n);
+                minX = Math.min(minX, n.x);
+                maxX = Math.max(maxX, n.x);
+                minY = Math.min(minY, n.y);
+                maxY = Math.max(maxY, n.y);
+            });
+        }
+
+        return { minX, maxX, minY, maxY };
+    }
+
+    const halfW = Math.floor(width / 2);
+    const halfH = Math.floor(height / 2);
+    const seeds = [
+        findSeed(0, halfW, 0, halfH, 1, 1),
+        findSeed(width - 1, halfW, 0, halfH, -1, 1),
+        findSeed(0, halfW, height - 1, halfH, 1, -1),
+    ];
+
+    if (seeds.some(seed => !seed)) return null;
+
+    const bounds = seeds.map(seed => getComponentBounds(seed));
+    return bounds.map((b) => ({
+        x: (b.minX + b.maxX) / 2,
+        y: (b.minY + b.maxY) / 2,
+        size: Math.max(1, Math.min(b.maxX - b.minX + 1, b.maxY - b.minY + 1)),
+    }));
+}
+
+function getLeafRadius(index, radiusPx) {
+    if (index === 0) return `${radiusPx}px ${radiusPx}px 0 ${radiusPx}px`;
+    if (index === 1) return `${radiusPx}px ${radiusPx}px ${radiusPx}px 0`;
+    return `${radiusPx}px 0 ${radiusPx}px ${radiusPx}px`;
+}
+
+function renderCustomCornerSquareOverlay(target, cornerStyle, cornerDotStyle, color) {
+    if (!target) return;
+
+    target.querySelectorAll('.custom-corner-square-marker, .custom-corner-inner-marker').forEach(marker => marker.remove());
+
+    if (!isCustomCornerStyle(cornerStyle)) {
+        return;
+    }
+
+    const qrCanvas = target.querySelector('canvas, svg');
+    if (!qrCanvas) return;
+
+    if (qrCanvas.clientWidth === 0 || qrCanvas.clientHeight === 0) {
+        requestAnimationFrame(() => renderCustomCornerSquareOverlay(target, cornerStyle, cornerDotStyle, color));
+        return;
+    }
+
+    if (window.getComputedStyle(target).position === 'static') {
+        target.style.position = 'relative';
+    }
+
+    const targetRect = target.getBoundingClientRect();
+    const canvasRect = qrCanvas.getBoundingClientRect();
+    const finderCenters = detectFinderCenters(qrCanvas);
+    let resolvedCenters = finderCenters;
+
+    if (!resolvedCenters || resolvedCenters.length !== 3) {
+        // Fallback so "leaf" never disappears if pixel detection fails.
+        const canvasSize = Math.min(qrCanvas.clientWidth, qrCanvas.clientHeight);
+        const boxSize = Math.max(20, Math.round(canvasSize * 0.24));
+        resolvedCenters = [
+            { x: boxSize / 2, y: boxSize / 2, size: boxSize },
+            { x: canvasSize - (boxSize / 2), y: boxSize / 2, size: boxSize },
+            { x: boxSize / 2, y: canvasSize - (boxSize / 2), size: boxSize },
+        ];
+    }
+
+    resolvedCenters.forEach((center, index) => {
+        const moduleSize = Math.max(1, center.size / 7);
+        const borderWidth = Math.max(2, Math.round(moduleSize * 1.05));
+        const outerSize = Math.max(22, Math.round(center.size * 1.12));
+        const outerRadius = Math.max(6, Math.round(moduleSize * 2.3));
+        const innerSize = Math.max(11, Math.round(moduleSize * 3.35));
+        const innerRadius = Math.max(3, Math.round(moduleSize * 1.1));
+
+        const inwardShift = Math.max(1, Math.round(moduleSize * 0.45));
+        const inwardOffsetByIndex = [
+            { x: inwardShift, y: inwardShift },   // top-left -> move right/down
+            { x: -inwardShift, y: inwardShift },  // top-right -> move left/down
+            { x: inwardShift, y: -inwardShift },  // bottom-left -> move right/up
+        ];
+        const inwardOffset = inwardOffsetByIndex[index] || { x: 0, y: 0 };
+
+        const markerCenterLeft = (canvasRect.left - targetRect.left) + center.x + inwardOffset.x;
+        const markerCenterTop = (canvasRect.top - targetRect.top) + center.y + inwardOffset.y;
+
+        const outer = document.createElement('div');
+        outer.className = 'custom-corner-square-marker';
+        outer.style.position = 'absolute';
+        outer.style.left = `${markerCenterLeft}px`;
+        outer.style.top = `${markerCenterTop}px`;
+        outer.style.width = `${outerSize}px`;
+        outer.style.height = `${outerSize}px`;
+        outer.style.transform = 'translate(-50%, -50%)';
+        outer.style.boxSizing = 'border-box';
+        outer.style.border = `${borderWidth}px solid ${color}`;
+        outer.style.borderRadius = getLeafRadius(index, outerRadius);
+        outer.style.pointerEvents = 'none';
+        outer.style.zIndex = '4';
+        target.appendChild(outer);
+
+        if (!isCustomCornerDotStyle(cornerDotStyle)) {
+            const inner = document.createElement('div');
+            inner.className = 'custom-corner-inner-marker';
+            inner.style.position = 'absolute';
+            inner.style.left = `${markerCenterLeft}px`;
+            inner.style.top = `${markerCenterTop}px`;
+            inner.style.width = `${innerSize}px`;
+            inner.style.height = `${innerSize}px`;
+            inner.style.transform = 'translate(-50%, -50%)';
+            inner.style.boxSizing = 'border-box';
+            inner.style.background = color;
+            inner.style.borderRadius = getLeafRadius(index, innerRadius);
+            inner.style.pointerEvents = 'none';
+            inner.style.zIndex = '4';
+            target.appendChild(inner);
+        }
+    });
+}
+
+function renderCustomCornerDotOverlay(target, style, color) {
+    if (!target) return;
+
+    target.querySelectorAll('.custom-corner-dot-marker').forEach(marker => marker.remove());
+
+    if (!isCustomCornerDotStyle(style)) {
+        return;
+    }
+
+    const qrCanvas = target.querySelector('canvas, svg');
+    if (!qrCanvas) return;
+
+    if (qrCanvas.clientWidth === 0 || qrCanvas.clientHeight === 0) {
+        requestAnimationFrame(() => renderCustomCornerDotOverlay(target, style, color));
+        return;
+    }
+
+    if (window.getComputedStyle(target).position === 'static') {
+        target.style.position = 'relative';
+    }
+
+    const path = CUSTOM_CORNER_DOT_SHAPES[style];
+    const shapeOffset = CUSTOM_CORNER_DOT_VISUAL_OFFSET[style] || { x: 0, y: 0 };
+    const selectedCornerStyle = document.getElementById('selected_corner')?.value || 'square';
+    const targetRect = target.getBoundingClientRect();
+    const canvasRect = qrCanvas.getBoundingClientRect();
+    const finderCenters = detectFinderCenters(qrCanvas);
+
+    let positions;
+    let iconSize;
+
+    if (finderCenters && finderCenters.length === 3) {
+        const avgFinderSize = finderCenters.reduce((sum, center) => sum + center.size, 0) / finderCenters.length;
+        iconSize = Math.max(12, Math.round(avgFinderSize * 0.36));
+        let cornerPositions = finderCenters.map(center => ({
+            left: (canvasRect.left - targetRect.left) + center.x,
+            top: (canvasRect.top - targetRect.top) + center.y,
+        }));
+
+        if (selectedCornerStyle === 'leaf') {
+            const leafDotOutward = Math.max(1, Math.round(avgFinderSize * 0.06));
+            const outwardOffsetsByIndex = [
+                { x: -leafDotOutward, y: -leafDotOutward }, // top-left
+                { x: leafDotOutward, y: -leafDotOutward },  // top-right
+                { x: -leafDotOutward, y: leafDotOutward },  // bottom-left
+            ];
+            cornerPositions = cornerPositions.map((position, index) => {
+                const offset = outwardOffsetsByIndex[index] || { x: 0, y: 0 };
+                return {
+                    left: position.left + offset.x,
+                    top: position.top + offset.y,
+                };
+            });
+        }
+
+        positions = cornerPositions;
+    } else {
+        // Fallback for unexpected rendering edge-cases.
+        const canvasSize = Math.min(qrCanvas.clientWidth, qrCanvas.clientHeight);
+        const finderBoxSize = Math.max(20, Math.round(canvasSize * 0.3));
+        iconSize = Math.max(12, Math.round(finderBoxSize * 0.36));
+        const canvasLeft = canvasRect.left - targetRect.left;
+        const canvasTop = canvasRect.top - targetRect.top;
+        positions = [
+            { top: canvasTop + (finderBoxSize / 2), left: canvasLeft + (finderBoxSize / 2) },
+            { top: canvasTop + (finderBoxSize / 2), left: canvasLeft + canvasSize - (finderBoxSize / 2) },
+            { top: canvasTop + canvasSize - (finderBoxSize / 2), left: canvasLeft + (finderBoxSize / 2) },
+        ];
+    }
+
+    positions.forEach((position) => {
+        const marker = document.createElement('div');
+        marker.className = 'custom-corner-dot-marker';
+        marker.style.position = 'absolute';
+        marker.style.top = `${position.top}px`;
+        marker.style.left = `${position.left}px`;
+        marker.style.transform = 'translate(-50%, -50%)';
+        marker.style.color = color;
+        marker.style.pointerEvents = 'none';
+        marker.style.zIndex = '4';
+        marker.innerHTML = `
+            <svg width="${iconSize}" height="${iconSize}" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
+                <path d="${path}" transform="translate(${shapeOffset.x} ${shapeOffset.y})"></path>
+            </svg>
+        `;
+        target.appendChild(marker);
+    });
 }
 
 function updateQRSize(value) {
@@ -3218,8 +3761,15 @@ async function updateStep2QRPreview() {
 
     const frameId = document.getElementById('selected_frame')?.value || 'none';
     const type = document.querySelector('input[name="type"]').value;
-    const primaryColor = document.getElementById('primary_color')?.value || '#000000';
-    const secondaryColor = document.getElementById('secondary_color')?.value || '#FFFFFF';
+    const {
+        primaryColor,
+        secondaryColor,
+        patternColorMode,
+        patternColorStart,
+        patternColorEnd,
+        cornerColor,
+        cornerDotColor,
+    } = getStep2StyleColors();
     const pattern = document.getElementById('selected_pattern')?.value || 'square';
     const cornerStyle = document.getElementById('selected_corner')?.value || 'square';
     const cornerDotStyle = document.getElementById('selected_corner_dot')?.value || 'square';
@@ -3248,13 +3798,22 @@ async function updateStep2QRPreview() {
     const QR_HOLE_SIZE = 260;
     const qrDisplaySize = (frameId && frameId !== 'none') ? 220 : QR_HOLE_SIZE;
     if (frameId === 'custom') {
-        const customFrame = getSelectedCustomFrameDesign();
+        let customFrame = getSelectedCustomFrameDesign();
+        if (!customFrame && document.getElementById('selected_frame_design_id')?.value) {
+            // Edit flow can hit this before cache is ready; ensure frames are loaded once.
+            await loadCustomFrames();
+            customFrame = getSelectedCustomFrameDesign();
+        }
         if (customFrame) {
             const customTarget = await buildCustomFrameWrapper(qrContainer, customFrame, primaryColor, secondaryColor);
             if (customTarget) {
                 appendTarget = customTarget;
                 qrStylingInstance = null;
             }
+        } else {
+            // Keep previous wrapper from stale state out of the preview.
+            qrContainer.innerHTML = '';
+            qrStylingInstance = null;
         }
     } else if (frameId && frameId !== 'none' && FRAME_CONFIG[frameId]) {
         const cfg = FRAME_CONFIG[frameId];
@@ -3310,24 +3869,34 @@ async function updateStep2QRPreview() {
     const dotsTypeMap = {
         square: 'square',
         circle: 'dots',
-        rounded: 'rounded',
-    };
-
-    const cornersSquareTypeMap = {
-        square: 'square',
+        dots: 'dots',
         rounded: 'rounded',
         'extra-rounded': 'extra-rounded',
-    };
-
-    const cornersDotTypeMap = {
-        square: 'square',
-        circle: 'dot',
-        rounded: 'rounded',
+        classy: 'classy',
+        'classy-rounded': 'classy-rounded',
     };
 
     const dotsType = dotsTypeMap[pattern] || 'square';
-    const cornersSquareType = cornersSquareTypeMap[cornerStyle] || 'square';
-    const cornersDotType = cornersDotTypeMap[cornerDotStyle] || 'dot';
+    const cornersSquareType = resolveCornersSquareType(cornerStyle);
+    const cornersSquareColor = resolveCornersSquareColor(cornerStyle, cornerColor);
+    const cornersDotType = resolveCornersDotType(cornerDotStyle);
+    const cornersDotColor = resolveCornersDotColor(cornerDotStyle, cornerDotColor);
+
+    const dotsOptions = {
+        type: dotsType,
+    };
+    if (patternColorMode === 'gradient') {
+        dotsOptions.gradient = {
+            type: 'linear',
+            rotation: Math.PI / 4,
+            colorStops: [
+                { offset: 0, color: patternColorStart },
+                { offset: 1, color: patternColorEnd },
+            ],
+        };
+    } else {
+        dotsOptions.color = patternColorStart;
+    }
 
     const options = {
         width: qrDisplaySize,
@@ -3338,20 +3907,17 @@ async function updateStep2QRPreview() {
         qrOptions: {
             errorCorrectionLevel: 'H',
         },
-        dotsOptions: {
-            color: primaryColor,
-            type: dotsType,
-        },
+        dotsOptions,
         backgroundOptions: {
             color: secondaryColor,
         },
         cornersSquareOptions: {
             type: cornersSquareType,
-            color: primaryColor,
+            color: cornersSquareColor,
         },
         cornersDotOptions: {
             type: cornersDotType,
-            color: primaryColor,
+            color: cornersDotColor,
         },
         image: logoDataUrl || undefined,
         imageOptions: {
@@ -3370,6 +3936,9 @@ async function updateStep2QRPreview() {
     } else {
         qrStylingInstance.update(options);
     }
+
+    renderCustomCornerSquareOverlay(appendTarget, cornerStyle, cornerDotStyle, cornerColor);
+    renderCustomCornerDotOverlay(appendTarget, cornerDotStyle, cornerDotColor);
 }
 
 function updatePhoneMockupOverlaySize() {
@@ -3428,6 +3997,34 @@ if (secondaryColorInput && secondaryColorHex) {
     });
 }
 
+const patternColorModeInput = document.getElementById('pattern_color_mode');
+const patternColorStartInput = document.getElementById('pattern_color_start');
+const patternColorEndInput = document.getElementById('pattern_color_end');
+const cornerColorInput = document.getElementById('corner_color');
+const cornerDotColorInput = document.getElementById('corner_dot_color');
+
+function updatePatternGradientControls() {
+    if (!patternColorModeInput || !patternColorEndInput) return;
+    const isGradient = patternColorModeInput.value === 'gradient';
+    const patternColorEndWrap = document.getElementById('pattern-color-end-wrap');
+    if (patternColorEndWrap) {
+        patternColorEndWrap.classList.toggle('hidden', !isGradient);
+    }
+    patternColorEndInput.classList.toggle('opacity-60', !isGradient);
+    patternColorEndInput.classList.toggle('cursor-not-allowed', !isGradient);
+}
+
+[patternColorModeInput, patternColorStartInput, patternColorEndInput, cornerColorInput, cornerDotColorInput]
+    .filter(Boolean)
+    .forEach((input) => {
+        input.addEventListener('input', () => {
+            updatePatternGradientControls();
+            updateStep2QRPreview();
+        });
+    });
+
+updatePatternGradientControls();
+
 // Populate form fields with existing QR code data when editing
 function populateFormFields() {
     if (!qrCodeId || Object.keys(qrCodeData).length === 0) {
@@ -3451,6 +4048,28 @@ function populateFormFields() {
         if (secondaryColorInput) secondaryColorInput.value = qrCodeColors.secondary;
         if (secondaryColorHex) secondaryColorHex.value = qrCodeColors.secondary;
     }
+
+    const patternColorMode = document.getElementById('pattern_color_mode');
+    const patternColorStart = document.getElementById('pattern_color_start');
+    const patternColorEnd = document.getElementById('pattern_color_end');
+    const cornerColor = document.getElementById('corner_color');
+    const cornerDotColor = document.getElementById('corner_dot_color');
+    if (patternColorMode) {
+        patternColorMode.value = qrCodeCustomization.pattern_color_mode === 'gradient' ? 'gradient' : 'solid';
+    }
+    if (patternColorStart) {
+        patternColorStart.value = normalizeHexColor(qrCodeCustomization.pattern_color_start || qrCodeColors.primary || '#000000');
+    }
+    if (patternColorEnd) {
+        patternColorEnd.value = normalizeHexColor(qrCodeCustomization.pattern_color_end || qrCodeColors.secondary || '#FFFFFF');
+    }
+    if (cornerColor) {
+        cornerColor.value = normalizeHexColor(qrCodeCustomization.corner_color || qrCodeColors.primary || '#000000');
+    }
+    if (cornerDotColor) {
+        cornerDotColor.value = normalizeHexColor(qrCodeCustomization.corner_dot_color || qrCodeColors.primary || '#000000');
+    }
+    updatePatternGradientControls();
     
     // Populate pattern
     if (qrCodeCustomization.pattern) {
@@ -3496,10 +4115,31 @@ function populateFormFields() {
         const frameInput = document.getElementById('selected_frame');
         if (frameInput) {
             frameInput.value = qrCodeCustomization.frame;
-            // Update visual selection
-            const frameButton = document.querySelector(`[data-frame="${qrCodeCustomization.frame}"]`);
-            if (frameButton) {
-                selectFrame(frameButton, qrCodeCustomization.frame);
+            if (qrCodeCustomization.frame === 'custom') {
+                const frameDesignId = String(
+                    qrCodeCustomization.frame_design_id
+                    || document.getElementById('selected_frame_design_id')?.value
+                    || ''
+                );
+                const frameDesignInput = document.getElementById('selected_frame_design_id');
+                if (frameDesignInput) frameDesignInput.value = frameDesignId;
+                if (frameDesignId) {
+                    const customCard = document.querySelector(`.custom-frame-option[data-frame-design-id="${frameDesignId}"]`);
+                    if (customCard) {
+                        selectCustomFrame(customCard, frameDesignId);
+                    } else {
+                        // Keep state even if card is temporarily unavailable.
+                        syncSelectedCustomFrameCardState();
+                        applyCustomFrameQrColors(frameDesignId, { skipPreview: true });
+                        updateStep2QRPreview();
+                    }
+                }
+            } else {
+                // Update visual selection
+                const frameButton = document.querySelector(`[data-frame="${qrCodeCustomization.frame}"]`);
+                if (frameButton) {
+                    selectFrame(frameButton, qrCodeCustomization.frame);
+                }
             }
         }
     }
@@ -4750,12 +5390,21 @@ document.querySelectorAll('.color-preset').forEach(btn => {
         const primaryColorHex = document.getElementById('primary_color_hex');
         const secondaryColorInput = document.getElementById('secondary_color');
         const secondaryColorHex = document.getElementById('secondary_color_hex');
+        const patternColorStartInput = document.getElementById('pattern_color_start');
+        const patternColorEndInput = document.getElementById('pattern_color_end');
+        const cornerColorInput = document.getElementById('corner_color');
+        const cornerDotColorInput = document.getElementById('corner_dot_color');
         
         if (primaryColorInput) primaryColorInput.value = primary;
         if (primaryColorHex) primaryColorHex.value = primary;
         if (secondaryColorInput) secondaryColorInput.value = secondary;
         if (secondaryColorHex) secondaryColorHex.value = secondary;
+        if (patternColorStartInput) patternColorStartInput.value = primary;
+        if (patternColorEndInput) patternColorEndInput.value = secondary;
+        if (cornerColorInput) cornerColorInput.value = primary;
+        if (cornerDotColorInput) cornerDotColorInput.value = primary;
         
+        updatePatternGradientControls();
         updateStep2QRPreview();
     });
 });
@@ -5579,6 +6228,12 @@ async function updateQRCode(id) {
     if (primaryColorInput && primaryColorHex) primaryColorInput.value = normalizeHexColor(primaryColorHex.value);
     if (secondaryColorInput && secondaryColorHex) secondaryColorInput.value = normalizeHexColor(secondaryColorHex.value);
 
+    // Populate honeypot token field on update submit as well (same as create flow)
+    const formTokenField = document.getElementById('form-token');
+    if (formTokenField) {
+        formTokenField.value = Date.now().toString(36) + Math.random().toString(36).substr(2);
+    }
+
     const form = document.getElementById('qr-form');
     if (!form) return false;
     const formData = new FormData(form);
@@ -5612,7 +6267,9 @@ async function updateQRCode(id) {
             method: 'POST',
             body: formData,
             headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
             }
         });
         
@@ -5673,8 +6330,15 @@ async function generateStep3CustomizedQR(menuPageUrl) {
         
         // Get customization parameters from Step 2
         const type = document.querySelector('input[name="type"]').value;
-        const primaryColor = document.getElementById('primary_color')?.value || '#000000';
-        const secondaryColor = document.getElementById('secondary_color')?.value || '#FFFFFF';
+        const {
+            primaryColor,
+            secondaryColor,
+            patternColorMode,
+            patternColorStart,
+            patternColorEnd,
+            cornerColor,
+            cornerDotColor,
+        } = getStep2StyleColors();
         const pattern = document.getElementById('selected_pattern')?.value || 'square';
         const cornerStyle = document.getElementById('selected_corner')?.value || 'square';
         const cornerDotStyle = document.getElementById('selected_corner_dot')?.value || 'square';
@@ -5704,24 +6368,34 @@ async function generateStep3CustomizedQR(menuPageUrl) {
         const dotsTypeMap = {
             square: 'square',
             circle: 'dots',
-            rounded: 'rounded',
-        };
-        
-        const cornersSquareTypeMap = {
-            square: 'square',
+            dots: 'dots',
             rounded: 'rounded',
             'extra-rounded': 'extra-rounded',
-        };
-        
-        const cornersDotTypeMap = {
-            square: 'square',
-            circle: 'dot',
-            rounded: 'rounded',
+            classy: 'classy',
+            'classy-rounded': 'classy-rounded',
         };
         
         const dotsType = dotsTypeMap[pattern] || 'square';
-        const cornersSquareType = cornersSquareTypeMap[cornerStyle] || 'square';
-        const cornersDotType = cornersDotTypeMap[cornerDotStyle] || 'dot';
+        const cornersSquareType = resolveCornersSquareType(cornerStyle);
+        const cornersSquareColor = resolveCornersSquareColor(cornerStyle, cornerColor);
+        const cornersDotType = resolveCornersDotType(cornerDotStyle);
+        const cornersDotColor = resolveCornersDotColor(cornerDotStyle, cornerDotColor);
+
+        const dotsOptions = {
+            type: dotsType,
+        };
+        if (patternColorMode === 'gradient') {
+            dotsOptions.gradient = {
+                type: 'linear',
+                rotation: Math.PI / 4,
+                colorStops: [
+                    { offset: 0, color: patternColorStart },
+                    { offset: 1, color: patternColorEnd },
+                ],
+            };
+        } else {
+            dotsOptions.color = patternColorStart;
+        }
         
         const frameId = document.getElementById('selected_frame')?.value || 'none';
         const STEP3_HOLE_SIZE = 300;
@@ -5740,20 +6414,17 @@ async function generateStep3CustomizedQR(menuPageUrl) {
             qrOptions: {
                 errorCorrectionLevel: 'H',
             },
-            dotsOptions: {
-                color: primaryColor,
-                type: dotsType,
-            },
+            dotsOptions,
             backgroundOptions: {
                 color: secondaryColor,
             },
             cornersSquareOptions: {
                 type: cornersSquareType,
-                color: primaryColor,
+                color: cornersSquareColor,
             },
             cornersDotOptions: {
                 type: cornersDotType,
-                color: primaryColor,
+                color: cornersDotColor,
             },
             image: logoDataUrl || undefined,
             imageOptions: {
@@ -5837,6 +6508,8 @@ async function generateStep3CustomizedQR(menuPageUrl) {
 
         const qrCodeStyling = new window.QRCodeStyling(options);
         qrCodeStyling.append(step3AppendTarget);
+        renderCustomCornerSquareOverlay(step3AppendTarget, cornerStyle, cornerDotStyle, cornerColor);
+        renderCustomCornerDotOverlay(step3AppendTarget, cornerDotStyle, cornerDotColor);
 
         window.step3QrInstance = qrCodeStyling;
         console.log('Step 3 QR instance created successfully');

@@ -30,6 +30,11 @@ class StoreQrCodeRequest extends FormRequest
             'name' => 'required|string|max:255',
             'primary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
             'secondary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'pattern_color_mode' => 'nullable|in:solid,gradient',
+            'pattern_color_start' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'pattern_color_end' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'corner_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'corner_dot_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
             'qr_logo' => 'nullable|image|mimes:jpeg,png,jpg|mimetypes:image/jpeg,image/png|image_signature|max:2048', // Step 2 logo, JPG/PNG only
             'frame' => 'nullable|string|max:50',
             'frame_design_id' => 'nullable|integer|exists:frame_designs,id',
